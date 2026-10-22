@@ -40,8 +40,8 @@ const sosController = {
         notes
       } = req.body;
 
-      // Map type to clean standardized name
-      const typeMapping = {
+      // Map type to clean standardized display name
+      const displayTypeMapping = {
         'Medical': 'Medical Emergency',
         'Medical Emergency': 'Medical Emergency',
         'Fire': 'Fire Outbreak',
@@ -56,7 +56,25 @@ const sosController = {
         'Other Emergency': 'Other Emergency',
         'General Emergency': 'Other Emergency',
       };
-      const validEmergencyType = typeMapping[emergency_type] || emergency_type || 'Other Emergency';
+      const validEmergencyType = displayTypeMapping[emergency_type] || emergency_type || 'Other Emergency';
+
+      // Map to canonical database type that is 100% compliant with legacy database check constraints
+      const canonicalDbTypeMapping = {
+        'Medical': 'Medical',
+        'Medical Emergency': 'Medical',
+        'Fire': 'Fire',
+        'Fire Incident': 'Fire',
+        'Fire Outbreak': 'Fire',
+        'Theft/Intruder': 'Theft/Intruder',
+        'Theft / Intruder': 'Theft/Intruder',
+        'Women Safety': 'Women Safety',
+        'Immediate Distress': 'Other',
+        'Immediate Emergency Distress': 'Other',
+        'Other': 'Other',
+        'Other Emergency': 'Other',
+        'General Emergency': 'Other',
+      };
+      const canonicalDbType = canonicalDbTypeMapping[emergency_type] || 'Other';
 
       // Fetch user profile info with full address
       const userRes = await pool.query(
@@ -100,7 +118,7 @@ const sosController = {
       const alertResult = await pool.query(alertInsertQuery, [
         userId,
         associationId,
-        validEmergencyType,
+        canonicalDbType,
         latitude ? parseFloat(latitude) : null,
         longitude ? parseFloat(longitude) : null,
         Boolean(is_test),
@@ -140,6 +158,7 @@ const sosController = {
       const alertPayload = {
         ...alert,
         problem: validEmergencyType,
+        emergency_type: validEmergencyType,
         resident_address: residentAddress,
         association_address: fullAssocInfo,
         user: {

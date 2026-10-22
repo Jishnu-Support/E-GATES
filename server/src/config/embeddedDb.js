@@ -196,7 +196,7 @@ function initSchemaAndSeed(db) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id),
       association_id INTEGER NOT NULL REFERENCES associations(id),
-      emergency_type TEXT DEFAULT 'Other' CHECK (emergency_type IN ('Medical', 'Fire', 'Theft/Intruder', 'Women Safety', 'Other')),
+      emergency_type TEXT DEFAULT 'Other',
       latitude REAL,
       longitude REAL,
       status TEXT DEFAULT 'triggered' CHECK (status IN ('triggered', 'acknowledged', 'resolved', 'false_alarm')),

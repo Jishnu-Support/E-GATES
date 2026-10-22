@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS sos_alerts (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id),
   association_id INTEGER NOT NULL REFERENCES associations(id),
-  emergency_type VARCHAR(50) DEFAULT 'Other' CHECK (emergency_type IN ('Medical', 'Fire', 'Theft/Intruder', 'Women Safety', 'Other')),
+  emergency_type VARCHAR(100) DEFAULT 'Other',
   latitude DECIMAL(10, 8),
   longitude DECIMAL(11, 8),
   status VARCHAR(20) DEFAULT 'triggered' CHECK (status IN ('triggered', 'acknowledged', 'resolved', 'false_alarm')),
