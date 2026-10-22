@@ -13,18 +13,13 @@ async function initPostgresSchemaAndSeed() {
   if (pgInitialized) return;
   pgInitialized = true;
   try {
-    // 1. Check if users table exists in PostgreSQL
-    const checkRes = await pgPool.query(
-      "SELECT to_regclass('public.users') as exists"
-    );
-    if (!checkRes.rows[0]?.exists) {
-      console.log('[PostgreSQL]: Initializing database schema from schema.sql...');
-      const schemaPath = path.resolve(__dirname, '../schema.sql');
-      if (fs.existsSync(schemaPath)) {
-        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        await pgPool.query(schemaSql);
-        console.log('[PostgreSQL]: Database schema successfully initialized.');
-      }
+    // Ensure all tables and relations exist (all statements in schema.sql are IF NOT EXISTS)
+    console.log('[PostgreSQL]: Verifying and initializing database schema from schema.sql...');
+    const schemaPath = path.resolve(__dirname, '../schema.sql');
+    if (fs.existsSync(schemaPath)) {
+      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+      await pgPool.query(schemaSql);
+      console.log('[PostgreSQL]: Database schema successfully ensured.');
     }
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration
