@@ -24,7 +24,7 @@ import {
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
@@ -85,20 +85,7 @@ export default function EventCaptures() {
   const [likedMap, setLikedMap] = useState({});
 
   // Helper to resolve static file paths to backend URL
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    const normalized = filePath.replace(/\\/g, '/');
-    const uploadIndex = normalized.indexOf('/uploads/');
-    if (uploadIndex !== -1) {
-      return `${base}${normalized.substring(uploadIndex)}`;
-    }
-    if (normalized.startsWith('uploads/')) {
-      return `${base}/${normalized}`;
-    }
-    return `${base}/${normalized.replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 B';
@@ -414,7 +401,9 @@ export default function EventCaptures() {
     } catch (err) {
       console.warn('Direct blob download error, triggering backend attachment download:', err);
       // Fallback: Direct attachment download endpoint
-      const baseApi = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
+      const baseApi = (typeof window !== 'undefined' && window.location.origin)
+        ? window.location.origin
+        : (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
       const downloadEndpoint = `${baseApi}/api/v1/event-captures/${capture.id}/download`;
 
       const link = document.createElement('a');

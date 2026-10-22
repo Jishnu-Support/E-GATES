@@ -10,7 +10,7 @@ import {
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import DataTable from '../../components/common/DataTable';
 import Modal from '../../components/common/Modal';
 
@@ -48,12 +48,7 @@ export default function AdminComplaints() {
     fetchComplaints();
   }, [fetchComplaints]);
 
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    return `${base}/${filePath.replace(/\\/g, '/').replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   const handleOpenDetail = (complaint) => {
     setSelectedComplaint(complaint);

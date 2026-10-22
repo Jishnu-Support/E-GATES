@@ -160,7 +160,14 @@ api.interceptors.response.use(
 
 export const getFileUrl = (filePath) => {
   if (!filePath) return '';
-  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    // If an existing record contains http://localhost:5002, rewrite it to current origin in browser
+    if (typeof window !== 'undefined' && window.location?.origin && filePath.includes('localhost:5002')) {
+      filePath = filePath.replace(/^http:\/\/localhost:5002/, window.location.origin);
+    } else {
+      return filePath;
+    }
+  }
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
   const normalized = filePath.replace(/\\/g, '/');
   const uploadIndex = normalized.indexOf('/uploads/');

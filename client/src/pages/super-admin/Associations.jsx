@@ -13,7 +13,7 @@ import {
   HiShieldCheck,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -531,7 +531,7 @@ export default function Associations() {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-blue-100 text-primary-700 flex items-center justify-center font-bold text-lg border border-primary-100 flex-shrink-0 overflow-hidden">
                     {assoc.logo ? (
                       <img
-                        src={`http://localhost:5002/${assoc.logo}`}
+                        src={getFileUrl(assoc.logo)}
                         alt={assoc.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {

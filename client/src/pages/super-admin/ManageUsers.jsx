@@ -11,7 +11,7 @@ import {
   HiCheckCircle,
   HiXCircle,
 } from 'react-icons/hi2';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import DigitalIdCardModal from '../../components/common/DigitalIdCardModal';
@@ -55,20 +55,7 @@ export default function ManageUsers() {
   const [deleteUser, setDeleteUser] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    const normalized = filePath.replace(/\\/g, '/');
-    const uploadIndex = normalized.indexOf('/uploads/');
-    if (uploadIndex !== -1) {
-      return `${base}${normalized.substring(uploadIndex)}`;
-    }
-    if (normalized.startsWith('uploads/')) {
-      return `${base}/${normalized}`;
-    }
-    return `${base}/${normalized.replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   const fetchData = async () => {
     try {

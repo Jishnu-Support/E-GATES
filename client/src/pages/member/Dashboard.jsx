@@ -27,7 +27,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { useSOS } from '../../hooks/useSOS';
 import { useSocket } from '../../hooks/useSocket';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import StatsCard from '../../components/common/StatsCard';
 import Modal from '../../components/common/Modal';
 import AudioPlayer from '../../components/common/AudioPlayer';
@@ -70,17 +70,7 @@ export default function MemberDashboard() {
   // Socket SOS incoming alert popup
   const [incomingSOS, setIncomingSOS] = useState(null);
 
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    let clean = filePath.replace(/\\/g, '/');
-    const idx = clean.indexOf('uploads/');
-    if (idx !== -1) {
-      clean = clean.substring(idx);
-    }
-    if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    return `${base}/${clean.replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 B';
@@ -394,11 +384,7 @@ export default function MemberDashboard() {
                   {news.voice_message && (
                     <div className="pt-1">
                       <AudioPlayer
-                        src={
-                          news.voice_message.startsWith('http')
-                            ? news.voice_message
-                            : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5002'}/${news.voice_message.replace(/\\/g, '/').replace(/^\/?/, '')}`
-                        }
+                        src={getFileUrl(news.voice_message)}
                         title="Voice Note"
                       />
                     </div>

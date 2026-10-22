@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/common/DataTable';
 import Modal from '../../components/common/Modal';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 
 const STATUS_CONFIG = {
   open: { label: 'Open', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -45,20 +45,7 @@ export default function AdminComplaints() {
   const [managePriority, setManagePriority] = useState('medium');
   const [updating, setUpdating] = useState(false);
 
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    const normalized = filePath.replace(/\\/g, '/');
-    const uploadIndex = normalized.indexOf('/uploads/');
-    if (uploadIndex !== -1) {
-      return `${base}${normalized.substring(uploadIndex)}`;
-    }
-    if (normalized.startsWith('uploads/')) {
-      return `${base}/${normalized}`;
-    }
-    return `${base}/${normalized.replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   const fetchComplaints = useCallback(async () => {
     try {

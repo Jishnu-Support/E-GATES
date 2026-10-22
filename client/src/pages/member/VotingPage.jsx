@@ -24,7 +24,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import { useSocket } from '../../hooks/useSocket';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
@@ -181,12 +181,7 @@ export default function MemberVotingPage() {
     }
   };
 
-  const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    return `${base}/${filePath.replace(/\\/g, '/').replace(/^\/?/, '')}`;
-  };
+  const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
   // Filtered Polls for Left Column
   const filteredPolls = useMemo(() => {

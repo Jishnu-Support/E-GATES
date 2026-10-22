@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark } from 'react-icons/hi2';
+import { getFileUrl } from '../../services/api';
 
 export default function AudioPlayer({ src, title = 'Voice Message' }) {
   const audioRef = useRef(null);
@@ -60,19 +61,7 @@ export default function AudioPlayer({ src, title = 'Voice Message' }) {
   }, [src]);
 
   // Adjust URL if relative to backend uploads or full path
-  const audioUrl = (() => {
-    if (!src) return '';
-    let str = String(src).replace(/\\/g, '/');
-    const uploadsIdx = str.indexOf('uploads/');
-    if (uploadsIdx !== -1) {
-      str = str.substring(uploadsIdx);
-    }
-    if (str.startsWith('http://') || str.startsWith('https://')) {
-      return str;
-    }
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
-    return `${base}/${str.replace(/^\/?/, '')}`;
-  })();
+  const audioUrl = getFileUrl(src);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
