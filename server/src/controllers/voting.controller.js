@@ -506,7 +506,7 @@ const votingController = {
   },
 
   /**
-   * Delete poll (only if no votes recorded)
+   * Delete poll (super_admin can delete even if votes exist; standard admins only if no votes recorded)
    */
   async deletePoll(req, res, next) {
     try {
@@ -531,18 +531,45 @@ const votingController = {
       }
 
       const votesCheck = await pool.query('SELECT COUNT(*) FROM votes WHERE poll_id = $1', [pollId]);
-      if (parseInt(votesCheck.rows[0].count, 10) > 0) {
-        return res.status(400).json({
+      const recordedVotesCount = parseInt(votesCheck.rows[0].count, 10);
+
+      if (recordedVotesCount > 0 && role !== 'super_admin') {
+        return res.status(403).json({
           success: false,
-          message: 'Cannot delete poll because votes have already been recorded'
+          message: 'Cannot delete poll because votes have already been recorded. Only Super Admin has permission to delete this poll.'
         });
       }
 
+      // Cleanup in proper order to maintain referential integrity
+      if (recordedVotesCount > 0) {
+        await pool.query('DELETE FROM votes WHERE poll_id = $1', [pollId]);
+      }
+      await pool.query('DELETE FROM poll_vendors WHERE poll_id = $1', [pollId]);
       await pool.query('DELETE FROM polls WHERE id = $1', [pollId]);
+
+      // Audit log
+      try {
+        await pool.query(
+          `INSERT INTO audit_log (user_id, action, entity_type, entity_id, details, ip_address)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            req.user.id || null,
+            recordedVotesCount > 0 ? 'DELETE_POLL_WITH_VOTES' : 'DELETE_POLL',
+            'polls',
+            pollId,
+            JSON.stringify({ title: poll.title, poll_type: poll.poll_type, votes_cleared: recordedVotesCount }),
+            req.ip || null
+          ]
+        );
+      } catch (auditErr) {
+        // Non-blocking
+      }
 
       res.json({
         success: true,
-        message: 'Poll deleted successfully'
+        message: recordedVotesCount > 0
+          ? 'Poll and all recorded votes deleted successfully by Super Admin'
+          : 'Poll deleted successfully'
       });
     } catch (error) {
       next(error);
@@ -714,18 +741,25 @@ const votingController = {
       }
 
       const votesCheck = await pool.query('SELECT COUNT(*) FROM votes WHERE vendor_id = $1', [vendorId]);
-      if (parseInt(votesCheck.rows[0].count, 10) > 0) {
-        return res.status(400).json({
+      const recordedVotes = parseInt(votesCheck.rows[0].count, 10);
+
+      if (recordedVotes > 0 && role !== 'super_admin') {
+        return res.status(403).json({
           success: false,
-          message: 'Cannot delete vendor with recorded votes'
+          message: 'Cannot delete candidate/option because votes have already been recorded. Only Super Admin has permission to delete.'
         });
       }
 
+      if (recordedVotes > 0) {
+        await pool.query('DELETE FROM votes WHERE vendor_id = $1', [vendorId]);
+      }
       await pool.query('DELETE FROM poll_vendors WHERE id = $1', [vendorId]);
 
       res.json({
         success: true,
-        message: 'Vendor deleted successfully'
+        message: recordedVotes > 0
+          ? 'Candidate/Option and recorded votes deleted successfully by Super Admin'
+          : 'Candidate/Option deleted successfully'
       });
     } catch (error) {
       next(error);

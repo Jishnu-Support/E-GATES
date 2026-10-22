@@ -40,6 +40,7 @@ import { useSocket } from '../../hooks/useSocket';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useAuth } from '../../hooks/useAuth';
 
 const SERVICE_CATEGORIES = [
   'Plumber',
@@ -67,7 +68,18 @@ const RESOLUTION_TASK_TYPES = [
 ];
 
 export default function AdminVotingManage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
   const { socket } = useSocket();
+
+  const checkHasVotes = (poll) => {
+    if (!poll) return false;
+    if (parseInt(poll.total_votes || 0, 10) > 0) return true;
+    if (Array.isArray(poll.vendors) && poll.vendors.some((v) => parseInt(v.vote_count || v.votes || 0, 10) > 0)) {
+      return true;
+    }
+    return false;
+  };
 
   const [polls, setPolls] = useState([]);
   const [selectedPoll, setSelectedPoll] = useState(null);
@@ -855,16 +867,42 @@ export default function AdminVotingManage() {
                       <HiArrowDownTray className="w-4 h-4" />
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setPollToDelete(selectedPoll);
-                        setIsDeleteConfirmOpen(true);
-                      }}
-                      className="p-2 border border-gray-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition"
-                      title="Delete Poll"
-                    >
-                      <HiTrash className="w-4 h-4" />
-                    </button>
+                    {(() => {
+                      const votesExist = checkHasVotes(selectedPoll);
+                      if (votesExist && !isSuperAdmin) {
+                        return (
+                          <button
+                            type="button"
+                            disabled
+                            className="p-2 border border-gray-200 text-gray-400 bg-gray-50 rounded-lg text-xs font-medium cursor-not-allowed opacity-60 flex items-center gap-1"
+                            title="Votes have already been recorded. Only Super Admin has permission to delete this poll."
+                          >
+                            <HiLockClosed className="w-4 h-4 text-gray-400" />
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPollToDelete(selectedPoll);
+                            setIsDeleteConfirmOpen(true);
+                          }}
+                          className={`p-2 border rounded-lg text-xs font-medium transition ${
+                            votesExist && isSuperAdmin
+                              ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100 ring-1 ring-red-300'
+                              : 'border-gray-200 text-red-600 hover:bg-red-50'
+                          }`}
+                          title={
+                            votesExist && isSuperAdmin
+                              ? 'Delete Poll (Super Admin Override - Recorded votes will be cleared)'
+                              : 'Delete Poll'
+                          }
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -2095,9 +2133,13 @@ export default function AdminVotingManage() {
         isOpen={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={handleConfirmDeletePoll}
-        title="Delete Voting Poll"
-        message={`Are you sure you want to delete "${pollToDelete?.title}"? Note: polls with cast votes cannot be deleted.`}
-        confirmText="Delete Poll"
+        title={checkHasVotes(pollToDelete) ? "Delete Poll (Super Admin Override)" : "Delete Voting Poll"}
+        message={
+          checkHasVotes(pollToDelete)
+            ? `Are you sure you want to delete "${pollToDelete?.title}"? WARNING: Votes have already been recorded on this poll. As Super Admin, proceeding will permanently remove this poll and delete all recorded ballot votes.`
+            : `Are you sure you want to delete "${pollToDelete?.title}"?`
+        }
+        confirmText={checkHasVotes(pollToDelete) ? "Delete Poll & All Votes" : "Delete Poll"}
         isDestructive
         loading={submitting}
       />
