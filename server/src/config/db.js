@@ -22,6 +22,37 @@ async function initPostgresSchemaAndSeed() {
       console.log('[PostgreSQL]: Database schema successfully ensured.');
     }
 
+    // Ensure all required columns exist on tables (in case table was previously created without them)
+    await pgPool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS blood_group VARCHAR(10);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS dob DATE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS aadhaar_number VARCHAR(20);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_main_admin BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS eb_bill_proof VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS property_tax_receipt VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS member_code VARCHAR(6);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR(5) DEFAULT 'en';
+      ALTER TABLE associations ADD COLUMN IF NOT EXISTS main_admin_id INTEGER;
+      ALTER TABLE associations ADD COLUMN IF NOT EXISTS logo VARCHAR(500);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS poll_type VARCHAR(50) DEFAULT 'vendor_selection';
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS service_category VARCHAR(100);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS resolution_task_type VARCHAR(100);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS target_audience VARCHAR(50) DEFAULT 'all';
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS target_street VARCHAR(255);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS target_user_ids TEXT;
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS election_type VARCHAR(50);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS internal_officer_name VARCHAR(255);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS internal_officer_contact VARCHAR(100);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS external_officer_name VARCHAR(255);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS external_officer_contact VARCHAR(100);
+      ALTER TABLE polls ADD COLUMN IF NOT EXISTS election_roles TEXT;
+      ALTER TABLE poll_vendors ADD COLUMN IF NOT EXISTS contesting_role VARCHAR(255);
+      ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS voice_message VARCHAR(500);
+      ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS attachment VARCHAR(500);
+      ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS image VARCHAR(500);
+    `);
+
     // 2. Ensure Super Admin exists matching seedAdmin configuration
     const seedUsername = config.seedAdmin?.username || 'jit_admin';
     const seedPassword = config.seedAdmin?.password || 'Jishnuinfotech@123';
