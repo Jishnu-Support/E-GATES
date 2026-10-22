@@ -57,6 +57,10 @@ if (!fs.existsSync(uploadsPath)) {
   }
 }
 app.use('/uploads', express.static(uploadsPath));
+if (config.attachmentsPath) {
+  // Also serve directly from attachments path in case old records stored the absolute path
+  app.use(config.attachmentsPath, express.static(uploadsPath));
+}
 
 // Universal Health Check endpoints (for Easypanel, Traefik, Docker Swarm, Kubernetes)
 app.get(['/health', '/healthz', '/ping', '/api/health', '/api/v1/health'], (req, res) => {
@@ -96,6 +100,7 @@ if (fs.existsSync(resolvedClientPath)) {
     if (
       req.path.startsWith('/api') ||
       req.path.startsWith('/uploads') ||
+      (config.attachmentsPath && req.path.startsWith(config.attachmentsPath)) ||
       req.path.startsWith('/health') ||
       req.path === '/ping' ||
       req.path === '/healthz'

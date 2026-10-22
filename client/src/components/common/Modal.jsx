@@ -55,13 +55,13 @@ export default function Modal({
       role="dialog"
     >
       <div
-        className={`w-full ${sizeClasses[size] || sizeClasses.md} bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transform transition-all duration-200 scale-100 max-h-[90vh] flex flex-col`}
+        className={`w-full ${sizeClasses[size] || sizeClasses.md} bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden transform transition-all duration-200 scale-100 max-h-[90vh] flex flex-col`}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/60">
             {title ? (
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
             ) : (
               <div />
             )}
@@ -69,7 +69,7 @@ export default function Modal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 rounded-lg p-1.5 hover:bg-gray-100 transition focus:outline-none"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition focus:outline-none"
                 aria-label="Close modal"
               >
                 <HiXMark className="w-5 h-5" />
@@ -83,7 +83,7 @@ export default function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-gray-100 bg-gray-50/80">
+          <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-800/80">
             {footer}
           </div>
         )}

@@ -170,7 +170,14 @@ export const getFileUrl = (filePath) => {
   if (normalized.startsWith('uploads/')) {
     return `${origin}/${normalized}`;
   }
-  return `${origin}/${normalized.replace(/^\/?/, '')}`;
+  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+  for (const dir of subdirs) {
+    const dirIdx = normalized.indexOf(`/${dir}/`);
+    if (dirIdx !== -1) {
+      return `${origin}/uploads${normalized.substring(dirIdx)}`;
+    }
+  }
+  return `${origin}/uploads/${normalized.replace(/^\/?/, '')}`;
 };
 
 export default api;

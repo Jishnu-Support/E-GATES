@@ -38,7 +38,14 @@ export default function DigitalIdCardModal({
     if (normalized.startsWith('uploads/')) {
       return `${base}/${normalized}`;
     }
-    return `${base}/${normalized.replace(/^\/?/, '')}`;
+    const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+    for (const dir of subdirs) {
+      const dirIdx = normalized.indexOf(`/${dir}/`);
+      if (dirIdx !== -1) {
+        return `${base}/uploads${normalized.substring(dirIdx)}`;
+      }
+    }
+    return `${base}/uploads/${normalized.replace(/^\/?/, '')}`;
   };
 
   useEffect(() => {

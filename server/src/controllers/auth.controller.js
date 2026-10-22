@@ -1,9 +1,26 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const pool = require('../config/db');
 const emailService = require('../services/email.service');
 const smsService = require('../services/sms.service');
+
+// Normalize any uploaded file path into a web accessible /uploads/... URL
+const normalizeFilePath = (file, defaultDir = 'documents') => {
+  if (!file) return null;
+  const raw = (file.path || file).replace(/\\/g, '/');
+  const uploadIdx = raw.indexOf('/uploads/');
+  if (uploadIdx !== -1) return raw.substring(uploadIdx);
+  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+  for (const dir of subdirs) {
+    const dirIdx = raw.indexOf(`/${dir}/`);
+    if (dirIdx !== -1) {
+      return `/uploads${raw.substring(dirIdx)}`;
+    }
+  }
+  return `/uploads/${defaultDir}/${path.basename(raw)}`;
+};
 
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret_association_2026';
 const ACCESS_TOKEN_EXPIRY = '15m';
@@ -91,15 +108,15 @@ const authController = {
 
       // Handle uploaded files
       const ebBillProof = req.files && req.files.eb_bill_proof && req.files.eb_bill_proof[0]
-        ? req.files.eb_bill_proof[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.eb_bill_proof[0], 'proofs')
         : null;
 
       const propertyTaxReceipt = req.files && req.files.property_tax_receipt && req.files.property_tax_receipt[0]
-        ? req.files.property_tax_receipt[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.property_tax_receipt[0], 'proofs')
         : null;
 
       const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
-        ? req.files.profile_photo[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
         : null;
 
       // Hash password
@@ -273,19 +290,19 @@ const authController = {
 
       // Handle files
       const logo = req.files && req.files.logo && req.files.logo[0]
-        ? req.files.logo[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.logo[0], 'logos')
         : null;
 
       const ebBillProof = req.files && req.files.eb_bill_proof && req.files.eb_bill_proof[0]
-        ? req.files.eb_bill_proof[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.eb_bill_proof[0], 'proofs')
         : null;
 
       const propertyTaxReceipt = req.files && req.files.property_tax_receipt && req.files.property_tax_receipt[0]
-        ? req.files.property_tax_receipt[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.property_tax_receipt[0], 'proofs')
         : null;
 
       const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
-        ? req.files.profile_photo[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
         : null;
 
       await client.query('BEGIN');

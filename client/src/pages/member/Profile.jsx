@@ -507,7 +507,9 @@ export default function Profile() {
   const resolveFileUrl = (filePath) => {
     if (!filePath) return '';
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
-    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
+    const base = typeof window !== 'undefined' && window.location.origin
+      ? window.location.origin
+      : (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
     const normalized = filePath.replace(/\\/g, '/');
     const uploadIndex = normalized.indexOf('/uploads/');
     if (uploadIndex !== -1) {
@@ -516,7 +518,14 @@ export default function Profile() {
     if (normalized.startsWith('uploads/')) {
       return `${base}/${normalized}`;
     }
-    return `${base}/${normalized.replace(/^\/?/, '')}`;
+    const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+    for (const dir of subdirs) {
+      const dirIdx = normalized.indexOf(`/${dir}/`);
+      if (dirIdx !== -1) {
+        return `${base}/uploads${normalized.substring(dirIdx)}`;
+      }
+    }
+    return `${base}/uploads/${normalized.replace(/^\/?/, '')}`;
   };
 
   // Helper to format file size

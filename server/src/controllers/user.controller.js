@@ -1,11 +1,28 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
+const path = require('path');
 const smsService = require('../services/sms.service');
 const emailService = require('../services/email.service');
 const { generateMemberCode } = require('../utils/generateMemberCode');
 const exportUtils = require('../utils/exportUtils');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
+
+// Universal helper to normalize any disk upload path into a web accessible /uploads/... URL
+const normalizeFilePath = (file, defaultDir = 'documents') => {
+  if (!file) return null;
+  const raw = (file.path || file).replace(/\\/g, '/');
+  const uploadIdx = raw.indexOf('/uploads/');
+  if (uploadIdx !== -1) return raw.substring(uploadIdx);
+  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+  for (const dir of subdirs) {
+    const dirIdx = raw.indexOf(`/${dir}/`);
+    if (dirIdx !== -1) {
+      return `/uploads${raw.substring(dirIdx)}`;
+    }
+  }
+  return `/uploads/${defaultDir}/${path.basename(raw)}`;
+};
 
 // Helper to log audit events
 const logAudit = async (userId, action, entityType, entityId, details, ipAddress) => {
@@ -657,11 +674,11 @@ const userController = {
 
       // Handle proof document uploads if provided
       const ebBillProof = req.files && req.files.eb_bill_proof && req.files.eb_bill_proof[0]
-        ? req.files.eb_bill_proof[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.eb_bill_proof[0], 'proofs')
         : null;
 
       const propertyTaxReceipt = req.files && req.files.property_tax_receipt && req.files.property_tax_receipt[0]
-        ? req.files.property_tax_receipt[0].path.replace(/\\/g, '/')
+        ? normalizeFilePath(req.files.property_tax_receipt[0], 'proofs')
         : null;
 
       // Handle profile photo / avatar upload if provided
@@ -669,9 +686,7 @@ const userController = {
       if (req.files) {
         const photoFile = (req.files.profile_photo && req.files.profile_photo[0]) || (req.files.avatar && req.files.avatar[0]);
         if (photoFile) {
-          profilePhoto = photoFile.path.replace(/\\/g, '/');
-          const idx = profilePhoto.indexOf('/uploads/');
-          if (idx !== -1) profilePhoto = profilePhoto.substring(idx);
+          profilePhoto = normalizeFilePath(photoFile, 'profiles');
         }
       }
 
@@ -1834,9 +1849,9 @@ const userController = {
 
       let aadharProof = null;
       if (req.files && req.files.aadhar_proof && req.files.aadhar_proof[0]) {
-        aadharProof = req.files.aadhar_proof[0].path.replace(/\\/g, '/');
+        aadharProof = normalizeFilePath(req.files.aadhar_proof[0], 'proofs');
       } else if (req.file) {
-        aadharProof = req.file.path.replace(/\\/g, '/');
+        aadharProof = normalizeFilePath(req.file, 'proofs');
       }
 
       const insertResult = await pool.query(
@@ -1907,9 +1922,9 @@ const userController = {
 
       let aadharProof = tenantCheck.rows[0].aadhar_proof;
       if (req.files && req.files.aadhar_proof && req.files.aadhar_proof[0]) {
-        aadharProof = req.files.aadhar_proof[0].path.replace(/\\/g, '/');
+        aadharProof = normalizeFilePath(req.files.aadhar_proof[0], 'proofs');
       } else if (req.file) {
-        aadharProof = req.file.path.replace(/\\/g, '/');
+        aadharProof = normalizeFilePath(req.file, 'proofs');
       }
 
       const updateResult = await pool.query(

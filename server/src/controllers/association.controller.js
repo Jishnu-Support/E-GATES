@@ -1,4 +1,21 @@
+const path = require('path');
 const pool = require('../config/db');
+
+// Normalize any uploaded file path into a web accessible /uploads/... URL
+const normalizeFilePath = (file, defaultDir = 'logos') => {
+  if (!file) return null;
+  const raw = (file.path || file).replace(/\\/g, '/');
+  const uploadIdx = raw.indexOf('/uploads/');
+  if (uploadIdx !== -1) return raw.substring(uploadIdx);
+  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+  for (const dir of subdirs) {
+    const dirIdx = raw.indexOf(`/${dir}/`);
+    if (dirIdx !== -1) {
+      return `/uploads${raw.substring(dirIdx)}`;
+    }
+  }
+  return `/uploads/${defaultDir}/${path.basename(raw)}`;
+};
 
 // Audit logging helper
 const logAudit = async (userId, action, entityType, entityId, details, ipAddress) => {
@@ -29,7 +46,7 @@ const associationController = {
         });
       }
 
-      const logo = req.file ? req.file.path.replace(/\\/g, '/') : null;
+      const logo = req.file ? normalizeFilePath(req.file, 'logos') : null;
 
       const result = await pool.query(
         `INSERT INTO associations (name, city, address, logo, is_active)
@@ -240,9 +257,7 @@ const associationController = {
       const current = check.rows[0];
       let logo = current.logo;
       if (req.file) {
-        logo = req.file.path.replace(/\\/g, '/');
-        const idx = logo.indexOf('/uploads/');
-        if (idx !== -1) logo = logo.substring(idx);
+        logo = normalizeFilePath(req.file, 'logos');
       }
 
       // Only super_admin can change is_active status
