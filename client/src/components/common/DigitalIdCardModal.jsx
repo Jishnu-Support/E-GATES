@@ -121,6 +121,7 @@ export default function DigitalIdCardModal({
         cardHeader: 'from-purple-900 via-indigo-900 to-slate-900',
         accent: 'text-purple-600',
         ring: 'ring-purple-400',
+        glow: 'shadow-purple-500/20',
         emoji: '👑',
       }
     : isMainAdmin
@@ -129,6 +130,7 @@ export default function DigitalIdCardModal({
         cardHeader: 'from-indigo-900 via-blue-900 to-slate-900',
         accent: 'text-indigo-600',
         ring: 'ring-indigo-400',
+        glow: 'shadow-indigo-500/20',
         emoji: '🛡️',
       }
     : isLayoutAdmin
@@ -137,6 +139,7 @@ export default function DigitalIdCardModal({
         cardHeader: 'from-blue-900 via-sky-900 to-slate-900',
         accent: 'text-blue-600',
         ring: 'ring-blue-400',
+        glow: 'shadow-blue-500/20',
         emoji: '🛡️',
       }
     : {
@@ -144,104 +147,116 @@ export default function DigitalIdCardModal({
         cardHeader: 'from-teal-900 via-emerald-900 to-slate-900',
         accent: 'text-teal-600',
         ring: 'ring-teal-400',
+        glow: 'shadow-teal-500/20',
         emoji: '👥',
       };
 
   const memberCode = fullUser.member_code || (isSuperAdmin ? '000001' : 'PENDING');
+
+  // Trigger quick browser print of the card
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in"
       aria-modal="true"
       role="dialog"
     >
-      <div className="relative w-full max-w-md bg-gray-900/90 rounded-3xl shadow-2xl border border-gray-700/60 overflow-hidden my-auto flex flex-col max-h-[95vh]">
+      <div className="relative w-full max-w-[340px] sm:max-w-[350px] bg-gray-950/95 rounded-3xl shadow-2xl border border-gray-800/80 overflow-hidden my-auto flex flex-col max-h-[96vh]">
         {/* Top Floating Control Bar */}
-        <div className="p-3.5 sm:px-6 bg-gray-900 border-b border-gray-800 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/egates-logo.png"
-              alt="EGATES"
-              className="h-6 w-auto object-contain rounded-lg bg-white/95 px-1.5 py-0.5 shadow-sm"
-            />
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-200">
-              Digital Identity Pass
+        <div className="py-2.5 px-4 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-white rounded-lg px-2 py-0.5 shadow-xs flex items-center justify-center">
+              <img
+                src="/egates-logo.png"
+                alt="EGATES"
+                className="h-6 w-auto object-contain"
+              />
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-wider text-gray-200">
+              Digital ID Pass
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Close Button */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handlePrint}
+              title="Print ID Card"
+              className="p-1.5 text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-lg border border-gray-700/60 transition text-xs"
+            >
+              🖨️
+            </button>
             <button
               type="button"
               onClick={onClose}
               title="Close"
-              className="p-1.5 text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-xl border border-gray-700 transition"
+              className="p-1.5 text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-lg border border-gray-700/60 transition"
             >
               <HiXMark className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col items-center">
+        {/* Modal Body: Reduced Size & Modern Styling */}
+        <div className="p-3 sm:p-4 overflow-y-auto flex-1 flex flex-col items-center">
           {/* Lanyard Top Punch Hole & Clip Strap */}
           <div className="w-full flex flex-col items-center mb-1">
-            <div className="w-16 h-3 bg-gray-800 rounded-full border border-gray-600 shadow-inner flex items-center justify-center">
-              <div className="w-6 h-1 bg-black/70 rounded-full" />
+            <div className="w-12 h-2.5 bg-gray-900 rounded-full border border-gray-700 shadow-inner flex items-center justify-center">
+              <div className="w-5 h-1 bg-black/80 rounded-full" />
             </div>
-            <div className="w-10 h-3 bg-gradient-to-b from-gray-700 to-gray-900 border-x border-gray-600 shadow-md" />
+            <div className="w-7 h-2 bg-gradient-to-b from-gray-700 to-gray-800 border-x border-gray-600 shadow-sm" />
           </div>
 
-          {/* SINGLE FRONT-SIDE ID CARD CONTAINER */}
-          <div className="w-full max-w-[370px] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 bg-white text-gray-900 transition-all duration-300 relative">
+          {/* COMPACT DIGITAL ID CARD CONTAINER */}
+          <div className="w-full max-w-[315px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 bg-white text-gray-900 transition-all duration-300 relative select-none">
             {/* Header Band */}
             <div
-              className={`bg-gradient-to-r ${roleTheme.cardHeader} text-white p-4 pt-4 pb-3.5 relative overflow-hidden text-center`}
+              className={`bg-gradient-to-r ${roleTheme.cardHeader} text-white p-3.5 pt-3 pb-3 relative overflow-hidden text-center`}
             >
-              {/* Subtle Security Guilloche Pattern overlay */}
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px] pointer-events-none" />
+              {/* Security Guilloche Pattern overlay */}
+              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:6px_6px] pointer-events-none" />
 
-              {/* Top row: Official EGATES Logo on left, Verified badge on right */}
-              <div className="relative z-10 flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/15">
-                <div className="flex items-center gap-2">
-                  <div className="bg-white/95 rounded-xl px-2 py-1 shadow-md border border-white/40 flex items-center justify-center">
-                    <img
-                      src="/egates-logo.png"
-                      alt="EGATES"
-                      className="h-6 sm:h-7 w-auto object-contain max-w-[85px]"
-                    />
-                  </div>
-                  <span className="text-[10px] tracking-wider uppercase font-black text-amber-300 drop-shadow-xs">
-                    EGATES PASS
+              {/* Prominent & Attractive EGATES Logo Badge */}
+              <div className="relative z-10 flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/20">
+                <div className="bg-white rounded-xl px-2.5 py-1 shadow-md border border-white/70 flex items-center gap-1.5 transition hover:shadow-lg">
+                  <img
+                    src="/egates-logo.png"
+                    alt="EGATES"
+                    className="h-8 sm:h-9 w-auto object-contain filter drop-shadow-xs"
+                  />
+                  <span className="text-[10px] tracking-wider uppercase font-black text-amber-600">
+                    PASS
                   </span>
                 </div>
 
-                <div className="px-2.5 py-0.5 bg-white/15 backdrop-blur-md rounded-full border border-white/25 text-[9px] font-extrabold text-amber-300 flex items-center gap-1 shadow-xs">
+                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-[9px] font-black text-amber-300 flex items-center gap-1 shadow-xs">
                   <HiShieldCheck className="w-3.5 h-3.5 text-amber-300" />
                   <span>VERIFIED</span>
                 </div>
               </div>
 
               {/* Association Title & Subtitle */}
-              <div className="relative z-10 px-2">
-                <h2 className="text-sm sm:text-base font-black tracking-tight line-clamp-1 drop-shadow-sm text-white">
+              <div className="relative z-10 px-1">
+                <h2 className="text-xs sm:text-sm font-black tracking-tight line-clamp-1 drop-shadow-sm text-white uppercase">
                   {currentAssocName}
                 </h2>
-                <p className="text-[9px] uppercase tracking-wider text-gray-300 font-semibold mt-0.5">
-                  OFFICIAL DIGITAL IDENTITY PASS
+                <p className="text-[8.5px] uppercase tracking-wider text-gray-300 font-semibold mt-0.5">
+                  OFFICIAL RESIDENT IDENTITY CARD
                 </p>
               </div>
             </div>
 
             {/* Photo & Identity Section */}
-            <div className="p-5 flex flex-col items-center text-center bg-gradient-to-b from-gray-50 via-white to-gray-50/50">
-              <div className="relative mb-2.5">
+            <div className="p-3.5 pt-3 flex flex-col items-center text-center bg-gradient-to-b from-slate-50 via-white to-slate-50/60">
+              <div className="relative mb-2">
                 <div
-                  className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-lg border-2 border-white ring-4 ${roleTheme.ring} bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center font-black text-3xl text-white`}
+                  className={`w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden shadow-md border-2 border-white ring-3 ${roleTheme.ring} bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center font-black text-2xl text-white`}
                 >
                   {fullUser.profile_photo ? (
                     <img
@@ -260,83 +275,97 @@ export default function DigitalIdCardModal({
                 </div>
 
                 {/* Status Pill on Photo */}
-                <span className="absolute -bottom-2 inset-x-0 mx-auto w-max px-2.5 py-0.5 bg-emerald-600 text-white font-extrabold text-[9px] uppercase tracking-wider rounded-full shadow-md border border-emerald-400 flex items-center gap-1">
+                <span className="absolute -bottom-2 inset-x-0 mx-auto w-max px-2 py-0.2 bg-emerald-600 text-white font-extrabold text-[8.5px] uppercase tracking-wider rounded-full shadow-sm border border-emerald-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                   <span>{fullUser.status === 'approved' ? 'Active' : fullUser.status || 'Active'}</span>
                 </span>
               </div>
 
               {/* Member Name */}
-              <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight mt-2 line-clamp-1">
+              <h3 className="text-sm sm:text-base font-black text-gray-900 tracking-tight mt-1 line-clamp-1">
                 {fullUser.name}
               </h3>
 
               {/* Role Designation Badge */}
               <div
-                className={`mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${roleTheme.badgeBg}`}
+                className={`mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border shadow-xs ${roleTheme.badgeBg}`}
               >
                 <span>{roleTheme.emoji}</span>
                 <span>{roleTitle}</span>
               </div>
 
-              {/* Member Code Monospace Pill */}
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                  MEMBER ID:
-                </span>
-                <span className="font-mono text-xs font-black text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-lg border border-primary-200">
-                  #{memberCode}
-                </span>
-              </div>
-
-              {/* Front Identity Details Grid */}
-              <div className="w-full grid grid-cols-2 gap-2 mt-4 text-left text-xs">
-                <div className="p-2.5 bg-white rounded-xl border border-gray-100 shadow-xs">
-                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
-                    Door / Plot No
-                  </span>
-                  <span className="font-extrabold text-gray-900 truncate block">
-                    {fullUser.door_no ? `Door #${fullUser.door_no}` : '—'}
+              {/* Smart Card Chip & Member ID Bar */}
+              <div className="w-full mt-2.5 px-1 py-1.5 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-between">
+                {/* Simulated Gold Smart Chip */}
+                <div className="flex items-center gap-1.5 pl-1.5">
+                  <div className="w-7 h-5 rounded bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 border border-amber-600/70 shadow-inner flex flex-col justify-between p-0.5 relative overflow-hidden">
+                    <div className="w-full h-[1px] bg-amber-700/60" />
+                    <div className="w-full h-[1px] bg-amber-700/60" />
+                    <div className="absolute inset-y-0 left-1/2 w-[1px] bg-amber-700/60" />
+                  </div>
+                  <span className="text-[8.5px] font-mono font-bold text-gray-500 tracking-wider">
+                    CHIP ID
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-white rounded-xl border border-gray-100 shadow-xs">
-                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
-                    Street / Cross
+                <div className="flex items-center gap-1 pr-1.5">
+                  <span className="text-[9px] uppercase font-bold text-gray-400">
+                    ID:
                   </span>
-                  <span className="font-semibold text-gray-900 truncate block">
+                  <span className="font-mono text-xs font-black text-primary-700 bg-white px-2 py-0.5 rounded-md border border-primary-200 shadow-xs">
+                    #{memberCode}
+                  </span>
+                </div>
+              </div>
+
+              {/* Compact Identity Details Grid */}
+              <div className="w-full grid grid-cols-2 gap-1.5 mt-2 text-left text-xs">
+                <div className="p-2 bg-white rounded-lg border border-gray-200/90 shadow-2xs">
+                  <span className="text-[8.5px] font-bold uppercase text-gray-400 block leading-tight">
+                    🏠 Door / Plot
+                  </span>
+                  <span className="font-extrabold text-[11px] text-gray-900 truncate block mt-0.5">
+                    {fullUser.door_no ? `#${fullUser.door_no}` : '—'}
+                  </span>
+                </div>
+
+                <div className="p-2 bg-white rounded-lg border border-gray-200/90 shadow-2xs">
+                  <span className="text-[8.5px] font-bold uppercase text-gray-400 block leading-tight">
+                    📍 Street
+                  </span>
+                  <span className="font-semibold text-[11px] text-gray-900 truncate block mt-0.5">
                     {fullUser.street || '—'}
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-white rounded-xl border border-gray-100 shadow-xs">
-                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
-                    Phone / Contact
+                <div className="p-2 bg-white rounded-lg border border-gray-200/90 shadow-2xs">
+                  <span className="text-[8.5px] font-bold uppercase text-gray-400 block leading-tight">
+                    📞 Contact
                   </span>
-                  <span className="font-mono font-semibold text-gray-900 truncate block">
+                  <span className="font-mono font-semibold text-[11px] text-gray-900 truncate block mt-0.5">
                     {fullUser.phone || '—'}
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-white rounded-xl border border-gray-100 shadow-xs">
-                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
-                    Blood Group
+                <div className="p-2 bg-white rounded-lg border border-gray-200/90 shadow-2xs">
+                  <span className="text-[8.5px] font-bold uppercase text-gray-400 block leading-tight">
+                    🩸 Blood Group
                   </span>
-                  <span className="font-bold text-rose-600 truncate block">
+                  <span className="font-bold text-[11px] text-rose-600 truncate block mt-0.5">
                     {familyMembers.find((f) => f.relation?.toLowerCase() === 'self')?.blood_group ||
                       fullUser.blood_group || (
-                        <span className="text-gray-400 font-normal italic">Not specified</span>
+                        <span className="text-gray-400 font-normal italic text-[10px]">N/A</span>
                       )}
                   </span>
                 </div>
 
                 {(fullUser.layout_name || fullUser.district) && (
-                  <div className="col-span-2 p-2.5 bg-white rounded-xl border border-gray-100 shadow-xs">
-                    <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  <div className="col-span-2 p-1.5 px-2 bg-slate-50 rounded-lg border border-gray-200/80 shadow-2xs">
+                    <span className="text-[8px] font-bold uppercase text-gray-400 block">
                       Layout / Location
                     </span>
-                    <span className="font-semibold text-gray-800 truncate block">
-                      {[fullUser.layout_name, fullUser.taluk ? `${fullUser.taluk} Taluk` : null, fullUser.district, fullUser.state]
+                    <span className="font-semibold text-[10px] text-gray-800 truncate block">
+                      {[fullUser.layout_name, fullUser.taluk ? `${fullUser.taluk} Taluk` : null, fullUser.district]
                         .filter(Boolean)
                         .join(', ')}
                     </span>
@@ -344,24 +373,37 @@ export default function DigitalIdCardModal({
                 )}
               </div>
 
-              {/* Card Bottom Branding & Powered By */}
-              <div className="w-full mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[10px]">
-                <div className="flex items-center gap-1.5">
-                  <img
-                    src="/egates-logo.png"
-                    alt="EGATES"
-                    className="h-4 w-auto object-contain"
-                  />
-                  <span className="font-bold text-gray-700">EGATES Pass</span>
+              {/* Barcode Graphic Simulation & Bottom Branding */}
+              <div className="w-full mt-2 pt-2 border-t border-gray-200 flex flex-col items-center gap-1">
+                {/* Simulated Barcode */}
+                <div className="flex items-center justify-center gap-[2px] h-3.5 opacity-60">
+                  {[3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6].map((w, i) => (
+                    <div
+                      key={i}
+                      className="bg-black h-full"
+                      style={{ width: `${(w % 3) + 1}px` }}
+                    />
+                  ))}
                 </div>
-                <span className="font-medium text-gray-500">Powered by Jishnu Infotech</span>
+
+                <div className="w-full flex items-center justify-between text-[8.5px] text-gray-500 pt-0.5">
+                  <div className="flex items-center gap-1">
+                    <img
+                      src="/egates-logo.png"
+                      alt="EGATES"
+                      className="h-3.5 w-auto object-contain"
+                    />
+                    <span className="font-bold text-gray-700">EGATES</span>
+                  </div>
+                  <span className="font-medium text-gray-400">Powered by Jishnu Infotech</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Modal Bottom Actions Bar */}
-        <div className="p-3.5 sm:px-6 bg-gray-900 border-t border-gray-800 flex items-center justify-between gap-2">
+        <div className="py-2.5 px-4 bg-gray-900 border-t border-gray-800 flex items-center justify-between gap-2">
           <div>
             {canManageRoles && (
               <button
@@ -370,9 +412,9 @@ export default function DigitalIdCardModal({
                   onClose();
                   if (onChangeRole) onChangeRole(fullUser);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/90 hover:bg-purple-600 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition shadow-xs"
               >
-                <HiShieldCheck className="w-4 h-4" />
+                <HiShieldCheck className="w-3.5 h-3.5" />
                 <span>Change Role</span>
               </button>
             )}
@@ -381,9 +423,9 @@ export default function DigitalIdCardModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white text-xs font-bold rounded-xl transition border border-gray-700 shadow-xs ml-auto"
+            className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white text-xs font-bold rounded-xl transition border border-gray-700 shadow-xs ml-auto"
           >
-            <HiXMark className="w-4 h-4" />
+            <HiXMark className="w-3.5 h-3.5" />
             <span>Close</span>
           </button>
         </div>
