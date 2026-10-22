@@ -172,10 +172,46 @@ export default function MemberVotingPage() {
       });
 
       toast.success(response.data?.message || 'Your election ballot has been securely submitted!');
+      setSelectedElectionCandidates({});
       await fetchPollDetail(selectedPoll.id);
       await fetchPolls(selectedPoll.id);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to submit election ballot');
+    } finally {
+      setVotingInProgress(false);
+    }
+  };
+
+  // Vote for a single role separately
+  const handleCastRoleVote = async (roleName) => {
+    if (!selectedPoll) return;
+    if (selectedPoll.status !== 'active') {
+      toast.error('This election is closed. Voting has concluded.');
+      return;
+    }
+    const candidateId = selectedElectionCandidates[roleName];
+    if (!candidateId) {
+      toast.error(`Please select a candidate for ${roleName}`);
+      return;
+    }
+    if (!window.confirm(`Submit your vote for ${roleName}? Your vote is strictly confidential and cannot be changed.`)) {
+      return;
+    }
+    try {
+      setVotingInProgress(true);
+      const response = await api.post(`/voting/polls/${selectedPoll.id}/vote`, {
+        candidate_ids: [candidateId],
+      });
+      toast.success(response.data?.message || `Your vote for ${roleName} has been securely submitted!`);
+      setSelectedElectionCandidates((prev) => {
+        const next = { ...prev };
+        delete next[roleName];
+        return next;
+      });
+      await fetchPollDetail(selectedPoll.id);
+      await fetchPolls(selectedPoll.id);
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to submit vote for ${roleName}`);
     } finally {
       setVotingInProgress(false);
     }
@@ -262,15 +298,26 @@ export default function MemberVotingPage() {
     return sorted[0];
   }, [selectedPoll]);
 
-  // Did the logged-in user vote?
-  const hasUserVoted = Boolean(
-    selectedPoll?.has_voted ||
-      selectedPoll?.user_voted_vendor_id ||
-      selectedPoll?.my_vote_vendor_id ||
-      selectedPoll?.user_voted ||
-      selectedPoll?.voted_vendor_id ||
-      (Array.isArray(selectedPoll?.user_voted_vendor_ids) && selectedPoll.user_voted_vendor_ids.length > 0)
-  );
+  const isElection = selectedPoll?.poll_type === 'election';
+  const roleNamesList = Object.keys(electionRoleGroups);
+  const hasVotedAllElectionRoles =
+    isElection &&
+    roleNamesList.length > 0 &&
+    roleNamesList.every((rName) =>
+      electionRoleGroups[rName].some((c) => myVotedVendorIds.includes(Number(c.id)))
+    );
+
+  // Did the logged-in user vote? For elections, only true when ALL roles have been voted
+  const hasUserVoted = isElection
+    ? hasVotedAllElectionRoles
+    : Boolean(
+        selectedPoll?.has_voted ||
+          selectedPoll?.user_voted_vendor_id ||
+          selectedPoll?.my_vote_vendor_id ||
+          selectedPoll?.user_voted ||
+          selectedPoll?.voted_vendor_id ||
+          (Array.isArray(selectedPoll?.user_voted_vendor_ids) && selectedPoll.user_voted_vendor_ids.length > 0)
+      );
 
   const myVotedVendorId =
     selectedPoll?.user_voted_vendor_id ||
@@ -580,20 +627,27 @@ export default function MemberVotingPage() {
                       <p className="text-xs text-gray-500">
                         {selectedPoll.status === 'active'
                           ? hasUserVoted
-                            ? 'Your official ballot has been submitted and recorded by the Polling Officers.'
+                            ? 'Your official ballot has been fully submitted and recorded by the Polling Officers.'
+                            : myVotedVendorIds.length > 0
+                            ? `You have voted for ${myVotedVendorIds.length} role(s). Cast your vote for the remaining role(s) below.`
                             : selectedPoll.election_type === 'single_role'
                             ? 'Select your preferred candidate for this post and cast your vote below.'
-                            : 'Select 1 preferred candidate for each executive committee role and submit your complete ballot.'
+                            : 'Select preferred candidate(s) for the executive committee roles and cast your vote role-by-role or submit together.'
                           : 'Voting for this election is now concluded.'}
                       </p>
                     </div>
 
-                    {hasUserVoted && (
+                    {hasUserVoted ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                         <HiCheckCircle className="w-4 h-4 text-green-600" />
-                        Ballot Submitted
+                        Full Ballot Submitted
                       </span>
-                    )}
+                    ) : myVotedVendorIds.length > 0 ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span>🗳️</span>
+                        {myVotedVendorIds.length} of {roleNamesList.length} Roles Voted
+                      </span>
+                    ) : null}
                   </div>
 
                   {/* Ballot Role by Role */}
@@ -658,7 +712,7 @@ export default function MemberVotingPage() {
                                     <div
                                       key={cand.id}
                                       onClick={() => {
-                                        if (selectedPoll.status === 'active' && !hasUserVoted && selectedPoll.is_user_eligible !== false) {
+                                        if (selectedPoll.status === 'active' && !isVotedForThisRole && selectedPoll.is_user_eligible !== false) {
                                           handleSelectElectionCandidate(roleName, cand.id);
                                         }
                                       }}
@@ -669,7 +723,7 @@ export default function MemberVotingPage() {
                                           ? 'bg-amber-50 border-amber-600 ring-2 ring-amber-400 shadow-sm'
                                           : isWinner
                                           ? 'bg-amber-50/70 border-amber-400 ring-1 ring-amber-300'
-                                          : selectedPoll.status === 'active' && !hasUserVoted
+                                          : selectedPoll.status === 'active' && !isVotedForThisRole
                                           ? 'bg-white hover:border-amber-400 cursor-pointer border-gray-200 hover:shadow-xs'
                                           : 'bg-white border-gray-200'
                                       }`}
@@ -691,7 +745,7 @@ export default function MemberVotingPage() {
                                                 <HiCheckCircle className="w-3.5 h-3.5" />
                                                 Your Vote
                                               </span>
-                                            ) : selectedPoll.status === 'active' && !hasUserVoted && selectedPoll.is_user_eligible !== false ? (
+                                            ) : selectedPoll.status === 'active' && !isVotedForThisRole && selectedPoll.is_user_eligible !== false ? (
                                               <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-amber-900">
                                                 <input
                                                   type="radio"
@@ -733,24 +787,57 @@ export default function MemberVotingPage() {
                                 })}
                               </div>
                             </div>
+
+                            {/* Cast Vote button for this specific role */}
+                            {selectedPoll.status === 'active' && !isVotedForThisRole && selectedPoll.is_user_eligible !== false && (
+                              <div className="p-3 bg-white border-t border-amber-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+                                <span className="text-xs text-gray-500">
+                                  {hasSelectedForThisRole ? 'Candidate selected above' : `Choose 1 candidate to vote for ${roleName}`}
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={votingInProgress || !hasSelectedForThisRole}
+                                  onClick={() => handleCastRoleVote(roleName)}
+                                  className="w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                                >
+                                  <span>🗳️</span>
+                                  <span>Cast Vote for {roleName}</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })
                     )}
                   </div>
 
-                  {/* Submit Ballot Button */}
+                  {/* Submit All Selected Ballot Button */}
                   {selectedPoll.status === 'active' && !hasUserVoted && selectedPoll.is_user_eligible !== false && (
-                    <div className="pt-4 border-t border-gray-100 flex justify-end">
+                    <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-amber-50/40 p-4 rounded-xl border border-amber-200">
+                      <div className="text-xs text-amber-900 font-medium">
+                        {Object.values(selectedElectionCandidates).filter(Boolean).length > 0 ? (
+                          <span>
+                            You have selected <strong>{Object.values(selectedElectionCandidates).filter(Boolean).length}</strong> role candidate(s). You can submit them together here or role-by-role above.
+                          </span>
+                        ) : (
+                          <span>
+                            Select candidates using the options above. You can cast your vote per role individually or submit your complete ballot at once.
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         disabled={votingInProgress || Object.values(selectedElectionCandidates).filter(Boolean).length === 0}
                         onClick={handleCastElectionBallot}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
                       >
                         <span>🗳️</span>
                         <span>
-                          {votingInProgress ? 'Submitting Ballot...' : 'Submit Official Confidential Election Ballot'}
+                          {votingInProgress
+                            ? 'Submitting Ballot...'
+                            : Object.values(selectedElectionCandidates).filter(Boolean).length > 1
+                            ? `Submit Ballot for ${Object.values(selectedElectionCandidates).filter(Boolean).length} Selected Roles`
+                            : 'Submit Official Election Ballot'}
                         </span>
                       </button>
                     </div>

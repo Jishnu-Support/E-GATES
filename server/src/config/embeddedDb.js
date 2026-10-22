@@ -255,7 +255,7 @@ function initSchemaAndSeed(db) {
       user_id INTEGER NOT NULL REFERENCES users(id),
       vendor_id INTEGER NOT NULL REFERENCES poll_vendors(id),
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(poll_id, user_id)
+      UNIQUE(poll_id, user_id, vendor_id)
     );
 
     CREATE TABLE IF NOT EXISTS complaints (

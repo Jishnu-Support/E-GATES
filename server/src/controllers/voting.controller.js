@@ -833,7 +833,7 @@ const votingController = {
         });
       }
 
-      // If election, enforce 1 candidate per contesting role
+      // If election, enforce 1 candidate per contesting role and allow voting per role separately
       if (poll.poll_type === 'election') {
         const rolesVoted = candCheck.rows.map(c => (c.contesting_role || 'Executive Committee Member').trim());
         const uniqueRoles = new Set(rolesVoted);
@@ -843,26 +843,46 @@ const votingController = {
             message: 'You can only vote for one candidate per role'
           });
         }
-      }
 
-      // Check for duplicate vote (user already voted in this poll)
-      const voteCheck = await pool.query(
-        'SELECT id FROM votes WHERE poll_id = $1 AND user_id = $2',
-        [pollId, userId]
-      );
-      if (voteCheck.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: poll.poll_type === 'election' 
-            ? 'You have already submitted your election ballot' 
-            : 'You have already cast your vote in this poll'
-        });
+        // Check which roles this user has ALREADY voted for in this election
+        const existingVotesRes = await pool.query(
+          `SELECT v.id, v.contesting_role 
+           FROM votes vt 
+           JOIN poll_vendors v ON vt.vendor_id = v.id 
+           WHERE vt.poll_id = $1 AND vt.user_id = $2`,
+          [pollId, userId]
+        );
+        const alreadyVotedRoles = existingVotesRes.rows.map(r => (r.contesting_role || 'Executive Committee Member').trim().toLowerCase());
+
+        for (const cand of candCheck.rows) {
+          const roleName = (cand.contesting_role || 'Executive Committee Member').trim();
+          if (alreadyVotedRoles.includes(roleName.toLowerCase())) {
+            return res.status(400).json({
+              success: false,
+              message: `You have already cast your vote for the ${roleName} role.`
+            });
+          }
+        }
+      } else {
+        // Standard poll: only 1 vote total per poll
+        const voteCheck = await pool.query(
+          'SELECT id FROM votes WHERE poll_id = $1 AND user_id = $2',
+          [pollId, userId]
+        );
+        if (voteCheck.rows.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'You have already cast your vote in this poll'
+          });
+        }
       }
 
       // Insert vote(s)
       for (const cid of chosenCandidateIds) {
         await pool.query(
-          'INSERT INTO votes (poll_id, user_id, vendor_id) VALUES ($1, $2, $3)',
+          `INSERT INTO votes (poll_id, user_id, vendor_id) 
+           VALUES ($1, $2, $3)
+           ON CONFLICT (poll_id, user_id, vendor_id) DO NOTHING`,
           [pollId, userId, cid]
         );
       }
@@ -946,12 +966,19 @@ const votingController = {
         console.error('Socket emission error for vote:cast:', err.message);
       }
 
+      // Fetch all vendor IDs the user has voted for in this poll
+      const allUserVotesRes = await pool.query(
+        'SELECT vendor_id FROM votes WHERE poll_id = $1 AND user_id = $2',
+        [pollId, userId]
+      );
+      const allVotedVendorIds = allUserVotesRes.rows.map(r => r.vendor_id);
+
       res.status(201).json({
         success: true,
         message: 'Vote cast successfully',
         data: {
           ...updatedResults,
-          user_voted_vendor_ids: chosenCandidateIds
+          user_voted_vendor_ids: allVotedVendorIds
         }
       });
     } catch (error) {

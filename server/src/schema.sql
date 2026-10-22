@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS votes (
   user_id INTEGER NOT NULL REFERENCES users(id),
   vendor_id INTEGER NOT NULL REFERENCES poll_vendors(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(poll_id, user_id)
+  UNIQUE(poll_id, user_id, vendor_id)
 );
 
 -- 10. Complaints

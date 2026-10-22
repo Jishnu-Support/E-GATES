@@ -51,6 +51,9 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS voice_message VARCHAR(500);
       ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS attachment VARCHAR(500);
       ALTER TABLE news_posts ADD COLUMN IF NOT EXISTS image VARCHAR(500);
+      ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_key;
+      ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_unique;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_votes_poll_user_vendor ON votes(poll_id, user_id, vendor_id);
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration
