@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   HiArrowUpTray,
   HiDocumentText,
@@ -22,10 +22,12 @@ export default function FileUpload({
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [internalFiles, setInternalFiles] = useState([]);
-  const [fileUrls, setFileUrls] = useState([]);
-  const [failedImages, setFailedImages] = useState(new Set());
-  const [previewItem, setPreviewItem] = useState(null); // { url, name, isImage, isPdf, size }
+  const [dataUrls, setDataUrls] = useState({});
+  const [previewItem, setPreviewItem] = useState(null); // { url, rawBlobUrl, name, isImage, isPdf, size, file }
   const fileInputRef = useRef(null);
+
+  // Persistent blob URL map to avoid premature revocation
+  const blobUrlsRef = useRef(new Map());
 
   // Sync with value if passed (e.g. File or File[] or existing url/object)
   const currentFiles = value
@@ -34,83 +36,128 @@ export default function FileUpload({
       : [value]
     : internalFiles;
 
-  // Manage object URLs safely with proper cleanup
+  // Cleanup blob URLs on unmount
   useEffect(() => {
-    const createdBlobUrls = [];
-    const processed = currentFiles
-      .map((file) => {
-        if (!file) return null;
-        if (file instanceof File || file instanceof Blob) {
-          try {
-            const blobUrl = URL.createObjectURL(file);
-            createdBlobUrls.push(blobUrl);
-            const isImage = file.type
-              ? file.type.startsWith('image/')
-              : /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name || '');
-            const isPdf =
-              file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
-
-            return {
-              file,
-              url: blobUrl,
-              name: file.name || 'Attachment',
-              size: file.size || null,
-              isImage,
-              isPdf,
-            };
-          } catch (e) {
-            console.warn('Could not create ObjectURL for file:', e);
-            return null;
-          }
-        }
-
-        if (typeof file === 'string') {
-          const fullUrl = getFileUrl(file);
-          const name = file.split('/').pop() || 'Attachment';
-          const isImage = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(name);
-          const isPdf = /\.pdf$/i.test(name);
-          return {
-            file,
-            url: fullUrl,
-            name,
-            size: null,
-            isImage,
-            isPdf,
-          };
-        }
-
-        if (typeof file === 'object') {
-          const path = file.url || file.path || '';
-          const fullUrl = path ? getFileUrl(path) : '';
-          const name = file.name || path.split('/').pop() || 'Attachment';
-          const isImage =
-            file.type?.startsWith('image/') ||
-            /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(name);
-          const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(name);
-          return {
-            file,
-            url: fullUrl,
-            name,
-            size: file.size || null,
-            isImage,
-            isPdf,
-          };
-        }
-
-        return null;
-      })
-      .filter(Boolean);
-
-    setFileUrls(processed);
-
     return () => {
-      createdBlobUrls.forEach((u) => {
+      blobUrlsRef.current.forEach((url) => {
         try {
-          URL.revokeObjectURL(u);
+          URL.revokeObjectURL(url);
         } catch (e) {}
       });
+      blobUrlsRef.current.clear();
     };
+  }, []);
+
+  // Read images as Data URLs (data:image/...) so they NEVER fail or get revoked
+  useEffect(() => {
+    currentFiles.forEach((file) => {
+      if (!file) return;
+      const isFile = file instanceof File || file instanceof Blob;
+      if (!isFile) return;
+
+      const isImg =
+        file.type?.startsWith('image/') ||
+        /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name || '');
+
+      if (isImg) {
+        const fileKey = `${file.name}_${file.size}_${file.lastModified || 0}`;
+        if (!dataUrls[fileKey]) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              setDataUrls((prev) => ({
+                ...prev,
+                [fileKey]: e.target.result,
+              }));
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
   }, [currentFiles]);
+
+  // Helper to obtain persistent blob URL for a File
+  const getPersistentBlobUrl = useCallback((file) => {
+    if (!file || !(file instanceof File || file instanceof Blob)) return null;
+    if (blobUrlsRef.current.has(file)) {
+      return blobUrlsRef.current.get(file);
+    }
+    try {
+      const url = URL.createObjectURL(file);
+      blobUrlsRef.current.set(file, url);
+      return url;
+    } catch (e) {
+      console.warn('Could not create ObjectURL:', e);
+      return null;
+    }
+  }, []);
+
+  // Format processed file items
+  const processedFiles = currentFiles
+    .map((file) => {
+      if (!file) return null;
+
+      const isFile = file instanceof File || file instanceof Blob;
+      if (isFile) {
+        const fileKey = `${file.name}_${file.size}_${file.lastModified || 0}`;
+        const isImage =
+          file.type?.startsWith('image/') ||
+          /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name || '');
+        const isPdf =
+          file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+        const persistentBlob = getPersistentBlobUrl(file);
+        const displayUrl = isImage && dataUrls[fileKey] ? dataUrls[fileKey] : persistentBlob;
+
+        return {
+          file,
+          url: displayUrl,
+          rawBlobUrl: persistentBlob,
+          name: file.name || 'Attachment',
+          size: file.size || null,
+          isImage,
+          isPdf,
+        };
+      }
+
+      if (typeof file === 'string') {
+        const fullUrl = getFileUrl(file);
+        const name = file.split('/').pop() || 'Attachment';
+        const isImage = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(name);
+        const isPdf = /\.pdf$/i.test(name);
+        return {
+          file,
+          url: fullUrl,
+          rawBlobUrl: fullUrl,
+          name,
+          size: null,
+          isImage,
+          isPdf,
+        };
+      }
+
+      if (typeof file === 'object') {
+        const path = file.url || file.path || '';
+        const fullUrl = path ? getFileUrl(path) : '';
+        const name = file.name || path.split('/').pop() || 'Attachment';
+        const isImage =
+          file.type?.startsWith('image/') ||
+          /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(name);
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(name);
+        return {
+          file,
+          url: fullUrl,
+          rawBlobUrl: fullUrl,
+          name,
+          size: file.size || null,
+          isImage,
+          isPdf,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
 
   // Handle escape key to close preview modal
   useEffect(() => {
@@ -181,6 +228,14 @@ export default function FileUpload({
 
   const handleRemove = (index, e) => {
     e.stopPropagation();
+    const targetFile = currentFiles[index];
+    if (targetFile && blobUrlsRef.current.has(targetFile)) {
+      try {
+        URL.revokeObjectURL(blobUrlsRef.current.get(targetFile));
+      } catch (err) {}
+      blobUrlsRef.current.delete(targetFile);
+    }
+
     const updated = currentFiles.filter((_, i) => i !== index);
     setInternalFiles(updated);
     if (onChange) {
@@ -193,8 +248,25 @@ export default function FileUpload({
 
   const handleOpenPreview = (item, e) => {
     if (e) e.stopPropagation();
-    if (!item || !item.url) return;
+    if (!item) return;
     setPreviewItem(item);
+  };
+
+  const handleOpenNewTab = (item, e) => {
+    if (e) e.preventDefault();
+    if (!item) return;
+    if (item.rawBlobUrl) {
+      window.open(item.rawBlobUrl, '_blank');
+      return;
+    }
+    if (item.file instanceof File || item.file instanceof Blob) {
+      const u = URL.createObjectURL(item.file);
+      window.open(u, '_blank');
+      return;
+    }
+    if (item.url) {
+      window.open(item.url, '_blank');
+    }
   };
 
   return (
@@ -241,11 +313,9 @@ export default function FileUpload({
       </div>
 
       {/* Selected File Previews with Recheck / View Feature */}
-      {fileUrls.length > 0 && (
+      {processedFiles.length > 0 && (
         <div className="mt-3 space-y-2">
-          {fileUrls.map((item, idx) => {
-            const hasBrokenImg = failedImages.has(item.url);
-
+          {processedFiles.map((item, idx) => {
             return (
               <div
                 key={idx}
@@ -258,16 +328,21 @@ export default function FileUpload({
                   title="Click to view and recheck this file"
                 >
                   {/* Thumbnail / Icon */}
-                  {item.isImage && !hasBrokenImg ? (
+                  {item.isImage && item.url ? (
                     <div className="w-11 h-11 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-100 flex items-center justify-center relative shadow-xs group-hover:ring-2 group-hover:ring-primary-400 transition">
                       <img
                         src={item.url}
                         alt={item.name}
-                        onError={() =>
-                          setFailedImages((prev) => new Set(prev).add(item.url))
-                        }
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.parentElement?.querySelector('.img-fallback');
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
                       />
+                      <div className="img-fallback hidden w-full h-full bg-purple-50 text-purple-600 items-center justify-center">
+                        <HiPhoto className="w-5 h-5 text-purple-600" />
+                      </div>
                       <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                         <HiEye className="w-4 h-4 text-white drop-shadow-sm" />
                       </div>
@@ -296,7 +371,7 @@ export default function FileUpload({
                       ) : null}
                       <span className="text-[11px] font-semibold text-primary-600 group-hover:underline flex items-center gap-0.5">
                         <HiEye className="w-3.5 h-3.5" />
-                        <span>Click to recheck</span>
+                        <span>Click to view & recheck</span>
                       </span>
                     </div>
                   </div>
@@ -377,16 +452,15 @@ export default function FileUpload({
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <a
-                  href={previewItem.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={(e) => handleOpenNewTab(previewItem, e)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white rounded-xl text-xs font-semibold border border-gray-700 transition"
                   title="Open full document in a new browser tab"
                 >
                   <HiArrowTopRightOnSquare className="w-4 h-4" />
                   <span className="hidden sm:inline">Open in New Tab</span>
-                </a>
+                </button>
                 <button
                   type="button"
                   onClick={() => setPreviewItem(null)}
@@ -401,30 +475,42 @@ export default function FileUpload({
             {/* Modal Body */}
             <div className="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-gray-100 min-h-[300px] max-h-[72vh]">
               {previewItem.isImage ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <img
-                    src={previewItem.url}
-                    alt={previewItem.name}
-                    className="max-w-full max-h-[68vh] object-contain rounded-xl shadow-lg border border-gray-200 bg-white"
-                  />
+                <div className="w-full h-full flex flex-col items-center justify-center p-2">
+                  {previewItem.url ? (
+                    <img
+                      src={previewItem.url}
+                      alt={previewItem.name}
+                      className="max-w-full max-h-[68vh] object-contain rounded-xl shadow-lg border border-gray-200 bg-white"
+                      onError={(e) => {
+                        console.warn('Preview modal image failed to load, trying rawBlobUrl:', e);
+                        if (previewItem.rawBlobUrl && e.currentTarget.src !== previewItem.rawBlobUrl) {
+                          e.currentTarget.src = previewItem.rawBlobUrl;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <HiPhoto className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-xs">Image preview not available</p>
+                    </div>
+                  )}
                 </div>
               ) : previewItem.isPdf ? (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <iframe
-                    src={previewItem.url}
+                    src={previewItem.rawBlobUrl || previewItem.url}
                     title={previewItem.name}
                     className="w-full h-[68vh] rounded-xl border border-gray-300 bg-white shadow-inner"
                   />
                   <div className="mt-2 text-center text-xs text-gray-500">
                     <span>If the PDF preview does not display inside the browser, </span>
-                    <a
-                      href={previewItem.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 font-bold hover:underline"
+                    <button
+                      type="button"
+                      onClick={(e) => handleOpenNewTab(previewItem, e)}
+                      className="text-primary-600 font-bold hover:underline ml-1"
                     >
                       click here to open in a new tab
-                    </a>
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -433,15 +519,14 @@ export default function FileUpload({
                   <p className="text-sm font-semibold text-gray-700">
                     Direct preview not available for this format.
                   </p>
-                  <a
-                    href={previewItem.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenNewTab(previewItem, e)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold"
                   >
                     <HiArrowTopRightOnSquare className="w-4 h-4" />
                     <span>Open in New Tab</span>
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
