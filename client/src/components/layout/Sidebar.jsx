@@ -57,6 +57,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_complaints'), path: '/admin/complaints', icon: HiChatBubbleLeftRight },
     { name: t('nav_events'), path: '/admin/events', icon: HiCalendarDays },
     { name: t('nav_event_captures') || 'Event Captures', path: '/admin/event-captures', icon: HiFilm },
+    { name: t('nav_documents') || 'Community Documents', path: '/admin/documents', icon: HiDocumentDuplicate },
     { name: t('nav_profile'), path: '/admin/profile', icon: HiUserCircle },
   ];
 
