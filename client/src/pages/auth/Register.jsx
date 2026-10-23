@@ -21,6 +21,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import FileUpload from '../../components/common/FileUpload';
 import PoweredByLogo from '../../components/common/PoweredByLogo';
 import Modal from '../../components/common/Modal';
+import BrandingModal from '../../components/common/BrandingModal';
 import api from '../../services/api';
 
 export default function Register() {
@@ -48,6 +49,7 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
+  const [showBrandingModal, setShowBrandingModal] = useState(false);
 
   // 1. Member Form State
   const [memberForm, setMemberForm] = useState({
@@ -565,21 +567,40 @@ export default function Register() {
     <div className="min-h-screen bg-slate-900 flex flex-col justify-between p-4 sm:p-6 antialiased">
       {/* Top Header */}
       <div className="relative w-full max-w-5xl mx-auto flex items-center justify-between py-2">
-        <Link to="/" className="flex items-center">
+        <button
+          type="button"
+          onClick={() => setShowBrandingModal(true)}
+          className="flex items-center hover:opacity-95 transition transform hover:scale-105 focus:outline-none cursor-pointer"
+          title="Click to view EGATES & Jishnu Infotech logos"
+        >
           <img
             src="/egates-logo.png"
             alt="EGATES"
             className="h-10 sm:h-12 w-auto max-w-[170px] sm:max-w-[200px] object-contain rounded-2xl bg-white/95 p-1.5 shadow-md"
           />
-        </Link>
+        </button>
 
         {/* Top Centre with Logo */}
         <div className="absolute left-1/2 -translate-x-1/2 hidden md:block">
-          <PoweredByLogo size="lg" />
+          <button
+            type="button"
+            onClick={() => setShowBrandingModal(true)}
+            className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
+            title="Click to view EGATES & Jishnu Infotech logos"
+          >
+            <PoweredByLogo size="lg" />
+          </button>
         </div>
 
         <div className="md:hidden">
-          <PoweredByLogo size="md" />
+          <button
+            type="button"
+            onClick={() => setShowBrandingModal(true)}
+            className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
+            title="Click to view EGATES & Jishnu Infotech logos"
+          >
+            <PoweredByLogo size="md" />
+          </button>
         </div>
       </div>
 
@@ -2292,6 +2313,12 @@ export default function Register() {
           </div>
         </div>
       </Modal>
+
+      {/* CENTER BRANDING MODAL: EGATES + JISHNU INFOTECH LOGOS */}
+      <BrandingModal
+        isOpen={showBrandingModal}
+        onClose={() => setShowBrandingModal(false)}
+      />
     </div>
   );
 }

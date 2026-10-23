@@ -14,6 +14,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import ThemeToggle from '../common/ThemeToggle';
 import PoweredByLogo from '../common/PoweredByLogo';
 import DigitalIdCardModal from '../common/DigitalIdCardModal';
+import BrandingModal from '../common/BrandingModal';
 import api from '../../services/api';
 
 export default function Header({ onMenuToggle, associationName }) {
@@ -26,6 +27,7 @@ export default function Header({ onMenuToggle, associationName }) {
   const [notifications, setNotifications] = useState([]);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [showBrandingModal, setShowBrandingModal] = useState(false);
 
   const userMenuRef = useRef(null);
   const notifMenuRef = useRef(null);
@@ -142,8 +144,8 @@ export default function Header({ onMenuToggle, associationName }) {
 
         <button
           type="button"
-          onClick={() => setShowIdCard(true)}
-          title="Click to view Digital ID Card"
+          onClick={() => setShowBrandingModal(true)}
+          title="Click to view EGATES & Jishnu Infotech logos"
           className="flex items-center hover:opacity-90 transition focus:outline-none cursor-pointer group py-0.5"
         >
           <img
@@ -156,7 +158,14 @@ export default function Header({ onMenuToggle, associationName }) {
 
       {/* Top Center: Powered by Logo & Association Name */}
       <div className="flex-1 min-w-0 flex flex-col items-center justify-center px-1.5 sm:px-3 mx-auto">
-        <PoweredByLogo size="md" className="hidden sm:inline-flex mb-1" />
+        <button
+          type="button"
+          onClick={() => setShowBrandingModal(true)}
+          className="hidden sm:inline-flex mb-1 cursor-pointer hover:opacity-90 transition transform hover:scale-105 focus:outline-none"
+          title="Click to view EGATES & Jishnu Infotech logos"
+        >
+          <PoweredByLogo size="md" />
+        </button>
         <h1
           className="text-xs sm:text-sm font-extrabold text-gray-800 dark:text-gray-100 truncate text-center max-w-full"
           title={displayedTitle}
@@ -348,6 +357,13 @@ export default function Header({ onMenuToggle, associationName }) {
           associationName={displayedTitle}
         />
       )}
+
+      {/* Center Branding Modal: EGATES + Jishnu Infotech Logos */}
+      <BrandingModal
+        isOpen={showBrandingModal}
+        onClose={() => setShowBrandingModal(false)}
+        onOpenIdCard={() => setShowIdCard(true)}
+      />
     </header>
   );
 }
