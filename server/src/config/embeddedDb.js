@@ -184,7 +184,7 @@ function initSchemaAndSeed(db) {
     CREATE TABLE IF NOT EXISTS sos_contacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       association_id INTEGER NOT NULL REFERENCES associations(id) ON DELETE CASCADE,
-      contact_type TEXT NOT NULL CHECK (contact_type IN ('member', 'police')),
+      contact_type TEXT NOT NULL,
       user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name TEXT NOT NULL,
       phone TEXT NOT NULL,

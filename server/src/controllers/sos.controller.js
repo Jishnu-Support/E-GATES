@@ -143,7 +143,7 @@ const sosController = {
       const contactsRes = await pool.query(
         `SELECT * FROM sos_contacts 
          WHERE association_id = $1 AND (
-           contact_type IN ('member', 'police') OR 
+           contact_type != 'family' OR 
            (contact_type = 'family' AND user_id = $2)
          )
          ORDER BY CASE WHEN contact_type = 'family' THEN 1 ELSE 2 END, id ASC`,
@@ -620,8 +620,16 @@ const sosController = {
         `SELECT sc.*, u.name as linked_user_name, u.email as linked_user_email
          FROM sos_contacts sc
          LEFT JOIN users u ON sc.user_id = u.id
-         WHERE sc.association_id = $1 AND sc.contact_type IN ('member', 'police')
-         ORDER BY CASE WHEN sc.contact_type = 'member' THEN 1 ELSE 2 END, sc.id ASC`,
+         WHERE sc.association_id = $1 AND sc.contact_type != 'family'
+         ORDER BY 
+           CASE 
+             WHEN sc.contact_type = 'medical' THEN 1 
+             WHEN sc.contact_type = 'police' THEN 2 
+             WHEN sc.contact_type IN ('member', 'resident') THEN 3 
+             WHEN sc.contact_type = 'other' THEN 4 
+             ELSE 5 
+           END, 
+           sc.id ASC`,
         [targetAssocId]
       );
 
@@ -645,11 +653,20 @@ const sosController = {
         allContacts.push(familyContact);
       }
 
+      const medicalContact = defaultRes.rows.find((c) => c.contact_type === 'medical' || c.contact_type === 'ambulance') || null;
+      const policeContact = defaultRes.rows.find((c) => c.contact_type === 'police') || null;
+      const memberContacts = defaultRes.rows.filter((c) => c.contact_type === 'member' || c.contact_type === 'resident');
+      const otherContact = defaultRes.rows.find((c) => c.contact_type === 'other') || null;
+
       res.json({
         success: true,
         data: allContacts,
         defaultContacts: defaultRes.rows,
-        familyContact: familyContact,
+        medicalContact,
+        policeContact,
+        memberContacts,
+        otherContact,
+        familyContact,
       });
     } catch (error) {
       next(error);
@@ -787,17 +804,20 @@ const sosController = {
 
       await client.query('BEGIN');
 
-      // Delete ONLY association default contacts (members & police), preserving any member's personal family contacts!
+      // Delete ONLY association default contacts, preserving any member's personal family contacts!
       await client.query(
-        "DELETE FROM sos_contacts WHERE association_id = $1 AND contact_type IN ('member', 'police')",
+        "DELETE FROM sos_contacts WHERE association_id = $1 AND contact_type != 'family'",
         [targetAssocId]
       );
 
       // Insert new association default contacts
       const inserted = [];
       for (const c of contacts) {
-        // Enforce only member and police as association default types
-        const type = c.contact_type === 'police' ? 'police' : 'member';
+        if (!c.name || !c.phone) continue;
+        const rawType = (c.contact_type || 'member').toLowerCase();
+        const validTypes = ['medical', 'police', 'member', 'resident', 'other', 'fire', 'ambulance'];
+        const type = validTypes.includes(rawType) ? rawType : 'member';
+
         const insertQuery = `
           INSERT INTO sos_contacts (association_id, contact_type, user_id, name, phone, designation)
           VALUES ($1, $2, $3, $4, $5, $6)

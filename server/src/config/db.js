@@ -55,6 +55,7 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_unique;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_votes_poll_user_vendor ON votes(poll_id, user_id, vendor_id);
       ALTER TABLE sos_alerts DROP CONSTRAINT IF EXISTS sos_alerts_emergency_type_check;
+      ALTER TABLE sos_contacts DROP CONSTRAINT IF EXISTS sos_contacts_contact_type_check;
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration

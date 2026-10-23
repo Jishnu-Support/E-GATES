@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 CREATE TABLE IF NOT EXISTS sos_contacts (
   id SERIAL PRIMARY KEY,
   association_id INTEGER NOT NULL REFERENCES associations(id) ON DELETE CASCADE,
-  contact_type VARCHAR(20) NOT NULL CHECK (contact_type IN ('member', 'police', 'family', 'ambulance', 'security', 'fire', 'other')),
+  contact_type VARCHAR(50) NOT NULL,
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   phone VARCHAR(20) NOT NULL,

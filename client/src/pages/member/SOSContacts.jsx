@@ -14,6 +14,8 @@ import {
   HiMapPin,
   HiShieldCheck,
   HiFire,
+  HiUserGroup,
+  HiChatBubbleOvalLeftEllipsis,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,10 +26,14 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 export default function MemberSOSContacts() {
   const { user } = useAuth();
-  const { triggerSOS, isSending, cancelSOS, showCancel, cancelCountdown, resetSOS, isTriggered, lastAlert } = useSOS();
+  const { triggerSOS, isSending, cancelSOS, showCancel, cancelCountdown, resetSOS, isTriggered, lastAlert, getCoordinates } = useSOS();
 
   const [loading, setLoading] = useState(true);
-  const [defaultContacts, setDefaultContacts] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [medicalContact, setMedicalContact] = useState(null);
+  const [policeContact, setPoliceContact] = useState(null);
+  const [memberResponders, setMemberResponders] = useState([]);
+  const [otherContact, setOtherContact] = useState(null);
   const [familyContact, setFamilyContact] = useState(null);
 
   // Edit Family Contact Modal State
@@ -55,11 +61,29 @@ export default function MemberSOSContacts() {
     try {
       setLoading(true);
       const res = await api.get('/sos/contacts');
-      const rawDefaults = res.data?.defaultContacts || [];
+      const rawAll = res.data?.data || [];
       const fam = res.data?.familyContact || null;
+      const defaults = res.data?.defaultContacts || [];
 
-      setDefaultContacts(rawDefaults);
+      setContacts(rawAll);
       setFamilyContact(fam);
+
+      // Parse specific categories
+      const med = res.data?.medicalContact || defaults.find(
+        (c) => c.contact_type === 'medical' || c.contact_type === 'ambulance' || c.designation?.toLowerCase().includes('medical') || c.designation?.toLowerCase().includes('ambulance')
+      ) || null;
+      setMedicalContact(med);
+
+      const pol = res.data?.policeContact || defaults.find((c) => c.contact_type === 'police') || null;
+      setPoliceContact(pol);
+
+      const members = res.data?.memberContacts || defaults.filter(
+        (c) => c.contact_type === 'member' || c.contact_type === 'resident'
+      );
+      setMemberResponders(members);
+
+      const oth = res.data?.otherContact || defaults.find((c) => c.contact_type === 'other' || c.contact_type === 'fire') || null;
+      setOtherContact(oth);
 
       if (fam) {
         setFamilyForm({
@@ -138,25 +162,68 @@ export default function MemberSOSContacts() {
     }
   };
 
-  const memberResponders = defaultContacts.filter((c) => c.contact_type === 'member');
-  const policeResponder = defaultContacts.find((c) => c.contact_type === 'police');
+  // Compile resident address
+  const compileAddress = () => {
+    const parts = [];
+    if (user?.door_no) parts.push(`Door/Flat #${user.door_no}`);
+    if (user?.street) parts.push(`Street: ${user.street}`);
+    if (user?.layout_name) parts.push(`Layout: ${user.layout_name}`);
+    if (user?.taluk) parts.push(`Taluk: ${user.taluk}`);
+    if (user?.district) parts.push(`District: ${user.district}`);
+    return parts.length > 0 ? parts.join(', ') : 'Registered Association Residence';
+  };
+
+  const formatWaPhone = (phoneStr) => {
+    if (!phoneStr) return '';
+    const digits = String(phoneStr).replace(/\D/g, '');
+    if (digits.length === 10) return `91${digits}`;
+    return digits;
+  };
+
+  const openWhatsAppWithLocation = async (phone, recipientRole = 'Emergency Responder') => {
+    if (!phone) {
+      toast.error('No phone number available for WhatsApp');
+      return;
+    }
+    const cleanPhone = formatWaPhone(phone);
+    let coords = { latitude: null, longitude: null };
+    try {
+      coords = await getCoordinates();
+    } catch (e) {
+      console.warn('Fast GPS coords lookup fallback:', e);
+    }
+
+    const mapsLink = (coords.latitude && coords.longitude)
+      ? `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`
+      : 'Location Coordinates Pending';
+
+    const msg = [
+      `🚨 *EMERGENCY SOS ALERT!*`,
+      `*RESIDENT:* ${user?.name || 'Resident'} (${user?.phone || 'N/A'}${user?.member_code ? `, Code: ${user.member_code}` : ''})`,
+      `*ADDRESS:* ${compileAddress()}`,
+      `*LIVE LOCATION:* ${mapsLink}`,
+      `*ATTENTION:* Urgent assistance required!`,
+    ].join('\n');
+
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+  };
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Banner */}
-      <div className="bg-gradient-to-r from-red-950 via-rose-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      {/* 1. Page Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-700 via-rose-700 to-amber-700 p-6 sm:p-8 text-white shadow-xl shadow-red-950/20">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-rose-200 text-xs font-semibold">
               <HiShieldExclamation className="w-4 h-4 text-rose-400" />
-              <span>Emergency Preparedness & Resident Safety</span>
+              <span>SOS Emergency Preparedness & Contacts</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Emergency SOS Contacts
             </h1>
             <p className="text-rose-100 text-xs sm:text-sm leading-relaxed">
-              When an SOS alarm is triggered, instant automated alerts and SMS messages with your live location coordinates are dispatched to verified responders: <strong>3 Association Default Contacts</strong> and <strong>Your Personal Family Contact</strong>.
+              Contacts configured to respond to your emergency situations: <strong>Medical (108)</strong>, <strong>Police (100)</strong>, <strong>Resident Responders (Multi-Member)</strong>, <strong>Your Family Contact</strong>, and <strong>Helplines</strong>.
             </p>
           </div>
 
@@ -188,10 +255,11 @@ export default function MemberSOSContacts() {
             <HiShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">Emergency Contact Hierarchy</p>
+            <p className="font-bold text-gray-900 text-sm">Synchronized SOS Emergency Categories</p>
             <p className="text-gray-500 mt-0.5 leading-relaxed">
-              • <strong>3 Association Default Contacts:</strong> Set by Association Admin for all residents (2 Layout Responders + 1 Police Station). Read-only for members.<br />
-              • <strong>Personal Family Contact:</strong> Managed exclusively by you. Only you can add or edit your family emergency contact.
+              • <strong>Medical, Police & Other Services:</strong> Managed by your Association Administration for all layout residents.<br />
+              • <strong>Resident Emergency Responders:</strong> Active community members (President, Secretary, Floor Wardens) ready to assist.<br />
+              • <strong>Personal Family Contact:</strong> Managed exclusively by you in your member profile.
             </p>
           </div>
         </div>
@@ -203,326 +271,340 @@ export default function MemberSOSContacts() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* SECTION A: Association Default Contacts (3 Contacts) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          {/* SECTION A: Primary Emergency Contacts Grid (Medical, Police, Family, Other) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* 1. Medical Emergency */}
+            <div className="bg-white rounded-2xl p-5 border-2 border-rose-100 shadow-sm flex flex-col justify-between hover:border-rose-300 transition">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-gray-900 flex items-center gap-2">
-                  <HiBuildingOffice2 className="w-5 h-5 text-indigo-600" />
-                  <span>Association Default Contacts (3 Responders)</span>
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Configured by Association Admin • Default for all layout members
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 flex items-center gap-1">
+                    🏥 Medical Emergency
+                  </span>
+                  <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                    🩺
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold">
+                      +
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-gray-900 truncate">
+                        {medicalContact ? medicalContact.name : '108 Ambulance / Emergency Doctor'}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {medicalContact ? medicalContact.designation : 'Ambulance (108), Hospital, Doctor'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-rose-50/50 rounded-xl p-3 border border-rose-100/70">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Emergency Phone</span>
+                    <a
+                      href={`tel:${medicalContact ? medicalContact.phone : '108'}`}
+                      className="text-xs font-bold text-rose-700 hover:underline flex items-center gap-1.5"
+                    >
+                      <HiPhone className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{medicalContact ? medicalContact.phone : '108 (National Ambulance)'}</span>
+                    </a>
+                  </div>
+                </div>
               </div>
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-                🔒 Admin Managed
-              </span>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <a
+                  href={`tel:${medicalContact ? medicalContact.phone : '108'}`}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  <HiPhone className="w-3.5 h-3.5" />
+                  <span>Call</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => openWhatsAppWithLocation(medicalContact?.phone || '108', 'Medical Responder')}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Responder 1 */}
-              <div className="bg-white rounded-2xl p-5 border-2 border-indigo-100 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
-                      Community Responder #1
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                      1
-                    </span>
-                  </div>
-
-                  {memberResponders[0] ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">
-                          {memberResponders[0].name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-gray-900 truncate">
-                            {memberResponders[0].name}
-                          </h3>
-                          <p className="text-xs text-gray-500 truncate">
-                            {memberResponders[0].designation || 'Resident Responder'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100/60">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
-                          Emergency Phone
-                        </span>
-                        <a
-                          href={`tel:${memberResponders[0].phone}`}
-                          className="text-xs font-bold text-indigo-700 hover:underline flex items-center gap-1.5"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>{memberResponders[0].phone}</span>
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-6 text-center text-xs text-gray-400 italic">
-                      Responder 1 not configured yet by Admin.
-                    </div>
-                  )}
-                </div>
-
-                {memberResponders[0]?.phone && (
-                  <a
-                    href={`tel:${memberResponders[0].phone}`}
-                    className="mt-4 inline-flex items-center justify-center gap-1.5 w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition"
-                  >
-                    <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Responder 1</span>
-                  </a>
-                )}
-
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                  <span className="text-gray-400 font-bold flex items-center gap-1">
-                    🔒 Edit Disabled
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    Association Default
-                  </span>
-                </div>
-              </div>
-
-              {/* Responder 2 */}
-              <div className="bg-white rounded-2xl p-5 border-2 border-indigo-100 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
-                      Community Responder #2
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                      2
-                    </span>
-                  </div>
-
-                  {memberResponders[1] ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">
-                          {memberResponders[1].name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-gray-900 truncate">
-                            {memberResponders[1].name}
-                          </h3>
-                          <p className="text-xs text-gray-500 truncate">
-                            {memberResponders[1].designation || 'Resident Responder'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100/60">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
-                          Emergency Phone
-                        </span>
-                        <a
-                          href={`tel:${memberResponders[1].phone}`}
-                          className="text-xs font-bold text-indigo-700 hover:underline flex items-center gap-1.5"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>{memberResponders[1].phone}</span>
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-6 text-center text-xs text-gray-400 italic">
-                      Responder 2 not configured yet by Admin.
-                    </div>
-                  )}
-                </div>
-
-                {memberResponders[1]?.phone && (
-                  <a
-                    href={`tel:${memberResponders[1].phone}`}
-                    className="mt-4 inline-flex items-center justify-center gap-1.5 w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition"
-                  >
-                    <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Responder 2</span>
-                  </a>
-                )}
-
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                  <span className="text-gray-400 font-bold flex items-center gap-1">
-                    🔒 Edit Disabled
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    Association Default
-                  </span>
-                </div>
-              </div>
-
-              {/* Police Contact */}
-              <div className="bg-white rounded-2xl p-5 border-2 border-red-100 shadow-xs flex flex-col justify-between hover:border-red-300 transition">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-red-100 text-red-800">
-                      Police / Law Enforcement
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs">
-                      👮
-                    </span>
-                  </div>
-
-                  {policeResponder ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-sm font-bold">
-                          P
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-gray-900 truncate">
-                            {policeResponder.name}
-                          </h3>
-                          <p className="text-xs text-gray-500 truncate">
-                            {policeResponder.designation || 'Station House Officer / Police Control'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="bg-red-50/50 rounded-xl p-3 border border-red-100/60">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
-                          Police Helpline / Hotline
-                        </span>
-                        <a
-                          href={`tel:${policeResponder.phone}`}
-                          className="text-xs font-bold text-red-700 hover:underline flex items-center gap-1.5"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-red-600" />
-                          <span>{policeResponder.phone}</span>
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-6 text-center text-xs text-gray-400 italic">
-                      Police contact not configured yet by Admin.
-                    </div>
-                  )}
-                </div>
-
-                {policeResponder?.phone && (
-                  <a
-                    href={`tel:${policeResponder.phone}`}
-                    className="mt-4 inline-flex items-center justify-center gap-1.5 w-full py-2 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl transition"
-                  >
-                    <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Police</span>
-                  </a>
-                )}
-
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                  <span className="text-gray-400 font-bold flex items-center gap-1">
-                    🔒 Edit Disabled
-                  </span>
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    Association Default
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION B: Personal Family Emergency Contact (Only Member Can Edit) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            {/* 2. Police Emergency */}
+            <div className="bg-white rounded-2xl p-5 border-2 border-blue-100 shadow-sm flex flex-col justify-between hover:border-blue-300 transition">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-gray-900 flex items-center gap-2">
-                  <HiHeart className="w-5 h-5 text-rose-600" />
-                  <span>Your Personal Family Emergency Contact</span>
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Personal to you • Only you can view & edit this contact
-                </p>
-              </div>
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
-                👤 Member Editable Only
-              </span>
-            </div>
-
-            <div className="bg-white rounded-2xl border-2 border-rose-200 p-6 shadow-sm relative overflow-hidden bg-gradient-to-br from-rose-50/30 via-white to-white">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
-                    {familyContact ? '👨‍👩‍👧' : '❤️'}
-                  </div>
-
-                  <div className="space-y-1">
-                    {familyContact ? (
-                      <>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-extrabold uppercase">
-                          <span>{familyContact.designation || 'Family Contact'}</span>
-                        </div>
-                        <h3 className="text-lg font-extrabold text-gray-900">
-                          {familyContact.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 flex items-center gap-2">
-                          <HiPhone className="w-4 h-4 text-rose-600" />
-                          <a href={`tel:${familyContact.phone}`} className="font-bold text-rose-700 hover:underline">
-                            {familyContact.phone}
-                          </a>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="text-base font-bold text-gray-900">
-                          No Family Emergency Contact Set Yet
-                        </h3>
-                        <p className="text-xs text-gray-500 max-w-lg leading-relaxed">
-                          Add your primary next of kin (spouse, parent, brother, sister, or guardian). When you trigger an SOS alert, your family contact will receive an automated SMS with your live Google Maps location.
-                        </p>
-                      </>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 flex items-center gap-1">
+                    🚓 Police Emergency
+                  </span>
+                  <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                    👮
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-shrink-0">
-                  {familyContact ? (
-                    <>
-                      <a
-                        href={`tel:${familyContact.phone}`}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition"
-                      >
-                        <HiPhone className="w-4 h-4" />
-                        <span>Call Family</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={handleOpenAddEditFamily}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition"
-                      >
-                        <HiPencilSquare className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-base font-bold">
+                      P
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-gray-900 truncate">
+                        {policeContact ? policeContact.name : 'Local Police Station (100)'}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {policeContact ? policeContact.designation : 'Police Station (100), Intruder, Layout Security'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/70">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Police Hotline</span>
+                    <a
+                      href={`tel:${policeContact ? policeContact.phone : '100'}`}
+                      className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1.5"
+                    >
+                      <HiPhone className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{policeContact ? policeContact.phone : '100 (Police)'}</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <a
+                  href={`tel:${policeContact ? policeContact.phone : '100'}`}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  <HiPhone className="w-3.5 h-3.5" />
+                  <span>Call</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => openWhatsAppWithLocation(policeContact?.phone || '100', 'Police Station')}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Personal Family Contact */}
+            <div className="bg-white rounded-2xl p-5 border-2 border-purple-100 shadow-sm flex flex-col justify-between hover:border-purple-300 transition">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
+                    <HiHeart className="w-3 h-3 text-purple-600" /> Family Emergency
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {familyContact && (
                       <button
                         type="button"
                         onClick={handleDeleteFamily}
-                        title="Remove family contact"
-                        className="p-2.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition border border-gray-200"
+                        title="Delete family contact"
+                        className="p-1 text-gray-400 hover:text-red-600 transition"
                       >
-                        <HiTrash className="w-4 h-4" />
+                        <HiTrash className="w-3.5 h-3.5" />
                       </button>
-                    </>
-                  ) : (
+                    )}
+                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                      Personal
+                    </span>
+                  </div>
+                </div>
+
+                {familyContact ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base font-bold">
+                        👨‍👩‍👧
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-gray-900 truncate">{familyContact.name}</h3>
+                        <p className="text-xs text-purple-700 font-semibold truncate">{familyContact.designation || 'Family Kin'}</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-100/70">
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Mobile Phone</span>
+                      <a
+                        href={`tel:${familyContact.phone}`}
+                        className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1.5"
+                      >
+                        <HiPhone className="w-3.5 h-3.5 text-purple-600" />
+                        <span>{familyContact.phone}</span>
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-gray-400 italic">
+                    No family contact added yet.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2">
+                {familyContact ? (
+                  <>
+                    <a
+                      href={`tel:${familyContact.phone}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                    >
+                      <HiPhone className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => openWhatsAppWithLocation(familyContact.phone, 'Family Contact')}
+                      className="flex-1 inline-flex items-center justify-center gap-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                    >
+                      <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
                     <button
                       type="button"
                       onClick={handleOpenAddEditFamily}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition"
+                      title="Edit Family Contact"
+                      className="p-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl transition"
                     >
-                      <HiPlus className="w-4 h-4" />
-                      <span>Add Family Emergency Contact</span>
+                      <HiPencilSquare className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleOpenAddEditFamily}
+                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
+                  >
+                    <HiPlus className="w-4 h-4" />
+                    <span>Add Family Contact</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* SECTION C: Instant SOS Emergency Action Banner */}
+          {/* SECTION B: Resident Emergency Responders (Multi-Member List) */}
+          <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/80 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🏡</span>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Resident Emergency Responders ({memberResponders.length})
+                  </h2>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                    Community Guardians
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Neighbors, Association President, and Executive Members instantly alerted when you trigger a <strong>Resident Emergency</strong>.
+                </p>
+              </div>
+            </div>
+
+            {memberResponders.length === 0 ? (
+              <div className="py-8 text-center text-xs text-gray-400 italic">
+                No resident responders configured by Association Admin yet.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {memberResponders.map((r, idx) => (
+                  <div
+                    key={r.id || idx}
+                    className="p-4 rounded-2xl border border-amber-200/70 bg-amber-50/20 hover:bg-amber-50/50 transition flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
+                          Responder #{idx + 1} {idx === 0 ? '(Lead)' : ''}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+                          {r.name?.charAt(0) || 'R'}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-gray-900 truncate">{r.name}</h4>
+                          <p className="text-xs text-gray-500 truncate">{r.designation || 'Resident Responder'}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-amber-100 flex items-center justify-between text-xs">
+                        <span className="text-gray-400 font-medium">Emergency Phone:</span>
+                        <a
+                          href={`tel:${r.phone}`}
+                          className="font-bold text-amber-800 hover:underline flex items-center gap-1"
+                        >
+                          <HiPhone className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{r.phone}</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`tel:${r.phone}`}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiPhone className="w-3.5 h-3.5" />
+                        <span>Call</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => openWhatsAppWithLocation(r.phone, r.name)}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* SECTION C: Other Emergency Helpline (if configured) */}
+          {otherContact?.phone && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 text-xl font-bold">
+                  ⚠️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Other Emergency Helpline:</span>
+                    <span className="text-xs font-bold text-gray-900">{otherContact.name}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">{otherContact.designation || 'Fire, Security Gate, Lift or Custom Assistance'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={`tel:${otherContact.phone}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                >
+                  <HiPhone className="w-3.5 h-3.5" />
+                  <span>Call {otherContact.phone}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => openWhatsAppWithLocation(otherContact.phone, 'Other Emergency')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                >
+                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION D: Instant Distress Trigger Beacon */}
           <div className="bg-red-50 border border-red-200 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="flex items-start gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
@@ -530,10 +612,10 @@ export default function MemberSOSContacts() {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-red-950">
-                  Instant Emergency Distress Trigger
+                  Instant Emergency Distress Beacon
                 </h3>
                 <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
-                  In case of immediate threat, intruder, medical, or fire emergency at your house, trigger the distress beacon to notify all 3 association responders + your family contact.
+                  Triggers an automated emergency broadcast to all association responders and your family contact with live GPS coordinates.
                 </p>
               </div>
             </div>

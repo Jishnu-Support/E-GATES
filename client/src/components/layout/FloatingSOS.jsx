@@ -88,18 +88,23 @@ export default function FloatingSOS() {
     if (isSending) return;
 
     // 1. Resolve target responders
-    const policeContact = emergencyContacts.find(
-      (c) => c.contact_type === 'police' || c.designation?.toLowerCase().includes('police')
-    );
     const medicalContact = emergencyContacts.find(
       (c) =>
+        c.contact_type === 'medical' ||
+        c.contact_type === 'ambulance' ||
         c.designation?.toLowerCase().includes('doctor') ||
         c.designation?.toLowerCase().includes('hospital') ||
         c.designation?.toLowerCase().includes('medical') ||
         c.designation?.toLowerCase().includes('ambulance')
     );
+    const policeContact = emergencyContacts.find(
+      (c) => c.contact_type === 'police' || c.designation?.toLowerCase().includes('police')
+    );
     const residentResponder = emergencyContacts.find(
-      (c) => c.contact_type === 'member' || c.designation?.toLowerCase().includes('president') || c.designation?.toLowerCase().includes('admin')
+      (c) => c.contact_type === 'member' || c.contact_type === 'resident' || c.designation?.toLowerCase().includes('president') || c.designation?.toLowerCase().includes('admin')
+    );
+    const otherContact = emergencyContacts.find(
+      (c) => c.contact_type === 'other' || c.contact_type === 'fire'
     );
     const fam = familyContact || emergencyContacts.find((c) => c.contact_type === 'family');
 
@@ -109,7 +114,7 @@ export default function FloatingSOS() {
 
     if (emergencyType === 'Medical Emergency') {
       targetCallPhone = medicalContact?.phone || '108'; // 108 Ambulance
-      targetWaPhone = fam?.phone || residentResponder?.phone || medicalContact?.phone || '';
+      targetWaPhone = medicalContact?.phone || fam?.phone || residentResponder?.phone || '';
     } else if (emergencyType === 'Police Emergency') {
       targetCallPhone = policeContact?.phone || '100'; // 100 Police
       targetWaPhone = policeContact?.phone || fam?.phone || residentResponder?.phone || '';
@@ -121,8 +126,8 @@ export default function FloatingSOS() {
       targetWaPhone = residentResponder?.phone || fam?.phone || '';
     } else {
       // Other Emergency
-      targetCallPhone = fam?.phone || residentResponder?.phone || '112';
-      targetWaPhone = fam?.phone || residentResponder?.phone || '';
+      targetCallPhone = otherContact?.phone || residentResponder?.phone || fam?.phone || '112';
+      targetWaPhone = otherContact?.phone || residentResponder?.phone || fam?.phone || '';
     }
 
     // 3. Obtain Coordinates with short timeout so it never hangs
