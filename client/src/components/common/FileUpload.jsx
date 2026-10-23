@@ -247,25 +247,43 @@ export default function FileUpload({
   };
 
   const handleOpenPreview = (item, e) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
     if (!item) return;
+
+    // For PDFs: directly open in new browser tab for clean full-screen viewing
+    if (item.isPdf) {
+      handleOpenNewTab(item, e);
+      return;
+    }
+
+    // For images or other media: open inside preview modal
     setPreviewItem(item);
   };
 
   const handleOpenNewTab = (item, e) => {
-    if (e) e.preventDefault();
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
     if (!item) return;
+
+    let targetUrl = null;
     if (item.rawBlobUrl) {
-      window.open(item.rawBlobUrl, '_blank');
-      return;
+      targetUrl = item.rawBlobUrl;
+    } else if (item.file instanceof File || item.file instanceof Blob) {
+      targetUrl = getPersistentBlobUrl(item.file) || URL.createObjectURL(item.file);
+    } else if (item.url) {
+      targetUrl = item.url;
     }
-    if (item.file instanceof File || item.file instanceof Blob) {
-      const u = URL.createObjectURL(item.file);
-      window.open(u, '_blank');
-      return;
-    }
-    if (item.url) {
-      window.open(item.url, '_blank');
+
+    if (targetUrl) {
+      const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      if (win) {
+        win.focus();
+      }
     }
   };
 
@@ -369,9 +387,18 @@ export default function FileUpload({
                       {item.size ? (
                         <span>{(item.size / (1024 * 1024)).toFixed(2)} MB</span>
                       ) : null}
-                      <span className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 group-hover:underline flex items-center gap-0.5">
-                        <HiEye className="w-3.5 h-3.5" />
-                        <span>Click to view & recheck</span>
+                      <span className="text-[11px] font-semibold flex items-center gap-0.5 group-hover:underline">
+                        {item.isPdf ? (
+                          <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
+                            <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
+                            <span>Click to open PDF in new tab</span>
+                          </span>
+                        ) : (
+                          <span className="text-primary-600 dark:text-primary-400 flex items-center gap-0.5">
+                            <HiEye className="w-3.5 h-3.5" />
+                            <span>Click to view & recheck</span>
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -382,11 +409,24 @@ export default function FileUpload({
                   <button
                     type="button"
                     onClick={(e) => handleOpenPreview(item, e)}
-                    className="px-2.5 py-1.5 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
-                    title="View and recheck this document"
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs ${
+                      item.isPdf
+                        ? 'bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60'
+                        : 'bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60'
+                    }`}
+                    title={item.isPdf ? 'Open PDF in new tab' : 'View and recheck this document'}
                   >
-                    <HiEye className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">View</span>
+                    {item.isPdf ? (
+                      <>
+                        <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Open in New Tab</span>
+                      </>
+                    ) : (
+                      <>
+                        <HiEye className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">View</span>
+                      </>
+                    )}
                   </button>
 
                   {!disabled && (
@@ -496,22 +536,28 @@ export default function FileUpload({
                   )}
                 </div>
               ) : previewItem.isPdf ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <iframe
-                    src={previewItem.rawBlobUrl || previewItem.url}
-                    title={previewItem.name}
-                    className="w-full h-[68vh] rounded-xl border border-gray-300 bg-white shadow-inner"
-                  />
-                  <div className="mt-2 text-center text-xs text-gray-500">
-                    <span>If the PDF preview does not display inside the browser, </span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenNewTab(previewItem, e)}
-                      className="text-primary-600 font-bold hover:underline ml-1"
-                    >
-                      click here to open in a new tab
-                    </button>
+                <div className="w-full flex flex-col items-center justify-center p-8 text-center space-y-4">
+                  <div className="w-20 h-20 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex flex-col items-center justify-center shadow-md border border-red-200 dark:border-red-900/50">
+                    <HiDocumentText className="w-10 h-10" />
+                    <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">PDF</span>
                   </div>
+                  <div className="max-w-md">
+                    <h4 className="text-base font-bold text-gray-900 dark:text-white truncate">
+                      {previewItem.name}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {previewItem.size ? `${(previewItem.size / (1024 * 1024)).toFixed(2)} MB • ` : ''}
+                      Click below to open and view the full document cleanly in a new browser tab.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenNewTab(previewItem, e)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-lg hover:shadow-xl cursor-pointer"
+                  >
+                    <HiArrowTopRightOnSquare className="w-4 h-4" />
+                    <span>Open PDF in New Tab</span>
+                  </button>
                 </div>
               ) : (
                 <div className="text-center py-10 space-y-3">
