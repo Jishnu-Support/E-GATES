@@ -454,7 +454,7 @@ export default function MemberVotingPage() {
                         }`}
                       >
                         {selectedPoll.poll_type === 'election'
-                          ? `🗳️ Association Election (${selectedPoll.election_type === 'single_role' ? 'Single Role' : 'All Roles'})`
+                          ? '🗳️ Association Election'
                           : selectedPoll.poll_type === 'resolution_passing'
                           ? `Resolution: ${selectedPoll.resolution_task_type || 'General'}`
                           : `Vendor Selection: ${selectedPoll.service_category || 'Service'}`}
@@ -630,8 +630,6 @@ export default function MemberVotingPage() {
                             ? 'Your official ballot has been fully submitted and recorded by the Polling Officers.'
                             : myVotedVendorIds.length > 0
                             ? `You have voted for ${myVotedVendorIds.length} role(s). Cast your vote for the remaining role(s) below.`
-                            : selectedPoll.election_type === 'single_role'
-                            ? 'Select your preferred candidate for this post and cast your vote below.'
                             : 'Select preferred candidate(s) for the executive committee roles and cast your vote role-by-role or submit together.'
                           : 'Voting for this election is now concluded.'}
                       </p>

@@ -25,8 +25,8 @@ const votingController = {
         target_street,
         target_user_ids = [],
         vendors = [],
-        // Election specific fields (Only 1 role at a time)
-        election_type = 'single_role',
+        // Election specific fields (Multi-role election)
+        election_type = 'all_roles',
         internal_officer_name,
         internal_officer_contact,
         external_officer_name,
@@ -86,7 +86,7 @@ const votingController = {
         target_audience || 'all',
         target_street ? target_street.trim() : null,
         JSON.stringify(Array.isArray(target_user_ids) ? target_user_ids : []),
-        poll_type === 'election' ? (election_type || 'single_role') : null,
+        poll_type === 'election' ? (election_type || 'all_roles') : null,
         poll_type === 'election' ? (internal_officer_name ? internal_officer_name.trim() : null) : null,
         poll_type === 'election' ? (internal_officer_contact ? internal_officer_contact.trim() : null) : null,
         poll_type === 'election' ? (external_officer_name ? external_officer_name.trim() : null) : null,

@@ -111,8 +111,8 @@ export default function AdminVotingManage() {
     vendors: [
       { name: '', company: '', contact: '', quotation: '', notes: '' },
     ],
-    // For election polling (Only 1 role at a time)
-    election_type: 'single_role',
+    // For election polling (Multi-role election with 1 mandatory role)
+    election_type: 'all_roles',
     internal_officer_id: '',
     internal_officer_name: '',
     internal_officer_contact: '',
@@ -492,7 +492,7 @@ export default function AdminVotingManage() {
         target_street: '',
         target_user_ids: [],
         vendors: [{ name: '', company: '', contact: '', quotation: '', notes: '' }],
-        election_type: 'single_role',
+        election_type: 'all_roles',
         internal_officer_id: '',
         internal_officer_name: '',
         internal_officer_contact: '',
@@ -739,7 +739,7 @@ export default function AdminVotingManage() {
                         }`}
                       >
                         {poll.poll_type === 'election'
-                          ? `🗳️ Election (${poll.election_type === 'single_role' ? 'Single Role' : 'All Roles'})`
+                          ? '🗳️ Multi-Role Election'
                           : poll.poll_type === 'resolution_passing'
                           ? 'Resolution'
                           : 'Vendor Select'}
@@ -810,7 +810,7 @@ export default function AdminVotingManage() {
                         }`}
                       >
                         {selectedPoll.poll_type === 'election'
-                          ? `🗳️ Association Election: ${selectedPoll.election_type === 'single_role' ? 'Single Role at a Time' : 'All Roles at a Time'}`
+                          ? '🗳️ Association Election: Multi-Role Ballot'
                           : selectedPoll.poll_type === 'resolution_passing'
                           ? `Resolution: ${selectedPoll.resolution_task_type || 'General'}`
                           : `Vendor Selection: ${selectedPoll.service_category || 'Service'}`}
@@ -1396,23 +1396,22 @@ export default function AdminVotingManage() {
           {/* Election Setup Section */}
           {pollForm.poll_type === 'election' && (
             <div className="space-y-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
-              {/* Election Scope: All Roles vs Single Role */}
-              {/* Election Scope: Only One Role at a Time */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-1.5">
-                  Election Scope / Type *
-                </label>
-                <div className="p-3.5 bg-amber-100/70 rounded-xl border border-amber-300">
+              {/* Multi-Role Election Scope Banner */}
+              <div className="p-3.5 bg-amber-100/70 rounded-xl border border-amber-300">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-base">🏛️</span>
                     <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
-                      Only One Role at a Time (Single Post Election)
+                      Multi-Role Association Election
                     </span>
                   </div>
-                  <p className="text-[11px] text-amber-800 mt-1 leading-snug">
-                    Each election poll is strictly configured for <strong>one role only</strong> (e.g., President Election or Secretary Election or Treasurer Election). To elect another role, please create a separate election poll.
-                  </p>
+                  <span className="text-[10px] font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                    {pollForm.election_roles_builder.length} {pollForm.election_roles_builder.length === 1 ? 'Role' : 'Roles'} Configured
+                  </span>
                 </div>
+                <p className="text-[11px] text-amber-800 mt-1 leading-snug">
+                  Role #1 is mandatory. If you want to elect multiple posts (e.g. President, Secretary, Treasurer), use the <strong>"+ Add Another Role"</strong> button below.
+                </p>
               </div>
 
               {/* Polling Officers Assignment */}
@@ -1795,15 +1794,24 @@ export default function AdminVotingManage() {
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Contesting Role & Candidates (Only 1 Role at a Time) *
+                    Executive Committee Roles & Candidates ({pollForm.election_roles_builder.length} {pollForm.election_roles_builder.length === 1 ? 'Role' : 'Roles'}) *
                   </label>
                   <p className="text-[11px] text-gray-500">
-                    Specify the single election post (e.g. President or Secretary) and add contesting candidates below.
+                    Role #1 is mandatory. If you want to elect multiple roles, click "+ Add Another Role" to configure more posts.
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddElectionRole}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 hover:text-amber-950 bg-amber-200/90 hover:bg-amber-300 px-3 py-1.5 rounded-lg border border-amber-400 transition cursor-pointer shadow-xs active:scale-95"
+                >
+                  <HiPlus className="w-3.5 h-3.5" />
+                  <span>+ Add Another Role</span>
+                </button>
               </div>
 
-              {pollForm.election_roles_builder.slice(0, 1).map((roleObj, rIdx) => (
+              {pollForm.election_roles_builder.map((roleObj, rIdx) => (
                 <div
                   key={rIdx}
                   className="p-4 bg-amber-50/40 rounded-xl border border-amber-200 space-y-3"
@@ -1811,22 +1819,35 @@ export default function AdminVotingManage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 flex items-center gap-2">
                       <span className="w-8 h-8 rounded-lg bg-amber-500 text-white text-xs font-black flex items-center justify-center flex-shrink-0">
-                        1
+                        #{rIdx + 1}
                       </span>
                       <div className="flex-1">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900">
-                          Single Role / Post Name * (e.g. President, Secretary, or Treasurer)
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900">
+                            Role #{rIdx + 1} Post Name * {rIdx === 0 ? <span className="text-red-600 font-bold">(Mandatory Role)</span> : <span className="text-amber-700 font-medium">(Additional Role)</span>}
+                          </label>
+                        </div>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. President"
+                          placeholder={rIdx === 0 ? "e.g. President" : rIdx === 1 ? "e.g. Secretary" : rIdx === 2 ? "e.g. Treasurer" : "e.g. Vice President"}
                           value={roleObj.role_name}
                           onChange={(e) => handleRoleNameChange(rIdx, e.target.value)}
                           className="w-full px-2.5 py-1.5 text-xs bg-white font-bold text-gray-900 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                         />
                       </div>
                     </div>
+
+                    {rIdx > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveElectionRole(rIdx)}
+                        className="text-gray-400 hover:text-red-600 p-1.5 self-end mb-1 cursor-pointer transition rounded-lg hover:bg-red-50"
+                        title="Remove this role"
+                      >
+                        <HiTrash className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Contesting Candidates under this role */}
