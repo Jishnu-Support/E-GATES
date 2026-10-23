@@ -824,7 +824,7 @@ export default function Register() {
                     <div>
                       <FileUpload
                         label="Association Official Logo (Optional)"
-                        helperText="Upload association logo (JPG/PNG, Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         accept="image/png,image/jpeg,image/jpg"
                         value={assocLogo}
                         onChange={(file) => setAssocLogo(file)}
@@ -1080,14 +1080,14 @@ export default function Register() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FileUpload
                         label="Electricity (EB) Bill / ID Proof"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={assocEbProof}
                         onChange={(file) => setAssocEbProof(file)}
                       />
 
                       <FileUpload
                         label="Property Tax Receipt / Appointment Letter"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={assocTaxProof}
                         onChange={(file) => setAssocTaxProof(file)}
                       />
@@ -1478,14 +1478,14 @@ export default function Register() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FileUpload
                         label="Electricity Bill (EB) / Residence Proof"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={adminEbProof}
                         onChange={(file) => setAdminEbProof(file)}
                       />
 
                       <FileUpload
                         label="Property Tax Receipt / Appointment Letter"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={adminTaxProof}
                         onChange={(file) => setAdminTaxProof(file)}
                       />
@@ -1926,14 +1926,14 @@ export default function Register() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FileUpload
                         label="Electricity Bill (EB) Proof"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={memberEbProof}
                         onChange={(file) => setMemberEbProof(file)}
                       />
 
                       <FileUpload
                         label="Property Tax Receipt Proof"
-                        helperText="Upload PDF/JPG (Max 5MB)"
+                        helperText="Upload file(5 MB)"
                         value={memberTaxProof}
                         onChange={(file) => setMemberTaxProof(file)}
                       />

@@ -11,7 +11,7 @@ import { getFileUrl } from '../../services/api';
 
 export default function FileUpload({
   label,
-  helperText = 'PDF, PNG, JPG up to 5MB',
+  helperText = 'Upload file(5 MB)',
   accept = '.pdf,image/png,image/jpeg,image/jpg',
   maxSizeMB = 5,
   multiple = false,
