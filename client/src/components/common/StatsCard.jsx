@@ -49,12 +49,12 @@ export default function StatsCard({
   return (
     <div
       onClick={onClick}
-      className={`bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-all duration-200 ${
+      className={`bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm transition-all duration-200 ${
         onClick ? 'cursor-pointer hover:shadow-md hover:border-primary-300 hover:-translate-y-0.5' : ''
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500 truncate">{title}</span>
+        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</span>
         {Icon && (
           <div className={`w-12 h-12 rounded-xl ${scheme.bg} ${scheme.text} flex items-center justify-center flex-shrink-0`}>
             <Icon className="w-6 h-6" />
@@ -63,7 +63,7 @@ export default function StatsCard({
       </div>
 
       <div className="mt-4 flex items-baseline justify-between">
-        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{value}</h3>
+        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</h3>
 
         {change !== undefined && change !== null && (
           <div
@@ -83,7 +83,7 @@ export default function StatsCard({
         )}
       </div>
 
-      {subtitle && <p className="mt-1 text-xs text-gray-400">{subtitle}</p>}
+      {subtitle && <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
     </div>
   );
 }

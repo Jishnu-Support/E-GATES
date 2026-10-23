@@ -243,7 +243,7 @@ export default function DigitalIdCardModal({
           <div className="p-3.5 pt-3 flex flex-col items-center text-center bg-gradient-to-b from-slate-50 via-white to-slate-50/60 flex-1">
             <div className="relative mb-2">
               <div
-                className={`w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-md border-2 border-white ring-3 ${roleTheme.ring} bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center font-black text-2xl text-white`}
+                className={`w-20 h-20 max-w-[80px] max-h-[80px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden shadow-md border-2 border-white ring-3 ${roleTheme.ring} bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center font-black text-2xl text-white`}
               >
                 {fullUser.profile_photo ? (
                   <img

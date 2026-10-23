@@ -14,6 +14,7 @@ import {
   HiPhoto,
   HiCamera,
   HiArrowRight,
+  HiEye,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -46,6 +47,7 @@ export default function Register() {
   const [errorMessage, setErrorMessage] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
 
   // 1. Member Form State
   const [memberForm, setMemberForm] = useState({
@@ -583,13 +585,13 @@ export default function Register() {
 
       {/* Main Registration Container */}
       <div className="w-full max-w-4xl mx-auto my-6">
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-5 sm:p-10">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 sm:p-10 transition-colors">
           {/* Header Title */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Registration Portal
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-gray-500">
+            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Select your registration form type below to complete your registration
             </p>
           </div>
@@ -602,8 +604,8 @@ export default function Register() {
               onClick={() => handleTabChange('assoc-admin')}
               className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
                 activeForm === 'assoc-admin'
-                  ? 'bg-purple-50/80 border-purple-500 shadow-md ring-2 ring-purple-500/20'
-                  : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                  ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-500 shadow-md ring-2 ring-purple-500/20'
+                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -615,10 +617,10 @@ export default function Register() {
                 )}
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                   Admin + Association
                 </h3>
-                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                   Register new layout & Main Association Admin
                 </p>
               </div>
@@ -630,8 +632,8 @@ export default function Register() {
               onClick={() => handleTabChange('admin')}
               className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
                 activeForm === 'admin'
-                  ? 'bg-blue-50/80 border-blue-500 shadow-md ring-2 ring-blue-500/20'
-                  : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                  ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 shadow-md ring-2 ring-blue-500/20'
+                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -643,10 +645,10 @@ export default function Register() {
                 )}
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                   Admin Registration
                 </h3>
-                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                   Register as administrator for an existing layout
                 </p>
               </div>
@@ -658,8 +660,8 @@ export default function Register() {
               onClick={() => handleTabChange('member')}
               className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
                 activeForm === 'member'
-                  ? 'bg-emerald-50/80 border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
-                  : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                  ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
+                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -671,10 +673,10 @@ export default function Register() {
                 )}
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                   Member Registration
                 </h3>
-                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                   Register as resident member for an existing layout
                 </p>
               </div>
@@ -817,32 +819,43 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col sm:flex-row items-center gap-4">
-                      <div className="w-18 h-18 rounded-2xl overflow-hidden bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xl ring-2 ring-purple-200 flex-shrink-0 shadow-xs">
+                    <div className="p-4 bg-purple-50/50 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-900/40 flex flex-col sm:flex-row items-center gap-4">
+                      <div
+                        onClick={() => assocAdminPhotoPreview && setViewPhotoModal({ url: assocAdminPhotoPreview, title: 'Main Admin Profile Photo' })}
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xl ring-2 ring-purple-200 dark:ring-purple-800/70 flex-shrink-0 shadow-xs relative group ${
+                          assocAdminPhotoPreview ? 'cursor-pointer hover:ring-purple-400' : ''
+                        }`}
+                        title={assocAdminPhotoPreview ? 'Click to view full photo' : ''}
+                      >
                         {assocAdminPhotoPreview ? (
-                          <img
-                            src={assocAdminPhotoPreview}
-                            alt="Profile Preview"
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img
+                              src={assocAdminPhotoPreview}
+                              alt="Profile Preview"
+                              className="w-full h-full object-cover object-center"
+                            />
+                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                              <HiEye className="w-5 h-5 text-white drop-shadow-sm" />
+                            </div>
+                          </>
                         ) : (
                           <HiCamera className="w-8 h-8 text-purple-500" />
                         )}
                       </div>
                       <div className="flex-1 text-center sm:text-left">
-                        <label className="block text-xs font-bold text-gray-800 mb-0.5">
+                        <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
                           Profile Photo (Optional)
                         </label>
-                        <p className="text-[11px] text-gray-500 mb-2">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your Main Administrator account (PNG, JPG, Max 5MB).
                         </p>
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                           <button
                             type="button"
                             onClick={() => assocAdminPhotoInputRef.current?.click()}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-purple-50 text-purple-800 border border-purple-200 text-xs font-semibold rounded-xl transition shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-slate-700 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
                           >
-                            <HiPhoto className="w-4 h-4 text-purple-600" />
+                            <HiPhoto className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                             <span>Choose from Files</span>
                           </button>
 
@@ -856,18 +869,28 @@ export default function Register() {
                           </button>
 
                           {assocAdminPhotoPreview && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAssocAdminProfilePhoto(null);
-                                setAssocAdminPhotoPreview(null);
-                                if (assocAdminPhotoInputRef.current) assocAdminPhotoInputRef.current.value = '';
-                                if (assocAdminCameraInputRef.current) assocAdminCameraInputRef.current.value = '';
-                              }}
-                              className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1"
-                            >
-                              Remove Photo
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setViewPhotoModal({ url: assocAdminPhotoPreview, title: 'Main Admin Profile Photo' })}
+                                className="inline-flex items-center gap-1 px-3 py-2 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
+                              >
+                                <HiEye className="w-3.5 h-3.5" />
+                                <span>View</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAssocAdminProfilePhoto(null);
+                                  setAssocAdminPhotoPreview(null);
+                                  if (assocAdminPhotoInputRef.current) assocAdminPhotoInputRef.current.value = '';
+                                  if (assocAdminCameraInputRef.current) assocAdminCameraInputRef.current.value = '';
+                                }}
+                                className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold px-2 py-1"
+                              >
+                                Remove Photo
+                              </button>
+                            </>
                           )}
 
                           <input
@@ -1212,32 +1235,43 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center gap-4">
-                      <div className="w-18 h-18 rounded-2xl overflow-hidden bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl ring-2 ring-blue-200 flex-shrink-0 shadow-xs">
+                    <div className="p-4 bg-blue-50/50 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/40 flex flex-col sm:flex-row items-center gap-4">
+                      <div
+                        onClick={() => adminPhotoPreview && setViewPhotoModal({ url: adminPhotoPreview, title: 'Admin Profile Photo' })}
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xl ring-2 ring-blue-200 dark:ring-blue-800/70 flex-shrink-0 shadow-xs relative group ${
+                          adminPhotoPreview ? 'cursor-pointer hover:ring-blue-400' : ''
+                        }`}
+                        title={adminPhotoPreview ? 'Click to view full photo' : ''}
+                      >
                         {adminPhotoPreview ? (
-                          <img
-                            src={adminPhotoPreview}
-                            alt="Profile Preview"
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img
+                              src={adminPhotoPreview}
+                              alt="Profile Preview"
+                              className="w-full h-full object-cover object-center"
+                            />
+                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                              <HiEye className="w-5 h-5 text-white drop-shadow-sm" />
+                            </div>
+                          </>
                         ) : (
                           <HiCamera className="w-8 h-8 text-blue-500" />
                         )}
                       </div>
                       <div className="flex-1 text-center sm:text-left">
-                        <label className="block text-xs font-bold text-gray-800 mb-0.5">
+                        <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
                           Profile Photo (Optional)
                         </label>
-                        <p className="text-[11px] text-gray-500 mb-2">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your administrator account (PNG, JPG, Max 5MB).
                         </p>
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                           <button
                             type="button"
                             onClick={() => adminPhotoInputRef.current?.click()}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold rounded-xl transition shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
                           >
-                            <HiPhoto className="w-4 h-4 text-blue-600" />
+                            <HiPhoto className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             <span>Choose from Files</span>
                           </button>
 
@@ -1251,18 +1285,28 @@ export default function Register() {
                           </button>
 
                           {adminPhotoPreview && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAdminProfilePhoto(null);
-                                setAdminPhotoPreview(null);
-                                if (adminPhotoInputRef.current) adminPhotoInputRef.current.value = '';
-                                if (adminCameraInputRef.current) adminCameraInputRef.current.value = '';
-                              }}
-                              className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1"
-                            >
-                              Remove Photo
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setViewPhotoModal({ url: adminPhotoPreview, title: 'Admin Profile Photo' })}
+                                className="inline-flex items-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
+                              >
+                                <HiEye className="w-3.5 h-3.5" />
+                                <span>View</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAdminProfilePhoto(null);
+                                  setAdminPhotoPreview(null);
+                                  if (adminPhotoInputRef.current) adminPhotoInputRef.current.value = '';
+                                  if (adminCameraInputRef.current) adminCameraInputRef.current.value = '';
+                                }}
+                                className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold px-2 py-1"
+                              >
+                                Remove Photo
+                              </button>
+                            </>
                           )}
 
                           <input
@@ -1586,32 +1630,43 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col sm:flex-row items-center gap-4">
-                      <div className="w-18 h-18 rounded-2xl overflow-hidden bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xl ring-2 ring-emerald-200 flex-shrink-0 shadow-xs">
+                    <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 flex flex-col sm:flex-row items-center gap-4">
+                      <div
+                        onClick={() => memberPhotoPreview && setViewPhotoModal({ url: memberPhotoPreview, title: 'Resident Member Profile Photo' })}
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xl ring-2 ring-emerald-200 dark:ring-emerald-800/70 flex-shrink-0 shadow-xs relative group ${
+                          memberPhotoPreview ? 'cursor-pointer hover:ring-emerald-400' : ''
+                        }`}
+                        title={memberPhotoPreview ? 'Click to view full photo' : ''}
+                      >
                         {memberPhotoPreview ? (
-                          <img
-                            src={memberPhotoPreview}
-                            alt="Profile Preview"
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img
+                              src={memberPhotoPreview}
+                              alt="Profile Preview"
+                              className="w-full h-full object-cover object-center"
+                            />
+                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                              <HiEye className="w-5 h-5 text-white drop-shadow-sm" />
+                            </div>
+                          </>
                         ) : (
                           <HiCamera className="w-8 h-8 text-emerald-500" />
                         )}
                       </div>
                       <div className="flex-1 text-center sm:text-left">
-                        <label className="block text-xs font-bold text-gray-800 mb-0.5">
+                        <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
                           Profile Photo (Optional)
                         </label>
-                        <p className="text-[11px] text-gray-500 mb-2">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your resident member account (PNG, JPG, Max 5MB).
                         </p>
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                           <button
                             type="button"
                             onClick={() => memberPhotoInputRef.current?.click()}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-semibold rounded-xl transition shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
                           >
-                            <HiPhoto className="w-4 h-4 text-emerald-600" />
+                            <HiPhoto className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             <span>Choose from Files</span>
                           </button>
 
@@ -1625,18 +1680,28 @@ export default function Register() {
                           </button>
 
                           {memberPhotoPreview && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMemberProfilePhoto(null);
-                                setMemberPhotoPreview(null);
-                                if (memberPhotoInputRef.current) memberPhotoInputRef.current.value = '';
-                                if (memberCameraInputRef.current) memberCameraInputRef.current.value = '';
-                              }}
-                              className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1"
-                            >
-                              Remove Photo
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setViewPhotoModal({ url: memberPhotoPreview, title: 'Resident Member Profile Photo' })}
+                                className="inline-flex items-center gap-1 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
+                              >
+                                <HiEye className="w-3.5 h-3.5" />
+                                <span>View</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMemberProfilePhoto(null);
+                                  setMemberPhotoPreview(null);
+                                  if (memberPhotoInputRef.current) memberPhotoInputRef.current.value = '';
+                                  if (memberCameraInputRef.current) memberCameraInputRef.current.value = '';
+                                }}
+                                className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold px-2 py-1"
+                              >
+                                Remove Photo
+                              </button>
+                            </>
                           )}
 
                           <input
@@ -2196,6 +2261,35 @@ export default function Register() {
               </div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* VIEW / RECHECK FULL PHOTO MODAL */}
+      <Modal
+        isOpen={Boolean(viewPhotoModal)}
+        onClose={() => setViewPhotoModal(null)}
+        title={viewPhotoModal?.title || 'Profile Photo Preview'}
+        size="md"
+      >
+        <div className="flex flex-col items-center justify-center space-y-4 p-2">
+          <div className="max-w-xs sm:max-w-sm max-h-[60vh] rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-lg bg-gray-900 flex items-center justify-center">
+            {viewPhotoModal?.url && (
+              <img
+                src={viewPhotoModal.url}
+                alt={viewPhotoModal.title || 'Profile Preview'}
+                className="w-full h-auto max-h-[55vh] object-contain"
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewPhotoModal(null)}
+              className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

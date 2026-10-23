@@ -225,20 +225,20 @@ export default function Login() {
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden transition-colors">
           {/* Header Banner */}
           <div className="px-8 pt-8 pb-4 text-center">
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Sign In to Your Account
             </h2>
-            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
+            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
               Select your role below to access your dedicated management portal.
             </p>
           </div>
 
           {/* 3 DISTINCT ROLE TABS */}
           <div className="px-6 sm:px-8 pt-2">
-            <div className="grid grid-cols-3 gap-2 bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200">
+            <div className="grid grid-cols-3 gap-2 bg-gray-100/80 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -250,7 +250,7 @@ export default function Login() {
                     className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all duration-200 ${
                       isActive
                         ? `${tab.activeBg} shadow-md shadow-gray-400/20 scale-[1.02]`
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-700/60'
                     }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
@@ -261,7 +261,7 @@ export default function Login() {
             </div>
 
             {/* Active Tab Subtitle Info Banner */}
-            <div className="mt-3 py-2 px-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs text-gray-600">
+            <div className="mt-3 py-2 px-3.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
               <span className="truncate pr-2">
                 📌 <span className="font-semibold">{currentTabInfo.label}:</span>{' '}
                 {currentTabInfo.description}
@@ -411,43 +411,43 @@ export default function Login() {
             </form>
 
             {/* Separate Registration Forms Gateway */}
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider text-center mb-3">
+            <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-3">
                 Need to register? Select a Registration Form:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Link
                   to="/register?type=assoc-admin"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/90 hover:border-purple-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-purple-800 flex items-center gap-1">
+                  <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
                     🏛️ Admin + Association
                   </span>
-                  <span className="text-[11px] text-purple-600 font-medium mt-0.5">
+                  <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
                     Main Admin & Layout
                   </span>
                 </Link>
 
                 <Link
                   to="/register?type=admin"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/90 hover:border-blue-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/90 dark:hover:bg-blue-900/50 hover:border-blue-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-blue-800 flex items-center gap-1">
+                  <span className="text-xs font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
                     🛡️ Admin
                   </span>
-                  <span className="text-[11px] text-blue-600 font-medium mt-0.5">
+                  <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">
                     Registration Form
                   </span>
                 </Link>
 
                 <Link
                   to="/register?type=member"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/90 hover:border-emerald-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                     👥 Member
                   </span>
-                  <span className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
                     Registration Form
                   </span>
                 </Link>

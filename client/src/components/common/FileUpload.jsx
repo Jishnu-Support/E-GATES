@@ -302,13 +302,13 @@ export default function FileUpload({
         />
 
         <div className="flex flex-col items-center justify-center">
-          <div className="w-10 h-10 rounded-full bg-blue-100 text-primary-600 flex items-center justify-center mb-2">
+          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center mb-2">
             <HiArrowUpTray className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-gray-700">
-            <span className="text-primary-600 hover:underline">Click to upload</span> or drag and drop
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <span className="text-primary-600 dark:text-primary-400 hover:underline">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-gray-500 mt-1">{helperText}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{helperText}</p>
         </div>
       </div>
 
@@ -319,7 +319,7 @@ export default function FileUpload({
             return (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2.5 sm:p-3 bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-primary-300 rounded-xl shadow-xs transition group"
+                className="flex items-center justify-between p-2.5 sm:p-3 bg-white dark:bg-slate-800 hover:bg-gray-50/80 dark:hover:bg-slate-700/60 border border-gray-200 dark:border-slate-700 hover:border-primary-300 rounded-xl shadow-xs transition group"
               >
                 {/* Clickable Area to Preview / Recheck */}
                 <div
@@ -329,7 +329,7 @@ export default function FileUpload({
                 >
                   {/* Thumbnail / Icon */}
                   {item.isImage && item.url ? (
-                    <div className="w-11 h-11 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-100 flex items-center justify-center relative shadow-xs group-hover:ring-2 group-hover:ring-primary-400 transition">
+                    <div className="w-11 h-11 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 flex-shrink-0 bg-gray-100 dark:bg-slate-900 flex items-center justify-center relative shadow-xs group-hover:ring-2 group-hover:ring-primary-400 transition">
                       <img
                         src={item.url}
                         alt={item.name}
@@ -340,36 +340,36 @@ export default function FileUpload({
                           if (fallback) fallback.style.display = 'flex';
                         }}
                       />
-                      <div className="img-fallback hidden w-full h-full bg-purple-50 text-purple-600 items-center justify-center">
-                        <HiPhoto className="w-5 h-5 text-purple-600" />
+                      <div className="img-fallback hidden w-full h-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 items-center justify-center">
+                        <HiPhoto className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                         <HiEye className="w-4 h-4 text-white drop-shadow-sm" />
                       </div>
                     </div>
                   ) : item.isPdf ? (
-                    <div className="w-11 h-11 rounded-lg bg-red-50 border border-red-200 text-red-600 flex flex-col items-center justify-center flex-shrink-0 shadow-xs group-hover:ring-2 group-hover:ring-red-300 transition">
-                      <HiDocumentText className="w-5 h-5 text-red-600" />
-                      <span className="text-[9px] font-black uppercase text-red-700 leading-none mt-0.5">
+                    <div className="w-11 h-11 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 flex flex-col items-center justify-center flex-shrink-0 shadow-xs group-hover:ring-2 group-hover:ring-red-300 transition">
+                      <HiDocumentText className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <span className="text-[9px] font-black uppercase text-red-700 dark:text-red-300 leading-none mt-0.5">
                         PDF
                       </span>
                     </div>
                   ) : (
-                    <div className="w-11 h-11 rounded-lg bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center flex-shrink-0 shadow-xs group-hover:ring-2 group-hover:ring-purple-300 transition">
-                      <HiPhoto className="w-5 h-5 text-purple-600" />
+                    <div className="w-11 h-11 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 shadow-xs group-hover:ring-2 group-hover:ring-purple-300 transition">
+                      <HiPhoto className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
                   )}
 
                   {/* File Metadata */}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-primary-700 truncate transition">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-primary-700 dark:group-hover:text-primary-300 truncate transition">
                       {item.name}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                       {item.size ? (
                         <span>{(item.size / (1024 * 1024)).toFixed(2)} MB</span>
                       ) : null}
-                      <span className="text-[11px] font-semibold text-primary-600 group-hover:underline flex items-center gap-0.5">
+                      <span className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 group-hover:underline flex items-center gap-0.5">
                         <HiEye className="w-3.5 h-3.5" />
                         <span>Click to view & recheck</span>
                       </span>
@@ -382,7 +382,7 @@ export default function FileUpload({
                   <button
                     type="button"
                     onClick={(e) => handleOpenPreview(item, e)}
-                    className="px-2.5 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 hover:border-primary-300 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                    className="px-2.5 py-1.5 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
                     title="View and recheck this document"
                   >
                     <HiEye className="w-3.5 h-3.5" />
@@ -393,7 +393,7 @@ export default function FileUpload({
                     <button
                       type="button"
                       onClick={(e) => handleRemove(idx, e)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
                       title="Remove file"
                     >
                       <HiXMark className="w-4 h-4" />

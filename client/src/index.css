@@ -11,6 +11,12 @@
   }
 
   /* Universal Dark Mode Input, Textarea & Select Text Visibility */
+  html.dark,
+  body.dark,
+  .dark {
+    color-scheme: dark;
+  }
+
   .dark input,
   .dark textarea,
   .dark select {
@@ -43,6 +49,156 @@
   .dark select option {
     background-color: #1e293b !important;
     color: #ffffff !important;
+  }
+
+  /* Universal Dark Mode Card & Surface Backgrounds */
+  .dark div.bg-white,
+  .dark section.bg-white,
+  .dark article.bg-white,
+  .dark main.bg-white,
+  .dark aside.bg-white,
+  .dark form.bg-white,
+  .dark .card-surface {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-gray-50\/40,
+  .dark .bg-gray-50\/50,
+  .dark .bg-gray-50\/60,
+  .dark .bg-gray-50\/70,
+  .dark .bg-gray-50\/80,
+  .dark .bg-gray-100,
+  .dark .bg-gray-100\/80,
+  .dark .bg-slate-50 {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-gray-300 {
+    border-color: #334155 !important;
+  }
+
+  /* Universal Dark Mode Typography - Adapt letters so text is always high-contrast & clearly visible */
+  .dark .text-gray-900,
+  .dark .text-slate-900,
+  .dark .text-black {
+    color: #f8fafc !important;
+  }
+
+  .dark .text-gray-800,
+  .dark .text-slate-800 {
+    color: #f1f5f9 !important;
+  }
+
+  .dark .text-gray-700,
+  .dark .text-slate-700,
+  .dark label {
+    color: #e2e8f0 !important;
+  }
+
+  .dark .text-gray-600,
+  .dark .text-slate-600 {
+    color: #cbd5e1 !important;
+  }
+
+  .dark .text-gray-500,
+  .dark .text-slate-500,
+  .dark .text-gray-400,
+  .dark .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+
+  /* Tinted Accents in Dark Mode */
+  .dark .text-purple-800,
+  .dark .text-purple-900 {
+    color: #d8b4fe !important;
+  }
+  .dark .text-purple-700 {
+    color: #c084fc !important;
+  }
+  .dark .bg-purple-50,
+  .dark .bg-purple-50\/40,
+  .dark .bg-purple-50\/50,
+  .dark .bg-purple-50\/80 {
+    background-color: rgba(88, 28, 135, 0.25) !important;
+    border-color: rgba(147, 51, 234, 0.3) !important;
+  }
+
+  .dark .text-blue-800,
+  .dark .text-blue-900 {
+    color: #93c5fd !important;
+  }
+  .dark .text-blue-700 {
+    color: #60a5fa !important;
+  }
+  .dark .bg-blue-50,
+  .dark .bg-blue-50\/40,
+  .dark .bg-blue-50\/50,
+  .dark .bg-blue-50\/80 {
+    background-color: rgba(30, 58, 138, 0.25) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+  }
+
+  .dark .text-emerald-800,
+  .dark .text-emerald-900,
+  .dark .text-green-800 {
+    color: #86efac !important;
+  }
+  .dark .text-emerald-700,
+  .dark .text-green-700 {
+    color: #4ade80 !important;
+  }
+  .dark .bg-emerald-50,
+  .dark .bg-emerald-50\/40,
+  .dark .bg-emerald-50\/50,
+  .dark .bg-emerald-50\/80 {
+    background-color: rgba(6, 78, 59, 0.25) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+  }
+
+  .dark .text-amber-800,
+  .dark .text-amber-900,
+  .dark .text-yellow-800 {
+    color: #fde047 !important;
+  }
+  .dark .text-amber-700,
+  .dark .text-yellow-700 {
+    color: #facc15 !important;
+  }
+  .dark .bg-amber-50,
+  .dark .bg-amber-50\/50,
+  .dark .bg-yellow-50 {
+    background-color: rgba(120, 53, 15, 0.25) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+  }
+
+  .dark .text-red-800,
+  .dark .text-red-900,
+  .dark .text-rose-800 {
+    color: #fca5a5 !important;
+  }
+  .dark .text-red-700,
+  .dark .text-rose-700 {
+    color: #f87171 !important;
+  }
+  .dark .bg-red-50,
+  .dark .bg-red-50\/50,
+  .dark .bg-rose-50 {
+    background-color: rgba(127, 29, 29, 0.25) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+  }
+
+  /* Preserve White Text and White Logo Container */
+  .dark .text-white {
+    color: #ffffff !important;
+  }
+  .dark img.bg-white,
+  .dark img.bg-white\/95 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
   }
 }
 
