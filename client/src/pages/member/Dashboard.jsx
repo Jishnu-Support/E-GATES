@@ -25,7 +25,6 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
-import { useSOS } from '../../hooks/useSOS';
 import { useSocket } from '../../hooks/useSocket';
 import api, { getFileUrl } from '../../services/api';
 import StatsCard from '../../components/common/StatsCard';
@@ -36,21 +35,6 @@ export default function MemberDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { socket } = useSocket();
-
-  const {
-    showTypeSelector,
-    setShowTypeSelector,
-    selectedType,
-    showCancel,
-    cancelCountdown,
-    isSending,
-    isTriggered,
-    lastAlert,
-    selectTypeAndStartCountdown,
-    triggerSOS,
-    cancelSOS,
-    resetSOS,
-  } = useSOS();
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -493,65 +477,7 @@ export default function MemberDashboard() {
         </div>
       </div>
 
-      {/* Modal: Emergency Type Selector (Reacts Immediately on Click) */}
-      <Modal
-        isOpen={showTypeSelector}
-        onClose={() => setShowTypeSelector(false)}
-        title="🚨 Emergency Situation (Instant Dispatch)"
-        size="md"
-      >
-        <div className="space-y-3">
-          <p className="text-xs text-gray-600">
-            Click any situation below to immediately dispatch emergency distress to association security and neighbors:
-          </p>
 
-          <button
-            type="button"
-            onClick={() => triggerSOS('Immediate Distress')}
-            disabled={isSending}
-            className="w-full p-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95 cursor-pointer"
-          >
-            <HiShieldExclamation className="w-5 h-5 text-white" />
-            <span>🚨 SEND IMMEDIATE SOS (GENERAL DISTRESS)</span>
-          </button>
-
-          <div className="space-y-2 pt-1">
-            {emergencyTypes.map((item) => (
-              <button
-                key={item.type}
-                type="button"
-                onClick={() => triggerSOS(item.type)}
-                disabled={isSending}
-                className="w-full p-3 rounded-xl border border-gray-200 hover:border-red-500 hover:bg-red-50/50 flex items-center justify-between transition group text-left cursor-pointer active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{item.icon}</span>
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900 group-hover:text-red-700">
-                      {item.type}
-                    </h4>
-                    <p className="text-[11px] text-gray-500">{item.desc}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-xs font-bold text-red-600 opacity-90 group-hover:opacity-100">
-                  <span>Send Now</span>
-                  <HiArrowRight className="w-4 h-4 text-red-600" />
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowTypeSelector(false)}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Modal: Live Incoming SOS Popup (For all residents in association) */}
       <Modal

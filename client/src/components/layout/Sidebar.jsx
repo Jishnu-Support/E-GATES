@@ -19,13 +19,14 @@ import {
   HiXMark,
   HiShieldExclamation,
   HiIdentification,
+  HiArrowRightOnRectangle,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import DigitalIdCardModal from '../common/DigitalIdCardModal';
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const [showIdCard, setShowIdCard] = useState(false);
@@ -185,9 +186,9 @@ export default function Sidebar({ isOpen, onClose }) {
           })}
         </div>
 
-        {/* Bottom User Info Card */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/40">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/40">
+        {/* Bottom User Info & Logout Option in Left Down Corner */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/70 space-y-2">
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/40">
             <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-500 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
               {user?.profile_photo ? (
                 <img
@@ -207,6 +208,17 @@ export default function Sidebar({ isOpen, onClose }) {
               </p>
             </div>
           </div>
+
+          {/* Left Down Corner Dedicated Logout Option */}
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-white bg-red-950/30 hover:bg-red-600 border border-red-900/40 hover:border-red-600 transition duration-150 cursor-pointer shadow-xs active:scale-[0.98]"
+            title="Logout from account"
+          >
+            <HiArrowRightOnRectangle className="w-4 h-4 text-red-400 group-hover:text-white" />
+            <span>{t('auth_logout') || 'Logout'}</span>
+          </button>
         </div>
       </aside>
 

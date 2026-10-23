@@ -111,8 +111,8 @@ export default function AdminVotingManage() {
     vendors: [
       { name: '', company: '', contact: '', quotation: '', notes: '' },
     ],
-    // For election polling
-    election_type: 'all_roles', // 'all_roles' | 'single_role'
+    // For election polling (Only 1 role at a time)
+    election_type: 'single_role',
     internal_officer_id: '',
     internal_officer_name: '',
     internal_officer_contact: '',
@@ -124,13 +124,6 @@ export default function AdminVotingManage() {
     election_roles_builder: [
       {
         role_name: 'President',
-        candidates: [
-          { name: '', contact: '', notes: '' },
-          { name: '', contact: '', notes: '' },
-        ],
-      },
-      {
-        role_name: 'Secretary',
         candidates: [
           { name: '', contact: '', notes: '' },
           { name: '', contact: '', notes: '' },
@@ -499,7 +492,7 @@ export default function AdminVotingManage() {
         target_street: '',
         target_user_ids: [],
         vendors: [{ name: '', company: '', contact: '', quotation: '', notes: '' }],
-        election_type: 'all_roles',
+        election_type: 'single_role',
         internal_officer_id: '',
         internal_officer_name: '',
         internal_officer_contact: '',
@@ -511,13 +504,6 @@ export default function AdminVotingManage() {
         election_roles_builder: [
           {
             role_name: 'President',
-            candidates: [
-              { name: '', contact: '', notes: '' },
-              { name: '', contact: '', notes: '' },
-            ],
-          },
-          {
-            role_name: 'Secretary',
             candidates: [
               { name: '', contact: '', notes: '' },
               { name: '', contact: '', notes: '' },
@@ -1411,54 +1397,21 @@ export default function AdminVotingManage() {
           {pollForm.poll_type === 'election' && (
             <div className="space-y-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
               {/* Election Scope: All Roles vs Single Role */}
+              {/* Election Scope: Only One Role at a Time */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-1.5">
                   Election Scope / Type *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label
-                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                      pollForm.election_type === 'all_roles'
-                        ? 'bg-amber-100/70 border-amber-500 text-amber-950 font-semibold'
-                        : 'bg-white border-gray-200 hover:border-amber-300 text-gray-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="election_type"
-                      checked={pollForm.election_type === 'all_roles'}
-                      onChange={() => setPollForm({ ...pollForm, election_type: 'all_roles' })}
-                      className="mt-0.5 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-xs font-bold block">All Roles at a Time</span>
-                      <span className="text-[11px] text-gray-500 block">
-                        Full Executive Committee ballot across multiple roles (President, Secretary, Treasurer, etc.)
-                      </span>
-                    </div>
-                  </label>
-
-                  <label
-                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                      pollForm.election_type === 'single_role'
-                        ? 'bg-amber-100/70 border-amber-500 text-amber-950 font-semibold'
-                        : 'bg-white border-gray-200 hover:border-amber-300 text-gray-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="election_type"
-                      checked={pollForm.election_type === 'single_role'}
-                      onChange={() => setPollForm({ ...pollForm, election_type: 'single_role' })}
-                      className="mt-0.5 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div>
-                      <span className="text-xs font-bold block">Only One Role at a Time</span>
-                      <span className="text-[11px] text-gray-500 block">
-                        Dedicated election focused on a specific single post (e.g. President only)
-                      </span>
-                    </div>
-                  </label>
+                <div className="p-3.5 bg-amber-100/70 rounded-xl border border-amber-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🏛️</span>
+                    <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                      Only One Role at a Time (Single Post Election)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 mt-1 leading-snug">
+                    Each election poll is strictly configured for <strong>one role only</strong> (e.g., President Election or Secretary Election or Treasurer Election). To elect another role, please create a separate election poll.
+                  </p>
                 </div>
               </div>
 
@@ -1842,28 +1795,15 @@ export default function AdminVotingManage() {
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-amber-900">
-                    {pollForm.election_type === 'single_role'
-                      ? 'Contesting Role & Candidates *'
-                      : `Executive Committee Roles & Candidates (${pollForm.election_roles_builder.length} Roles) *`}
+                    Contesting Role & Candidates (Only 1 Role at a Time) *
                   </label>
                   <p className="text-[11px] text-gray-500">
-                    Type role names manually. Members can stand for any role they desire by notifying the admin.
+                    Specify the single election post (e.g. President or Secretary) and add contesting candidates below.
                   </p>
                 </div>
-
-                {pollForm.election_type === 'all_roles' && (
-                  <button
-                    type="button"
-                    onClick={handleAddElectionRole}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg border border-amber-300 transition"
-                  >
-                    <HiPlus className="w-3.5 h-3.5" />
-                    <span>Add Another Role</span>
-                  </button>
-                )}
               </div>
 
-              {pollForm.election_roles_builder.map((roleObj, rIdx) => (
+              {pollForm.election_roles_builder.slice(0, 1).map((roleObj, rIdx) => (
                 <div
                   key={rIdx}
                   className="p-4 bg-amber-50/40 rounded-xl border border-amber-200 space-y-3"
@@ -1871,13 +1811,11 @@ export default function AdminVotingManage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 flex items-center gap-2">
                       <span className="w-8 h-8 rounded-lg bg-amber-500 text-white text-xs font-black flex items-center justify-center flex-shrink-0">
-                        #{rIdx + 1}
+                        1
                       </span>
                       <div className="flex-1">
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900">
-                          {pollForm.election_type === 'single_role'
-                            ? 'Single Role Post Name * (e.g. President)'
-                            : `Election Role #${rIdx + 1} Post Name * (e.g. President, Secretary, Treasurer)`}
+                          Single Role / Post Name * (e.g. President, Secretary, or Treasurer)
                         </label>
                         <input
                           type="text"
@@ -1889,17 +1827,6 @@ export default function AdminVotingManage() {
                         />
                       </div>
                     </div>
-
-                    {pollForm.election_type === 'all_roles' && pollForm.election_roles_builder.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveElectionRole(rIdx)}
-                        className="text-gray-400 hover:text-red-600 p-1.5 self-end mb-1"
-                        title="Remove Role"
-                      >
-                        <HiTrash className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
 
                   {/* Contesting Candidates under this role */}
