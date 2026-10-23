@@ -194,13 +194,6 @@ export default function MemberDashboard() {
     };
   }, [socket]);
 
-  const emergencyTypes = [
-    { type: 'Medical', icon: '🚑', desc: 'Ambulance & Paramedic emergency' },
-    { type: 'Fire', icon: '🔥', desc: 'Fire incident or smoke hazard' },
-    { type: 'Theft/Intruder', icon: '🚨', desc: 'Break-in, trespasser or theft' },
-    { type: 'Women Safety', icon: '🛡️', desc: 'Immediate security assistance' },
-    { type: 'Other', icon: '⚠️', desc: 'Urgent general layout distress' },
-  ];
 
   const assocName = user?.association_name || 'Layout Association';
 
@@ -225,54 +218,7 @@ export default function MemberDashboard() {
       </div>
 
 
-      {/* 5-Second Cancel Countdown Overlay Banner */}
-      {showCancel && (
-        <div className="bg-red-900 border-2 border-red-500 text-white rounded-2xl p-5 shadow-2xl animate-bounce flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-600 border-2 border-white flex items-center justify-center text-xl font-black">
-              {cancelCountdown}
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">
-                Dispatching "{selectedType}" Emergency SOS in {cancelCountdown} seconds!
-              </h3>
-              <p className="text-xs text-red-200">
-                Designated contacts, security and local patrol are being alerted with your coordinates.
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={cancelSOS}
-            className="px-6 py-2.5 bg-white text-red-800 hover:bg-gray-100 font-extrabold text-sm rounded-xl shadow-lg transition"
-          >
-            Cancel SOS
-          </button>
-        </div>
-      )}
-
-      {/* Post-dispatch Confirmation Banner */}
-      {isTriggered && (
-        <div className="bg-green-50 border-2 border-green-500 rounded-2xl p-4 text-green-900 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <HiCheckCircle className="w-8 h-8 text-green-600 flex-shrink-0" />
-            <div className="text-xs">
-              <p className="font-bold text-sm">Emergency Alert Dispatched</p>
-              <p className="text-green-700">
-                Your emergency request ({lastAlert?.emergency_type || 'SOS'}) has been transmitted. Keep your phone line clear.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={resetSOS}
-            className="text-xs font-semibold px-3 py-1.5 bg-green-200 hover:bg-green-300 rounded-lg text-green-900 transition"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
