@@ -14,6 +14,7 @@ import {
   HiPhoto,
   HiCamera,
   HiArrowRight,
+  HiArrowLeft,
   HiEye,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
@@ -49,7 +50,7 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
-  const [showBrandingModal, setShowBrandingModal] = useState(false);
+  const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
   // 1. Member Form State
   const [memberForm, setMemberForm] = useState({
@@ -566,41 +567,54 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-between p-4 sm:p-6 antialiased">
       {/* Top Header */}
-      <div className="relative w-full max-w-5xl mx-auto flex items-center justify-between py-2">
+      <div className="relative w-full max-w-5xl mx-auto flex items-center justify-between py-2 gap-2 sm:gap-4">
+        {/* Left: EGATES Logo (Opens EGATES logo modal centered) */}
         <button
           type="button"
-          onClick={() => setShowBrandingModal(true)}
-          className="flex items-center hover:opacity-95 transition transform hover:scale-105 focus:outline-none cursor-pointer"
-          title="Click to view EGATES & Jishnu Infotech logos"
+          onClick={() => setBrandingModalType('egates')}
+          className="flex items-center hover:opacity-95 transition transform hover:scale-105 focus:outline-none cursor-pointer flex-shrink-0"
+          title="Click to view EGATES logo"
         >
           <img
             src="/egates-logo.png"
             alt="EGATES"
-            className="h-10 sm:h-12 w-auto max-w-[170px] sm:max-w-[200px] object-contain rounded-2xl bg-white/95 p-1.5 shadow-md"
+            className="h-9 sm:h-12 w-auto max-w-[130px] sm:max-w-[200px] object-contain rounded-2xl bg-white/95 p-1.5 shadow-md"
           />
         </button>
 
-        {/* Top Centre with Logo */}
-        <div className="absolute left-1/2 -translate-x-1/2 hidden md:block">
+        {/* Top Centre: Powered by Jishnu Infotech Logo (Opens Jishnu Infotech logo modal centered) */}
+        <div className="hidden sm:block absolute left-1/2 -translate-x-1/2">
           <button
             type="button"
-            onClick={() => setShowBrandingModal(true)}
+            onClick={() => setBrandingModalType('jishnu')}
             className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
-            title="Click to view EGATES & Jishnu Infotech logos"
+            title="Click to view Jishnu Infotech logo"
           >
             <PoweredByLogo size="lg" />
           </button>
         </div>
 
-        <div className="md:hidden">
-          <button
-            type="button"
-            onClick={() => setShowBrandingModal(true)}
-            className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
-            title="Click to view EGATES & Jishnu Infotech logos"
+        {/* Right side: Mobile Jishnu logo + Back to Login button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="sm:hidden">
+            <button
+              type="button"
+              onClick={() => setBrandingModalType('jishnu')}
+              className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
+              title="Click to view Jishnu Infotech logo"
+            >
+              <PoweredByLogo size="sm" />
+            </button>
+          </div>
+
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs sm:text-sm font-semibold border border-white/20 transition shadow-sm hover:border-white/30"
+            title="Back to Login page"
           >
-            <PoweredByLogo size="md" />
-          </button>
+            <HiArrowLeft className="w-4 h-4" />
+            <span>Back to Login</span>
+          </Link>
         </div>
       </div>
 
@@ -2314,10 +2328,11 @@ export default function Register() {
         </div>
       </Modal>
 
-      {/* CENTER BRANDING MODAL: EGATES + JISHNU INFOTECH LOGOS */}
+      {/* CENTER BRANDING MODAL: EGATES OR JISHNU INFOTECH (SEPARATE CENTER DISPLAY) */}
       <BrandingModal
-        isOpen={showBrandingModal}
-        onClose={() => setShowBrandingModal(false)}
+        isOpen={Boolean(brandingModalType)}
+        onClose={() => setBrandingModalType(null)}
+        type={brandingModalType || 'egates'}
       />
     </div>
   );

@@ -25,7 +25,7 @@ export default function Login() {
 
   // 3 Distinct Tabs: 'super_admin' | 'admin' | 'member'
   const [activeTab, setActiveTab] = useState('super_admin');
-  const [showBrandingModal, setShowBrandingModal] = useState(false);
+  const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -191,9 +191,9 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between py-2">
         <button
           type="button"
-          onClick={() => setShowBrandingModal(true)}
+          onClick={() => setBrandingModalType('egates')}
           className="flex items-center hover:opacity-95 transition transform hover:scale-105 focus:outline-none cursor-pointer"
-          title="Click to view EGATES & Jishnu Infotech logos"
+          title="Click to view EGATES logo"
         >
           <img
             src="/egates-logo.png"
@@ -206,9 +206,9 @@ export default function Login() {
         <div className="absolute left-1/2 -translate-x-1/2 hidden md:block">
           <button
             type="button"
-            onClick={() => setShowBrandingModal(true)}
+            onClick={() => setBrandingModalType('jishnu')}
             className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
-            title="Click to view EGATES & Jishnu Infotech logos"
+            title="Click to view Jishnu Infotech logo"
           >
             <PoweredByLogo size="lg" />
           </button>
@@ -217,9 +217,9 @@ export default function Login() {
         <div className="md:hidden">
           <button
             type="button"
-            onClick={() => setShowBrandingModal(true)}
+            onClick={() => setBrandingModalType('jishnu')}
             className="cursor-pointer focus:outline-none hover:opacity-95 transition transform hover:scale-105"
-            title="Click to view EGATES & Jishnu Infotech logos"
+            title="Click to view Jishnu Infotech logo"
           >
             <PoweredByLogo size="md" />
           </button>
@@ -483,10 +483,11 @@ export default function Login() {
         <p>&copy; {new Date().getFullYear()} EGATES - Community & Layout Association Management. All rights reserved.</p>
       </footer>
 
-      {/* CENTER BRANDING MODAL: EGATES + JISHNU INFOTECH LOGOS */}
+      {/* CENTER BRANDING MODAL: EGATES OR JISHNU INFOTECH (SEPARATE CENTER DISPLAY) */}
       <BrandingModal
-        isOpen={showBrandingModal}
-        onClose={() => setShowBrandingModal(false)}
+        isOpen={Boolean(brandingModalType)}
+        onClose={() => setBrandingModalType(null)}
+        type={brandingModalType || 'egates'}
       />
     </div>
   );

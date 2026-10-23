@@ -27,7 +27,7 @@ export default function Header({ onMenuToggle, associationName }) {
   const [notifications, setNotifications] = useState([]);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
-  const [showBrandingModal, setShowBrandingModal] = useState(false);
+  const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
   const userMenuRef = useRef(null);
   const notifMenuRef = useRef(null);
@@ -144,8 +144,8 @@ export default function Header({ onMenuToggle, associationName }) {
 
         <button
           type="button"
-          onClick={() => setShowBrandingModal(true)}
-          title="Click to view EGATES & Jishnu Infotech logos"
+          onClick={() => setBrandingModalType('egates')}
+          title="Click to view EGATES logo"
           className="flex items-center hover:opacity-90 transition focus:outline-none cursor-pointer group py-0.5"
         >
           <img
@@ -160,9 +160,9 @@ export default function Header({ onMenuToggle, associationName }) {
       <div className="flex-1 min-w-0 flex flex-col items-center justify-center px-1.5 sm:px-3 mx-auto">
         <button
           type="button"
-          onClick={() => setShowBrandingModal(true)}
+          onClick={() => setBrandingModalType('jishnu')}
           className="hidden sm:inline-flex mb-1 cursor-pointer hover:opacity-90 transition transform hover:scale-105 focus:outline-none"
-          title="Click to view EGATES & Jishnu Infotech logos"
+          title="Click to view Jishnu Infotech logo"
         >
           <PoweredByLogo size="md" />
         </button>
@@ -358,10 +358,11 @@ export default function Header({ onMenuToggle, associationName }) {
         />
       )}
 
-      {/* Center Branding Modal: EGATES + Jishnu Infotech Logos */}
+      {/* Center Branding Modal: EGATES OR JISHNU INFOTECH (SEPARATE CENTER DISPLAY) */}
       <BrandingModal
-        isOpen={showBrandingModal}
-        onClose={() => setShowBrandingModal(false)}
+        isOpen={Boolean(brandingModalType)}
+        onClose={() => setBrandingModalType(null)}
+        type={brandingModalType || 'egates'}
         onOpenIdCard={() => setShowIdCard(true)}
       />
     </header>
