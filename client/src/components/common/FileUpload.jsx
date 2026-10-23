@@ -387,46 +387,20 @@ export default function FileUpload({
                       {item.size ? (
                         <span>{(item.size / (1024 * 1024)).toFixed(2)} MB</span>
                       ) : null}
-                      <span className="text-[11px] font-semibold flex items-center gap-0.5 group-hover:underline">
-                        {item.isPdf ? (
-                          <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
-                            <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
-                            <span>Click to open PDF in new tab</span>
-                          </span>
-                        ) : (
-                          <span className="text-primary-600 dark:text-primary-400 flex items-center gap-0.5">
-                            <HiEye className="w-3.5 h-3.5" />
-                            <span>Click to view & recheck</span>
-                          </span>
-                        )}
-                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions: View and Remove */}
+                {/* Actions: Preview and Remove */}
                 <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
                   <button
                     type="button"
                     onClick={(e) => handleOpenPreview(item, e)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs ${
-                      item.isPdf
-                        ? 'bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60'
-                        : 'bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60'
-                    }`}
-                    title={item.isPdf ? 'Open PDF in new tab' : 'View and recheck this document'}
+                    className="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                    title={item.isPdf ? 'Open PDF in new tab' : 'Preview this file'}
                   >
-                    {item.isPdf ? (
-                      <>
-                        <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Open in New Tab</span>
-                      </>
-                    ) : (
-                      <>
-                        <HiEye className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">View</span>
-                      </>
-                    )}
+                    <HiEye className="w-3.5 h-3.5" />
+                    <span>Preview</span>
                   </button>
 
                   {!disabled && (
