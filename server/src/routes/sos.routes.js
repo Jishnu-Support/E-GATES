@@ -76,11 +76,12 @@ router.get(
 router.post(
   '/family-contact',
   authenticate,
-  [
-    body('name').trim().notEmpty().withMessage('Family contact name is required'),
-    body('phone').trim().notEmpty().withMessage('Family contact phone is required'),
-    validate
-  ],
+  sosController.saveFamilyContact
+);
+
+router.post(
+  '/family-contacts',
+  authenticate,
   sosController.saveFamilyContact
 );
 
@@ -90,7 +91,7 @@ router.post(
  * @access  Private (Authenticated Member)
  */
 router.delete(
-  '/family-contact',
+  '/family-contact/:id?',
   authenticate,
   sosController.deleteFamilyContact
 );

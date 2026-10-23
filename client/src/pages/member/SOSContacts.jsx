@@ -33,17 +33,16 @@ export default function MemberSOSContacts() {
   const [medicalContact, setMedicalContact] = useState(null);
   const [policeContact, setPoliceContact] = useState(null);
   const [memberResponders, setMemberResponders] = useState([]);
-  const [otherContact, setOtherContact] = useState(null);
-  const [familyContact, setFamilyContact] = useState(null);
+  const [otherContactsList, setOtherContactsList] = useState([]);
+  const [familyContacts, setFamilyContacts] = useState([]);
 
-  // Edit Family Contact Modal State
+  // Edit Family Contacts Modal State (Up to 2 contacts)
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
   const [submittingFamily, setSubmittingFamily] = useState(false);
-  const [familyForm, setFamilyForm] = useState({
-    name: '',
-    phone: '',
-    designation: 'Spouse',
-  });
+  const [familyForms, setFamilyForms] = useState([
+    { name: '', phone: '', designation: 'Spouse' },
+    { name: '', phone: '', designation: 'Father' },
+  ]);
 
   const relationPresets = [
     'Spouse',
@@ -62,36 +61,55 @@ export default function MemberSOSContacts() {
       setLoading(true);
       const res = await api.get('/sos/contacts');
       const rawAll = res.data?.data || [];
-      const fam = res.data?.familyContact || null;
       const defaults = res.data?.defaultContacts || [];
 
       setContacts(rawAll);
-      setFamilyContact(fam);
 
-      // Parse specific categories
+      // Parse up to 2 family contacts
+      const fams = res.data?.familyContacts || (res.data?.familyContact ? [res.data.familyContact] : []);
+      setFamilyContacts(fams);
+
+      if (fams.length > 0) {
+        setFamilyForms([
+          {
+            id: fams[0]?.id || null,
+            name: fams[0]?.name || '',
+            phone: fams[0]?.phone || '',
+            designation: fams[0]?.designation || 'Spouse',
+          },
+          {
+            id: fams[1]?.id || null,
+            name: fams[1]?.name || '',
+            phone: fams[1]?.phone || '',
+            designation: fams[1]?.designation || 'Father',
+          },
+        ]);
+      } else {
+        setFamilyForms([
+          { name: '', phone: '', designation: 'Spouse' },
+          { name: '', phone: '', designation: 'Father' },
+        ]);
+      }
+
+      // Parse medical contact
       const med = res.data?.medicalContact || defaults.find(
         (c) => c.contact_type === 'medical' || c.contact_type === 'ambulance' || c.designation?.toLowerCase().includes('medical') || c.designation?.toLowerCase().includes('ambulance')
       ) || null;
       setMedicalContact(med);
 
+      // Parse police contact
       const pol = res.data?.policeContact || defaults.find((c) => c.contact_type === 'police') || null;
       setPoliceContact(pol);
 
+      // Parse resident member responders
       const members = res.data?.memberContacts || defaults.filter(
         (c) => c.contact_type === 'member' || c.contact_type === 'resident'
       );
       setMemberResponders(members);
 
-      const oth = res.data?.otherContact || defaults.find((c) => c.contact_type === 'other' || c.contact_type === 'fire') || null;
-      setOtherContact(oth);
-
-      if (fam) {
-        setFamilyForm({
-          name: fam.name || '',
-          phone: fam.phone || '',
-          designation: fam.designation || 'Family / Relative',
-        });
-      }
+      // Parse other emergency services (Fire, Security Gate, EB Breakdown, etc.)
+      const oths = res.data?.otherContacts || defaults.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
+      setOtherContactsList(oths);
     } catch (err) {
       console.error('Failed to load SOS contacts:', err);
       toast.error('Failed to load emergency contacts');
@@ -105,57 +123,43 @@ export default function MemberSOSContacts() {
   }, [fetchContacts]);
 
   const handleOpenAddEditFamily = () => {
-    if (familyContact) {
-      setFamilyForm({
-        name: familyContact.name || '',
-        phone: familyContact.phone || '',
-        designation: familyContact.designation || 'Spouse',
-      });
-    } else {
-      setFamilyForm({
-        name: '',
-        phone: '',
-        designation: 'Spouse',
-      });
-    }
     setIsFamilyModalOpen(true);
   };
 
   const handleSaveFamily = async (e) => {
     e.preventDefault();
-    if (!familyForm.name.trim()) {
-      toast.error('Please enter the family member name');
-      return;
-    }
-    if (!familyForm.phone.trim()) {
-      toast.error('Please enter the family member phone number');
+
+    const validList = familyForms
+      .filter((c) => c.name && c.phone && c.name.trim() && c.phone.trim())
+      .map((c) => ({
+        name: c.name.trim(),
+        phone: c.phone.trim(),
+        designation: (c.designation || 'Family / Relative').trim(),
+      }));
+
+    if (validList.length === 0) {
+      toast.error('Please enter at least one family contact (Name and Phone)');
       return;
     }
 
     try {
       setSubmittingFamily(true);
-      const res = await api.post('/sos/family-contact', {
-        name: familyForm.name.trim(),
-        phone: familyForm.phone.trim(),
-        designation: familyForm.designation.trim() || 'Family / Relative',
-      });
-      toast.success(res.data?.message || 'Family emergency contact saved successfully!');
+      const res = await api.post('/sos/family-contact', { contacts: validList });
+      toast.success(res.data?.message || 'Family emergency contacts saved successfully!');
       setIsFamilyModalOpen(false);
       fetchContacts();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to save family emergency contact');
+      toast.error(err.response?.data?.message || 'Failed to save family emergency contacts');
     } finally {
       setSubmittingFamily(false);
     }
   };
 
-  const handleDeleteFamily = async () => {
-    if (!window.confirm('Are you sure you want to remove your family emergency contact?')) return;
+  const handleDeleteSingleFamily = async (contactId) => {
+    if (!window.confirm('Are you sure you want to remove this family emergency contact?')) return;
     try {
-      await api.delete('/sos/family-contact');
+      await api.delete(`/sos/family-contact/${contactId}`);
       toast.success('Family emergency contact removed');
-      setFamilyContact(null);
-      setFamilyForm({ name: '', phone: '', designation: 'Spouse' });
       fetchContacts();
     } catch (err) {
       toast.error('Failed to remove family contact');
@@ -223,7 +227,7 @@ export default function MemberSOSContacts() {
               Emergency SOS Contacts
             </h1>
             <p className="text-rose-100 text-xs sm:text-sm leading-relaxed">
-              Contacts configured to respond to your emergency situations: <strong>Medical (108)</strong>, <strong>Police (100)</strong>, <strong>Resident Responders (Multi-Member)</strong>, <strong>Your Family Contact</strong>, and <strong>Helplines</strong>.
+              Contacts configured to respond to your emergencies: <strong>Medical (108)</strong>, <strong>Police (100)</strong>, <strong>2 Family Contacts</strong>, <strong>Resident Responders</strong>, and <strong>Fire & Helplines</strong>.
             </p>
           </div>
 
@@ -234,7 +238,7 @@ export default function MemberSOSContacts() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-rose-950/40 transition"
             >
               <HiPencilSquare className="w-4 h-4" />
-              <span>{familyContact ? 'Edit Family Contact' : '+ Add Family Contact'}</span>
+              <span>{familyContacts.length > 0 ? 'Manage 2 Family Contacts' : '+ Add Family Contacts'}</span>
             </button>
             <button
               type="button"
@@ -257,9 +261,10 @@ export default function MemberSOSContacts() {
           <div>
             <p className="font-bold text-gray-900 text-sm">Synchronized SOS Emergency Categories</p>
             <p className="text-gray-500 mt-0.5 leading-relaxed">
-              • <strong>Medical, Police & Other Services:</strong> Managed by your Association Administration for all layout residents.<br />
-              • <strong>Resident Emergency Responders:</strong> Active community members (President, Secretary, Floor Wardens) ready to assist.<br />
-              • <strong>Personal Family Contact:</strong> Managed exclusively by you in your member profile.
+              • <strong>Family Emergency (2 Contacts):</strong> You can configure 2 personal family members and choose either one when triggering SOS.<br />
+              • <strong>Medical & Police:</strong> Hospital (108) and Police Station (100) configured by Administration.<br />
+              • <strong>Resident Responders:</strong> Community guardians (President, Secretary) alerted on Resident Emergency.<br />
+              • <strong>Other Services:</strong> Public safety helplines including Fire & Rescue (101) and Security Gate.
             </p>
           </div>
         </div>
@@ -271,8 +276,8 @@ export default function MemberSOSContacts() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* SECTION A: Primary Emergency Contacts Grid (Medical, Police, Family, Other) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* SECTION A: Primary Emergency Contacts Grid (Medical, Police) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* 1. Medical Emergency */}
             <div className="bg-white rounded-2xl p-5 border-2 border-rose-100 shadow-sm flex flex-col justify-between hover:border-rose-300 transition">
               <div>
@@ -292,7 +297,7 @@ export default function MemberSOSContacts() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm font-bold text-gray-900 truncate">
-                        {medicalContact ? medicalContact.name : '108 Ambulance / Emergency Doctor'}
+                        {medicalContact ? medicalContact.name : '108 Ambulance / Emergency Medical'}
                       </h3>
                       <p className="text-xs text-gray-500 truncate">
                         {medicalContact ? medicalContact.designation : 'Ambulance (108), Hospital, Doctor'}
@@ -390,103 +395,120 @@ export default function MemberSOSContacts() {
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* 3. Personal Family Contact */}
-            <div className="bg-white rounded-2xl p-5 border-2 border-purple-100 shadow-sm flex flex-col justify-between hover:border-purple-300 transition">
+          {/* SECTION B: Personal Family Emergency Contacts (2 Contacts Allowed) */}
+          <div className="bg-white rounded-3xl p-6 border-2 border-purple-200/90 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
-                    <HiHeart className="w-3 h-3 text-purple-600" /> Family Emergency
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👨‍👩‍👧</span>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Personal Family Emergency Contacts ({familyContacts.length}/2 Configured)
+                  </h2>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                    2 Contacts • Choice on SOS
                   </span>
-                  <div className="flex items-center gap-1">
-                    {familyContact && (
-                      <button
-                        type="button"
-                        onClick={handleDeleteFamily}
-                        title="Delete family contact"
-                        className="p-1 text-gray-400 hover:text-red-600 transition"
-                      >
-                        <HiTrash className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
-                      Personal
-                    </span>
-                  </div>
                 </div>
-
-                {familyContact ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-base font-bold">
-                        👨‍👩‍👧
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-gray-900 truncate">{familyContact.name}</h3>
-                        <p className="text-xs text-purple-700 font-semibold truncate">{familyContact.designation || 'Family Kin'}</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-100/70">
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Mobile Phone</span>
-                      <a
-                        href={`tel:${familyContact.phone}`}
-                        className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1.5"
-                      >
-                        <HiPhone className="w-3.5 h-3.5 text-purple-600" />
-                        <span>{familyContact.phone}</span>
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-6 text-center text-xs text-gray-400 italic">
-                    No family contact added yet.
-                  </div>
-                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Configure up to 2 personal family contacts. When you tap <strong>Family Emergency</strong>, you can choose which contact to call and WhatsApp.
+                </p>
               </div>
 
-              <div className="mt-4 flex items-center gap-2">
-                {familyContact ? (
-                  <>
-                    <a
-                      href={`tel:${familyContact.phone}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                    >
-                      <HiPhone className="w-3.5 h-3.5" />
-                      <span>Call</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => openWhatsAppWithLocation(familyContact.phone, 'Family Contact')}
-                      className="flex-1 inline-flex items-center justify-center gap-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                    >
-                      <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleOpenAddEditFamily}
-                      title="Edit Family Contact"
-                      className="p-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl transition"
-                    >
-                      <HiPencilSquare className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
+              <button
+                type="button"
+                onClick={handleOpenAddEditFamily}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+              >
+                <HiPencilSquare className="w-4 h-4" />
+                <span>{familyContacts.length > 0 ? 'Edit 2 Family Contacts' : '+ Add Family Contacts'}</span>
+              </button>
+            </div>
+
+            {familyContacts.length === 0 ? (
+              <div className="py-8 text-center text-xs text-gray-400 italic">
+                No personal family contacts added yet. Click "+ Add Family Contacts" to configure Contact 1 & Contact 2.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {familyContacts.map((f, idx) => (
+                  <div
+                    key={f.id || idx}
+                    className="p-4 rounded-2xl border border-purple-200 bg-purple-50/20 hover:bg-purple-50/50 transition flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-200 text-purple-900">
+                          Family Member #{idx + 1} {idx === 0 ? '(Primary)' : '(Secondary)'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSingleFamily(f.id)}
+                          title="Delete contact"
+                          className="p-1 text-gray-400 hover:text-red-600 transition"
+                        >
+                          <HiTrash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-sm">
+                          {f.name.charAt(0) || 'F'}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-gray-900 truncate">{f.name}</h4>
+                          <p className="text-xs text-purple-700 font-semibold truncate">{f.designation || 'Family Kin'}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-purple-100 flex items-center justify-between text-xs">
+                        <span className="text-gray-500 font-medium">Mobile Phone:</span>
+                        <a
+                          href={`tel:${f.phone}`}
+                          className="font-bold text-purple-700 hover:underline flex items-center gap-1"
+                        >
+                          <HiPhone className="w-3.5 h-3.5 text-purple-600" />
+                          <span>{f.phone}</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`tel:${f.phone}`}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiPhone className="w-3.5 h-3.5" />
+                        <span>Call</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => openWhatsAppWithLocation(f.phone, f.name)}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {familyContacts.length === 1 && (
                   <button
                     type="button"
                     onClick={handleOpenAddEditFamily}
-                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
+                    className="p-4 rounded-2xl border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/10 hover:bg-purple-50/30 transition flex flex-col items-center justify-center gap-2 text-purple-700 min-h-[140px]"
                   >
-                    <HiPlus className="w-4 h-4" />
-                    <span>Add Family Contact</span>
+                    <HiPlus className="w-6 h-6" />
+                    <span className="text-xs font-bold">+ Add 2nd Family Emergency Contact</span>
+                    <span className="text-[11px] text-gray-400">(Father, Mother, Sibling, etc.)</span>
                   </button>
                 )}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* SECTION B: Resident Emergency Responders (Multi-Member List) */}
+          {/* SECTION C: Resident Emergency Responders (Multi-Member List) */}
           <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/80 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
               <div>
@@ -500,7 +522,7 @@ export default function MemberSOSContacts() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Neighbors, Association President, and Executive Members instantly alerted when you trigger a <strong>Resident Emergency</strong>.
+                  Neighbors, Association President, and Executive Members alerted when you trigger a <strong>Resident Emergency</strong>.
                 </p>
               </div>
             </div>
@@ -568,43 +590,82 @@ export default function MemberSOSContacts() {
             )}
           </div>
 
-          {/* SECTION C: Other Emergency Helpline (if configured) */}
-          {otherContact?.phone && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 text-xl font-bold">
-                  ⚠️
-                </div>
+          {/* SECTION D: Other Emergency Helplines (Fire, Security Gate, EB, Snake, etc.) */}
+          {otherContactsList.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 border-2 border-slate-300 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Other Emergency Helpline:</span>
-                    <span className="text-xs font-bold text-gray-900">{otherContact.name}</span>
+                    <span className="text-xl">🔥</span>
+                    <h2 className="text-base font-bold text-gray-900">
+                      Other Emergency Helplines & Services ({otherContactsList.length})
+                    </h2>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
+                      Public Safety & Gate Helplines
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{otherContact.designation || 'Fire, Security Gate, Lift or Custom Assistance'}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Specialized emergency helplines configured for the layout (Fire, Main Gate Security, Electricity Board).
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <a
-                  href={`tel:${otherContact.phone}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition"
-                >
-                  <HiPhone className="w-3.5 h-3.5" />
-                  <span>Call {otherContact.phone}</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => openWhatsAppWithLocation(otherContact.phone, 'Other Emergency')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {otherContactsList.map((o, idx) => (
+                  <div
+                    key={o.id || idx}
+                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-900 mb-2 inline-block">
+                        Helpline #{idx + 1}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center text-lg font-bold">
+                          {idx === 0 ? '🔥' : '⚠️'}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-gray-900 truncate">{o.name}</h4>
+                          <p className="text-xs text-gray-500 truncate">{o.designation || 'Emergency Helpline'}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-slate-200 flex items-center justify-between text-xs">
+                        <span className="text-gray-500 font-medium">Helpline:</span>
+                        <a
+                          href={`tel:${o.phone}`}
+                          className="font-bold text-slate-900 hover:underline flex items-center gap-1"
+                        >
+                          <HiPhone className="w-3.5 h-3.5 text-slate-600" />
+                          <span>{o.phone}</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`tel:${o.phone}`}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiPhone className="w-3.5 h-3.5" />
+                        <span>Call</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => openWhatsAppWithLocation(o.phone, o.name)}
+                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* SECTION D: Instant Distress Trigger Beacon */}
+          {/* SECTION E: Instant Distress Trigger Beacon */}
           <div className="bg-red-50 border border-red-200 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="flex items-start gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
@@ -615,7 +676,7 @@ export default function MemberSOSContacts() {
                   Instant Emergency Distress Beacon
                 </h3>
                 <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
-                  Triggers an automated emergency broadcast to all association responders and your family contact with live GPS coordinates.
+                  Triggers an automated emergency broadcast to all association responders and your family contacts with live GPS coordinates.
                 </p>
               </div>
             </div>
@@ -635,74 +696,188 @@ export default function MemberSOSContacts() {
         </div>
       )}
 
-      {/* MODAL: Add / Edit Personal Family Contact */}
+      {/* MODAL: Configure 2 Personal Family Emergency Contacts */}
       <Modal
         isOpen={isFamilyModalOpen}
         onClose={() => setIsFamilyModalOpen(false)}
-        title={familyContact ? 'Edit Personal Family Emergency Contact' : 'Add Personal Family Emergency Contact'}
-        size="md"
+        title="Configure 2 Family Emergency Contacts"
+        size="lg"
       >
-        <form onSubmit={handleSaveFamily} className="space-y-4">
-          <p className="text-xs text-gray-500">
-            This contact belongs exclusively to your profile. Only you can view or change this information.
+        <form onSubmit={handleSaveFamily} className="space-y-5 max-h-[75vh] overflow-y-auto px-1 pr-2">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Configure up to 2 personal family members. When you touch <strong>Family Emergency</strong> in the SOS menu, you will be given the choice to alert either contact immediately.
           </p>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Family Member Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={familyForm.name}
-              onChange={(e) => setFamilyForm({ ...familyForm, name: e.target.value })}
-              placeholder="e.g. Priya Murali / K. Senthil"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Relationship / Role *
-            </label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {relationPresets.map((rel) => (
-                <button
-                  type="button"
-                  key={rel}
-                  onClick={() => setFamilyForm({ ...familyForm, designation: rel })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
-                    familyForm.designation === rel
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {rel}
-                </button>
-              ))}
+          {/* Contact 1 */}
+          <div className="p-4 bg-purple-50/40 rounded-2xl border border-purple-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-purple-950 uppercase flex items-center gap-1.5">
+                <span>👨‍👩‍👧</span> 1. Family Contact #1 (Primary) *
+              </h4>
+              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
+                Primary Kin
+              </span>
             </div>
-            <input
-              type="text"
-              required
-              value={familyForm.designation}
-              onChange={(e) => setFamilyForm({ ...familyForm, designation: e.target.value })}
-              placeholder="e.g. Spouse / Father / Sister"
-              className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
-            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Family Member Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={familyForms[0]?.name || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[0] = { ...updated[0], name: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. Priya Murali"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Mobile Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={familyForms[0]?.phone || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[0] = { ...updated[0], phone: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. 9876543210"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Relationship / Role *
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-1.5">
+                  {relationPresets.map((rel) => (
+                    <button
+                      type="button"
+                      key={rel}
+                      onClick={() => {
+                        const updated = [...familyForms];
+                        updated[0] = { ...updated[0], designation: rel };
+                        setFamilyForms(updated);
+                      }}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        familyForms[0]?.designation === rel
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {rel}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={familyForms[0]?.designation || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[0] = { ...updated[0], designation: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. Spouse / Father / Sister"
+                  className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Mobile Phone Number (for SMS & Calls) *
-            </label>
-            <input
-              type="tel"
-              required
-              value={familyForm.phone}
-              onChange={(e) => setFamilyForm({ ...familyForm, phone: e.target.value })}
-              placeholder="e.g. 9876543210"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
-            />
+          {/* Contact 2 */}
+          <div className="p-4 bg-purple-50/40 rounded-2xl border border-purple-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-purple-950 uppercase flex items-center gap-1.5">
+                <span>👨‍👩‍👦</span> 2. Family Contact #2 (Secondary / Optional)
+              </h4>
+              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
+                Secondary Kin
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Family Member Name
+                </label>
+                <input
+                  type="text"
+                  value={familyForms[1]?.name || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[1] = { ...updated[1], name: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. K. Senthil"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Mobile Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={familyForms[1]?.phone || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[1] = { ...updated[1], phone: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. 9876543211"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Relationship / Role
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-1.5">
+                  {relationPresets.map((rel) => (
+                    <button
+                      type="button"
+                      key={rel}
+                      onClick={() => {
+                        const updated = [...familyForms];
+                        updated[1] = { ...updated[1], designation: rel };
+                        setFamilyForms(updated);
+                      }}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        familyForms[1]?.designation === rel
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {rel}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={familyForms[1]?.designation || ''}
+                  onChange={(e) => {
+                    const updated = [...familyForms];
+                    updated[1] = { ...updated[1], designation: e.target.value };
+                    setFamilyForms(updated);
+                  }}
+                  placeholder="e.g. Father / Mother / Brother / Guardian"
+                  className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
@@ -717,9 +892,9 @@ export default function MemberSOSContacts() {
             <button
               type="submit"
               disabled={submittingFamily}
-              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
+              className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
             >
-              {submittingFamily ? 'Saving...' : 'Save Family Contact'}
+              {submittingFamily ? 'Saving...' : 'Save 2 Family Contacts'}
             </button>
           </div>
         </form>

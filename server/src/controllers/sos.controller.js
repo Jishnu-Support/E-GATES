@@ -633,30 +633,26 @@ const sosController = {
         [targetAssocId]
       );
 
-      // 2. If a member or specific user is calling, get their personal family emergency contact
-      let familyContact = null;
+      // 2. If a member or specific user is calling, get their personal family emergency contacts (up to 2)
+      let familyContacts = [];
       const targetUserId = role === 'member' ? currentUserId : (req.query.user_id ? parseInt(req.query.user_id, 10) : null);
       if (targetUserId) {
         const famRes = await pool.query(
           `SELECT sc.* FROM sos_contacts sc
            WHERE sc.user_id = $1 AND sc.contact_type = 'family'
-           ORDER BY sc.id DESC LIMIT 1`,
+           ORDER BY sc.id ASC LIMIT 2`,
           [targetUserId]
         );
-        if (famRes.rows.length > 0) {
-          familyContact = famRes.rows[0];
-        }
+        familyContacts = famRes.rows;
       }
 
-      const allContacts = [...defaultRes.rows];
-      if (familyContact) {
-        allContacts.push(familyContact);
-      }
+      const allContacts = [...defaultRes.rows, ...familyContacts];
 
       const medicalContact = defaultRes.rows.find((c) => c.contact_type === 'medical' || c.contact_type === 'ambulance') || null;
       const policeContact = defaultRes.rows.find((c) => c.contact_type === 'police') || null;
       const memberContacts = defaultRes.rows.filter((c) => c.contact_type === 'member' || c.contact_type === 'resident');
-      const otherContact = defaultRes.rows.find((c) => c.contact_type === 'other') || null;
+      const otherContacts = defaultRes.rows.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
+      const otherContact = otherContacts[0] || null;
 
       res.json({
         success: true,
@@ -666,7 +662,9 @@ const sosController = {
         policeContact,
         memberContacts,
         otherContact,
-        familyContact,
+        otherContacts,
+        familyContact: familyContacts[0] || null,
+        familyContacts,
       });
     } catch (error) {
       next(error);
@@ -674,71 +672,68 @@ const sosController = {
   },
 
   /**
-   * Member sets or updates their personal Family Emergency Contact
-   * ONLY the member can edit this contact
+   * Member sets or updates their personal Family Emergency Contacts (up to 2 contacts)
+   * ONLY the member can edit these contacts
    */
   async saveFamilyContact(req, res, next) {
     try {
       const { id: userId, association_id: assocId } = req.user;
-      const { name, phone, designation = 'Family / Relative' } = req.body;
+      let rawList = req.body.contacts;
 
-      if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Family contact name is required' });
-      }
-      if (!phone || !phone.trim()) {
-        return res.status(400).json({ success: false, message: 'Family contact phone number is required' });
+      if (!rawList) {
+        // Fallback for single contact submission
+        if (req.body.name && req.body.phone) {
+          rawList = [{
+            name: req.body.name,
+            phone: req.body.phone,
+            designation: req.body.designation || 'Family / Relative'
+          }];
+        } else {
+          return res.status(400).json({ success: false, message: 'Family contact details (name and phone) are required' });
+        }
       }
 
-      // Check if member already has a family contact configured
-      const checkRes = await pool.query(
-        "SELECT id FROM sos_contacts WHERE user_id = $1 AND contact_type = 'family' ORDER BY id DESC LIMIT 1",
+      // Filter valid contacts (at most 2 allowed)
+      const validContacts = rawList
+        .filter((c) => c && c.name && c.phone && c.name.trim() && c.phone.trim())
+        .slice(0, 2);
+
+      if (validContacts.length === 0) {
+        return res.status(400).json({ success: false, message: 'At least one family contact with name and phone is required' });
+      }
+
+      // Delete existing family contacts for this user
+      await pool.query(
+        "DELETE FROM sos_contacts WHERE user_id = $1 AND contact_type = 'family'",
         [userId]
       );
 
-      let savedContact;
-      if (checkRes.rows.length > 0) {
-        const updateQuery = `
-          UPDATE sos_contacts
-          SET name = $1, phone = $2, designation = $3
-          WHERE id = $4
-          RETURNING *
-        `;
-        const updateRes = await pool.query(updateQuery, [
-          name.trim(),
-          phone.trim(),
-          designation ? designation.trim() : 'Family / Relative',
-          checkRes.rows[0].id
-        ]);
-        savedContact = updateRes.rows[0];
-      } else {
-        const insertQuery = `
-          INSERT INTO sos_contacts (association_id, user_id, contact_type, name, phone, designation)
-          VALUES ($1, $2, 'family', $3, $4, $5)
-          RETURNING *
-        `;
-        const insertRes = await pool.query(insertQuery, [
-          assocId,
-          userId,
-          name.trim(),
-          phone.trim(),
-          designation ? designation.trim() : 'Family / Relative'
-        ]);
-        savedContact = insertRes.rows[0];
+      const inserted = [];
+      for (const c of validContacts) {
+        const insertRes = await pool.query(
+          `INSERT INTO sos_contacts (association_id, user_id, contact_type, name, phone, designation)
+           VALUES ($1, $2, 'family', $3, $4, $5)
+           RETURNING *`,
+          [assocId, userId, c.name.trim(), c.phone.trim(), (c.designation || 'Family Kin').trim()]
+        );
+        inserted.push(insertRes.rows[0]);
       }
 
       await logAudit(
         userId,
-        'SET_FAMILY_CONTACT',
+        'SET_FAMILY_CONTACTS',
         'sos_contacts',
-        savedContact.id,
-        { name: savedContact.name, phone: savedContact.phone, designation: savedContact.designation },
+        inserted[0]?.id || null,
+        { contactsCount: inserted.length },
         req.ip
       );
 
       res.json({
         success: true,
-        message: 'Personal family emergency contact saved successfully',
-        data: savedContact
+        message: 'Personal family emergency contacts saved successfully',
+        data: inserted,
+        familyContacts: inserted,
+        familyContact: inserted[0] || null
       });
     } catch (error) {
       next(error);
@@ -746,18 +741,26 @@ const sosController = {
   },
 
   /**
-   * Member deletes their personal family contact
+   * Member deletes their personal family contact(s)
    */
   async deleteFamilyContact(req, res, next) {
     try {
       const { id: userId } = req.user;
-      await pool.query(
-        "DELETE FROM sos_contacts WHERE user_id = $1 AND contact_type = 'family'",
-        [userId]
-      );
+      const contactId = req.params.id || req.query.id;
+      if (contactId) {
+        await pool.query(
+          "DELETE FROM sos_contacts WHERE id = $1 AND user_id = $2 AND contact_type = 'family'",
+          [contactId, userId]
+        );
+      } else {
+        await pool.query(
+          "DELETE FROM sos_contacts WHERE user_id = $1 AND contact_type = 'family'",
+          [userId]
+        );
+      }
       res.json({
         success: true,
-        message: 'Personal family emergency contact removed'
+        message: 'Family emergency contact removed successfully'
       });
     } catch (error) {
       next(error);
