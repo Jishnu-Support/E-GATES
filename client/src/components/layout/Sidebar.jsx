@@ -50,7 +50,6 @@ export default function Sidebar({ isOpen, onClose }) {
       ? [{ name: t('nav_approvals') || 'Pending Approvals', path: '/admin/approvals', icon: HiShieldExclamation }]
       : []),
     { name: 'Manage Users', path: '/admin/users', icon: HiUsers },
-    { name: t('nav_sos_contacts'), path: '/admin/sos-contacts', icon: HiPhoneArrowUpRight },
     { name: t('nav_sos_alerts'), path: '/admin/sos-alerts', icon: HiExclamationCircle },
     { name: t('nav_news'), path: '/admin/news', icon: HiMegaphone },
     { name: t('nav_voting'), path: '/admin/voting', icon: HiChartBarSquare },
@@ -63,7 +62,6 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const memberLinks = [
     { name: t('nav_dashboard'), path: '/member/dashboard', icon: HiSquares2X2 },
-    { name: t('nav_sos_contacts') || 'Emergency SOS', path: '/member/sos-contacts', icon: HiPhoneArrowUpRight },
     { name: t('nav_events'), path: '/member/events', icon: HiCalendarDays },
     { name: t('nav_event_captures') || 'Event Captures', path: '/member/event-captures', icon: HiFilm },
     { name: t('nav_news'), path: '/member/news', icon: HiMegaphone },

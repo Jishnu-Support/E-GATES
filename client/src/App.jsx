@@ -25,7 +25,6 @@ const AuditLog = lazy(() => import('./pages/super-admin/AuditLog'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const AdminManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const Members = lazy(() => import('./pages/admin/Members'));
-const SOSContacts = lazy(() => import('./pages/admin/SOSContacts'));
 const SOSAlerts = lazy(() => import('./pages/admin/SOSAlerts'));
 const NewsManage = lazy(() => import('./pages/admin/NewsManage'));
 const VotingManage = lazy(() => import('./pages/admin/VotingManage'));
@@ -37,7 +36,6 @@ const Documents = lazy(() => import('./pages/admin/Documents'));
 
 // Member Pages
 const MemberDashboard = lazy(() => import('./pages/member/Dashboard'));
-const MemberSOSContacts = lazy(() => import('./pages/member/SOSContacts'));
 const NewsFeed = lazy(() => import('./pages/member/NewsFeed'));
 const VotingPage = lazy(() => import('./pages/member/VotingPage'));
 const MemberComplaints = lazy(() => import('./pages/member/Complaints'));
@@ -141,7 +139,7 @@ export default function App() {
           <Route path="approvals" element={<PendingApprovals />} />
           <Route path="users" element={<AdminManageUsers />} />
           <Route path="members" element={<Members />} />
-          <Route path="sos-contacts" element={<SOSContacts />} />
+          <Route path="sos-contacts" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="sos-alerts" element={<SOSAlerts />} />
           <Route path="news" element={<NewsManage />} />
           <Route path="voting" element={<VotingManage />} />
@@ -167,7 +165,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<MemberDashboard />} />
-          <Route path="sos-contacts" element={<MemberSOSContacts />} />
+          <Route path="sos-contacts" element={<Navigate to="/member/dashboard" replace />} />
           <Route path="events" element={<Events />} />
           <Route path="event-captures" element={<EventCaptures />} />
           <Route path="news" element={<NewsFeed />} />
