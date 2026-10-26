@@ -24,9 +24,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // If sending FormData, let the browser set Content-Type with boundary
+    // If sending FormData, let the browser set Content-Type with boundary & disable client timeout for multi-GB uploads
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
+      config.timeout = 0;
     }
     return config;
   },

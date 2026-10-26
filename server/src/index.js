@@ -125,6 +125,10 @@ app.use(errorHandler);
 
 // Create HTTP Server & initialize Socket.io
 const server = http.createServer(app);
+server.timeout = 0; // Disable timeout for multi-gigabyte video uploads (up to 3GB)
+server.requestTimeout = 0;
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
 initSocket(server);
 
 // Bootstrapping function

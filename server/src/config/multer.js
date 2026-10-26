@@ -243,7 +243,7 @@ const uploadEventCaptures = multer({
     }
   },
   limits: {
-    fileSize: 150 * 1024 * 1024, // 150MB per file
+    fileSize: 3 * 1024 * 1024 * 1024, // 3GB per file
     files: 20, // up to 20 files per batch
   },
 });

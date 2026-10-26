@@ -55,6 +55,7 @@ export default function EventCaptures() {
   // Upload Modal State
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadFiles, setUploadFiles] = useState([]); // [{ file, preview, isVideo, name, size }]
   const [uploadAssocId, setUploadAssocId] = useState('');
   const [uploadForm, setUploadForm] = useState({
@@ -158,12 +159,24 @@ export default function EventCaptures() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // File selection for Upload
+  // File selection for Upload (up to 3GB per file)
   const handleFilesSelect = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const newEntries = files.map((file) => {
+    const MAX_FILE_SIZE = 3 * 1024 * 1024 * 1024; // 3GB per file
+    const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast.error(`File exceeds 3GB limit: ${oversized.map((f) => f.name).join(', ')}`);
+    }
+
+    const validFiles = files.filter((f) => f.size <= MAX_FILE_SIZE);
+    if (!validFiles.length) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const newEntries = validFiles.map((file) => {
       const isVideo = file.type.startsWith('video/');
       const preview = isVideo ? null : URL.createObjectURL(file);
       return {
@@ -189,6 +202,7 @@ export default function EventCaptures() {
 
   const handleOpenUpload = () => {
     setUploadFiles([]);
+    setUploadProgress(0);
     setUploadForm({
       title: '',
       description: '',
@@ -212,6 +226,7 @@ export default function EventCaptures() {
 
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       const formData = new FormData();
 
       formData.append('title', uploadForm.title.trim());
@@ -230,16 +245,25 @@ export default function EventCaptures() {
 
       const res = await api.post('/event-captures', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 0,
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          }
+        },
       });
 
       toast.success(res.data?.message || 'Event capture saved successfully!');
       setIsUploadOpen(false);
       setUploadFiles([]);
+      setUploadProgress(0);
       await fetchCaptures();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save event capture');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -907,7 +931,7 @@ export default function EventCaptures() {
               <label className="block text-xs font-bold text-gray-700">
                 Upload Event Videos & Photos (Optional)
               </label>
-              <span className="text-[11px] text-gray-400">Max 20 files, up to 150MB each</span>
+              <span className="text-[11px] text-gray-400">Max 20 files, up to 3GB each</span>
             </div>
             <input
               type="file"
@@ -998,12 +1022,32 @@ export default function EventCaptures() {
             />
           </div>
 
+          {/* Upload Progress Bar for large multi-GB videos/photos */}
+          {isUploading && (
+            <div className="space-y-1.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl">
+              <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+                <span className="flex items-center gap-1.5">
+                  <HiArrowPath className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                  <span>Uploading Media...</span>
+                </span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-indigo-100 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Modal Actions */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => setIsUploadOpen(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition"
+              className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1015,7 +1059,7 @@ export default function EventCaptures() {
               {isUploading ? (
                 <>
                   <HiArrowPath className="w-4 h-4 animate-spin" />
-                  <span>Saving...</span>
+                  <span>{uploadProgress > 0 ? `Uploading (${uploadProgress}%)...` : 'Processing...'}</span>
                 </>
               ) : (
                 <span>Save Event Capture</span>
