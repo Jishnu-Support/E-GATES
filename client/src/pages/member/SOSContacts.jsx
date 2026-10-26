@@ -36,6 +36,41 @@ export default function MemberSOSContacts() {
   const [otherContactsList, setOtherContactsList] = useState([]);
   const [familyContacts, setFamilyContacts] = useState([]);
 
+  // Disabled Emergency Preferences (User choice for all emergencies EXCEPT family)
+  const [disabledEmergencies, setDisabledEmergencies] = useState(() => {
+    try {
+      const saved = localStorage.getItem('disabled_emergencies');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const handleToggleEmergency = async (type, displayName) => {
+    if (type === 'family' || type === 'Family Emergency') {
+      toast.error('Family Emergency is protected and cannot be disabled');
+      return;
+    }
+
+    const isCurrentlyDisabled = disabledEmergencies.includes(type);
+    const updated = isCurrentlyDisabled
+      ? disabledEmergencies.filter((t) => t !== type)
+      : [...disabledEmergencies, type];
+
+    setDisabledEmergencies(updated);
+    try {
+      localStorage.setItem('disabled_emergencies', JSON.stringify(updated));
+      await api.put('/sos/preferences', { disabled_emergencies: updated });
+      toast.success(
+        isCurrentlyDisabled
+          ? `${displayName} enabled for your portal`
+          : `${displayName} disabled for your portal`
+      );
+    } catch (err) {
+      console.error('Failed to sync emergency preferences:', err);
+    }
+  };
+
   // Edit Family Contacts Modal State (Up to 2 contacts)
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
   const [submittingFamily, setSubmittingFamily] = useState(false);
@@ -110,6 +145,14 @@ export default function MemberSOSContacts() {
       // Parse other emergency services (Fire, Security Gate, EB Breakdown, etc.)
       const oths = res.data?.otherContacts || defaults.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
       setOtherContactsList(oths);
+
+      // Parse user's disabled emergencies preferences
+      if (res.data?.disabled_emergencies && Array.isArray(res.data.disabled_emergencies)) {
+        setDisabledEmergencies(res.data.disabled_emergencies);
+        try {
+          localStorage.setItem('disabled_emergencies', JSON.stringify(res.data.disabled_emergencies));
+        } catch (e) {}
+      }
     } catch (err) {
       console.error('Failed to load SOS contacts:', err);
       toast.error('Failed to load emergency contacts');
@@ -279,15 +322,43 @@ export default function MemberSOSContacts() {
           {/* SECTION A: Primary Emergency Contacts Grid (Medical, Police) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* 1. Medical Emergency */}
-            <div className="bg-white rounded-2xl p-5 border-2 border-rose-100 shadow-sm flex flex-col justify-between hover:border-rose-300 transition">
+            <div className={`bg-white rounded-2xl p-5 border-2 shadow-sm flex flex-col justify-between transition ${
+              disabledEmergencies.includes('medical')
+                ? 'border-gray-200 opacity-75 bg-gray-50/50'
+                : 'border-rose-100 hover:border-rose-300'
+            }`}>
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 flex items-center gap-1">
-                    🏥 Medical Emergency
-                  </span>
-                  <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
-                    🩺
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                      disabledEmergencies.includes('medical')
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      🏥 Medical Emergency
+                    </span>
+                    {disabledEmergencies.includes('medical') && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        DISABLED BY YOU
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEmergency('medical', 'Medical Emergency')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                        disabledEmergencies.includes('medical')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                      }`}
+                    >
+                      {disabledEmergencies.includes('medical') ? '✓ Enable' : '✕ Disable'}
+                    </button>
+                    <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                      🩺
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -338,15 +409,43 @@ export default function MemberSOSContacts() {
             </div>
 
             {/* 2. Police Emergency */}
-            <div className="bg-white rounded-2xl p-5 border-2 border-blue-100 shadow-sm flex flex-col justify-between hover:border-blue-300 transition">
+            <div className={`bg-white rounded-2xl p-5 border-2 shadow-sm flex flex-col justify-between transition ${
+              disabledEmergencies.includes('police')
+                ? 'border-gray-200 opacity-75 bg-gray-50/50'
+                : 'border-blue-100 hover:border-blue-300'
+            }`}>
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 flex items-center gap-1">
-                    🚓 Police Emergency
-                  </span>
-                  <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                    👮
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                      disabledEmergencies.includes('police')
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      🚓 Police Emergency
+                    </span>
+                    {disabledEmergencies.includes('police') && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        DISABLED BY YOU
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEmergency('police', 'Police Emergency')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                        disabledEmergencies.includes('police')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                      }`}
+                    >
+                      {disabledEmergencies.includes('police') ? '✓ Enable' : '✕ Disable'}
+                    </button>
+                    <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                      👮
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -401,13 +500,13 @@ export default function MemberSOSContacts() {
           <div className="bg-white rounded-3xl p-6 border-2 border-purple-200/90 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xl">👨‍👩‍👧</span>
                   <h2 className="text-base font-bold text-gray-900">
                     Personal Family Emergency Contacts ({familyContacts.length}/2 Configured)
                   </h2>
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                    2 Contacts • Choice on SOS
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
+                    🔒 Always Active • Protected (Cannot be disabled)
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -509,22 +608,42 @@ export default function MemberSOSContacts() {
           </div>
 
           {/* SECTION C: Resident Emergency Responders (Multi-Member List) */}
-          <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/80 shadow-sm space-y-4">
+          <div className={`bg-white rounded-3xl p-6 border-2 shadow-sm space-y-4 transition ${
+            disabledEmergencies.includes('resident')
+              ? 'border-gray-200 opacity-75 bg-gray-50/50'
+              : 'border-amber-200/80'
+          }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xl">🏡</span>
                   <h2 className="text-base font-bold text-gray-900">
                     Resident Emergency Responders ({memberResponders.length})
                   </h2>
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                    Community Guardians
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                    disabledEmergencies.includes('resident')
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {disabledEmergencies.includes('resident') ? 'DISABLED BY YOU' : 'Community Guardians'}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   Neighbors, Association President, and Executive Members alerted when you trigger a <strong>Resident Emergency</strong>.
                 </p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleEmergency('resident', 'Resident Emergency')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  disabledEmergencies.includes('resident')
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                }`}
+              >
+                {disabledEmergencies.includes('resident') ? '✓ Enable Resident Emergency' : '✕ Disable Resident Emergency'}
+              </button>
             </div>
 
             {memberResponders.length === 0 ? (
@@ -592,22 +711,42 @@ export default function MemberSOSContacts() {
 
           {/* SECTION D: Other Emergency Helplines (Fire, Security Gate, EB, Snake, etc.) */}
           {otherContactsList.length > 0 && (
-            <div className="bg-white rounded-3xl p-6 border-2 border-slate-300 shadow-sm space-y-4">
+            <div className={`bg-white rounded-3xl p-6 border-2 shadow-sm space-y-4 transition ${
+              disabledEmergencies.includes('other')
+                ? 'border-gray-200 opacity-75 bg-gray-50/50'
+                : 'border-slate-300'
+            }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xl">🔥</span>
                     <h2 className="text-base font-bold text-gray-900">
                       Other Emergency Helplines & Services ({otherContactsList.length})
                     </h2>
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
-                      Public Safety & Gate Helplines
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                      disabledEmergencies.includes('other')
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-slate-100 text-slate-800'
+                    }`}>
+                      {disabledEmergencies.includes('other') ? 'DISABLED BY YOU' : 'Public Safety & Gate Helplines'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     Specialized emergency helplines configured for the layout (Fire, Main Gate Security, Electricity Board).
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleEmergency('other', 'Other Emergency & Fire')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    disabledEmergencies.includes('other')
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+                  }`}
+                >
+                  {disabledEmergencies.includes('other') ? '✓ Enable Other Emergencies' : '✕ Disable Other Emergencies'}
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

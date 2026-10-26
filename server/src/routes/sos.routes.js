@@ -69,6 +69,28 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/sos/preferences
+ * @desc    Get member's SOS emergency preferences (disabled emergencies)
+ * @access  Private
+ */
+router.get(
+  '/preferences',
+  authenticate,
+  sosController.getPreferences
+);
+
+/**
+ * @route   PUT /api/v1/sos/preferences
+ * @desc    Save member's SOS emergency preferences (disabled emergencies)
+ * @access  Private
+ */
+router.put(
+  '/preferences',
+  authenticate,
+  sosController.savePreferences
+);
+
+/**
  * @route   POST /api/v1/sos/family-contact
  * @desc    Set or update member's personal family emergency contact (Only Member can edit)
  * @access  Private (Authenticated Member)

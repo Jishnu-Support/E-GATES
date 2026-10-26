@@ -41,6 +41,14 @@ export default function FloatingSOS() {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [familyContacts, setFamilyContacts] = useState([]);
   const [otherServicesList, setOtherServicesList] = useState([]);
+  const [disabledEmergencies, setDisabledEmergencies] = useState(() => {
+    try {
+      const saved = localStorage.getItem('disabled_emergencies');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherDetails, setOtherDetails] = useState('');
   const [showFamilyChoice, setShowFamilyChoice] = useState(false);
@@ -59,6 +67,13 @@ export default function FloatingSOS() {
 
           const oths = res.data?.otherContacts || list.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
           setOtherServicesList(Array.isArray(oths) ? oths : []);
+
+          if (res.data?.disabled_emergencies && Array.isArray(res.data.disabled_emergencies)) {
+            setDisabledEmergencies(res.data.disabled_emergencies);
+            try {
+              localStorage.setItem('disabled_emergencies', JSON.stringify(res.data.disabled_emergencies));
+            } catch (e) {}
+          }
         })
         .catch((err) => console.warn('Could not load SOS contacts for floating widget:', err));
     }
@@ -95,6 +110,25 @@ export default function FloatingSOS() {
   // Immediate Action: Call, WhatsApp with Address & Live GPS Location, and Backend Dispatch
   const handleTriggerWithAction = async (emergencyType, customText = '', specificContact = null) => {
     if (isSending) return;
+
+    // Check if resident user has disabled this emergency
+    const categoryKey = emergencyType.toLowerCase().includes('medical') ? 'medical'
+      : emergencyType.toLowerCase().includes('police') ? 'police'
+      : emergencyType.toLowerCase().includes('resident') ? 'resident'
+      : emergencyType.toLowerCase().includes('family') ? null
+      : 'other';
+
+    if (categoryKey && disabledEmergencies.includes(categoryKey)) {
+      if (!window.confirm(`"${emergencyType}" is currently marked as disabled in your portal. Do you want to enable it and proceed with dispatching SOS?`)) {
+        return;
+      }
+      const updated = disabledEmergencies.filter((t) => t !== categoryKey);
+      setDisabledEmergencies(updated);
+      try {
+        localStorage.setItem('disabled_emergencies', JSON.stringify(updated));
+        api.put('/sos/preferences', { disabled_emergencies: updated }).catch(() => {});
+      } catch (e) {}
+    }
 
     // 1. Resolve target responders
     const medicalContact = emergencyContacts.find(
@@ -249,16 +283,29 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Medical Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-50 to-white dark:from-rose-950/40 dark:to-slate-900 hover:from-rose-100 hover:to-rose-50 dark:hover:from-rose-900/50 dark:hover:to-slate-850 hover:border-rose-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border-2 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left ${
+                disabledEmergencies.includes('medical')
+                  ? 'border-gray-300 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-900/80 opacity-70'
+                  : 'border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-50 to-white dark:from-rose-950/40 dark:to-slate-900 hover:from-rose-100 hover:to-rose-50 dark:hover:from-rose-900/50 dark:hover:to-slate-850 hover:border-rose-400'
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0 ${
+                  disabledEmergencies.includes('medical') ? 'bg-gray-400 text-white' : 'bg-rose-600 text-white'
+                }`}>
                   🏥
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
-                    Medical Emergency
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
+                      Medical Emergency
+                    </h4>
+                    {disabledEmergencies.includes('medical') && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400">
+                        Disabled by You
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-rose-700 dark:text-rose-300 font-medium truncate">
                     Ambulance (108), Hospital, Emergency Doctor
                   </p>
@@ -275,16 +322,29 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Police Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/40 dark:to-slate-900 hover:from-blue-100 hover:to-blue-50 dark:hover:from-blue-900/50 dark:hover:to-slate-850 hover:border-blue-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border-2 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left ${
+                disabledEmergencies.includes('police')
+                  ? 'border-gray-300 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-900/80 opacity-70'
+                  : 'border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/40 dark:to-slate-900 hover:from-blue-100 hover:to-blue-50 dark:hover:from-blue-900/50 dark:hover:to-slate-850 hover:border-blue-400'
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0 ${
+                  disabledEmergencies.includes('police') ? 'bg-gray-400 text-white' : 'bg-blue-600 text-white'
+                }`}>
                   🚓
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
-                    Police Emergency
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
+                      Police Emergency
+                    </h4>
+                    {disabledEmergencies.includes('police') && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400">
+                        Disabled by You
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-blue-700 dark:text-blue-300 font-medium truncate">
                     Police Station (100), Intruder, Layout Security
                   </p>
@@ -380,16 +440,29 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Resident Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-amber-200 dark:border-amber-900/60 bg-gradient-to-r from-amber-50 to-white dark:from-amber-950/40 dark:to-slate-900 hover:from-amber-100 hover:to-amber-50 dark:hover:from-amber-900/50 dark:hover:to-slate-850 hover:border-amber-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border-2 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left ${
+                disabledEmergencies.includes('resident')
+                  ? 'border-gray-300 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-900/80 opacity-70'
+                  : 'border-amber-200 dark:border-amber-900/60 bg-gradient-to-r from-amber-50 to-white dark:from-amber-950/40 dark:to-slate-900 hover:from-amber-100 hover:to-amber-50 dark:hover:from-amber-900/50 dark:hover:to-slate-850 hover:border-amber-400'
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0 ${
+                  disabledEmergencies.includes('resident') ? 'bg-gray-400 text-white' : 'bg-amber-600 text-white'
+                }`}>
                   🏘️
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
-                    Resident Emergency
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
+                      Resident Emergency
+                    </h4>
+                    {disabledEmergencies.includes('resident') && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400">
+                        Disabled by You
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium truncate">
                     Association President, Secretary & Responders ({residentRespondersList.length} Active)
                   </p>
@@ -402,16 +475,29 @@ export default function FloatingSOS() {
             </button>
 
             {/* 5. Other Emergency (Fire, Security Gate, EB, Multi-Service Choice) */}
-            <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/80 p-3.5 space-y-2.5 transition">
+            <div className={`rounded-2xl border-2 p-3.5 space-y-2.5 transition ${
+              disabledEmergencies.includes('other')
+                ? 'border-gray-300 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-900/80 opacity-70'
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/80'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-xl bg-slate-700 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0 ${
+                    disabledEmergencies.includes('other') ? 'bg-gray-400 text-white' : 'bg-slate-700 text-white'
+                  }`}>
                     🔥
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
-                      Other Emergency & Fire
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                        Other Emergency & Fire
+                      </h4>
+                      {disabledEmergencies.includes('other') && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400">
+                          Disabled by You
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                       Fire (101), Security Gate, EB, Snake, or Custom issue
                     </p>

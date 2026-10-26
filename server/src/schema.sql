@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users (
   status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   rejection_reason TEXT,
   language VARCHAR(5) DEFAULT 'en',
+  disabled_emergencies JSONB DEFAULT '[]'::jsonb,
   reset_token VARCHAR(255),
   reset_token_expires TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),

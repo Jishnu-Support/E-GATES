@@ -654,6 +654,15 @@ const sosController = {
       const otherContacts = defaultRes.rows.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
       const otherContact = otherContacts[0] || null;
 
+      // Fetch user's disabled emergencies preferences
+      let disabledEmergencies = [];
+      if (currentUserId) {
+        const uRes = await pool.query('SELECT disabled_emergencies FROM users WHERE id = $1', [currentUserId]);
+        if (uRes.rows[0]?.disabled_emergencies) {
+          disabledEmergencies = uRes.rows[0].disabled_emergencies;
+        }
+      }
+
       res.json({
         success: true,
         data: allContacts,
@@ -665,6 +674,50 @@ const sosController = {
         otherContacts,
         familyContact: familyContacts[0] || null,
         familyContacts,
+        disabled_emergencies: disabledEmergencies,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Get member's disabled emergency preferences
+   */
+  async getPreferences(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const result = await pool.query('SELECT disabled_emergencies FROM users WHERE id = $1', [userId]);
+      const disabled = (result.rows[0]?.disabled_emergencies) || [];
+      res.json({
+        success: true,
+        disabled_emergencies: disabled
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Save member's disabled emergency preferences
+   * Note: 'family' emergency can NEVER be disabled
+   */
+  async savePreferences(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const rawDisabled = req.body.disabled_emergencies;
+      const list = Array.isArray(rawDisabled) ? rawDisabled : [];
+      // Filter out family emergency: Family Emergency is ALWAYS active
+      const filtered = list.filter((item) => item !== 'family' && item !== 'Family Emergency');
+
+      const result = await pool.query(
+        'UPDATE users SET disabled_emergencies = $1 WHERE id = $2 RETURNING disabled_emergencies',
+        [JSON.stringify(filtered), userId]
+      );
+      res.json({
+        success: true,
+        message: 'Emergency preferences updated successfully',
+        disabled_emergencies: result.rows[0]?.disabled_emergencies || []
       });
     } catch (error) {
       next(error);
@@ -1044,6 +1097,14 @@ const sosController = {
 
       if (role !== 'super_admin' && check.rows[0].association_id !== userAssocId) {
         return res.status(403).json({ success: false, message: 'Unauthorized' });
+      }
+
+      // Family Emergency contacts cannot be deleted by Admin
+      if (check.rows[0].contact_type === 'family' && role !== 'member') {
+        return res.status(403).json({
+          success: false,
+          message: 'Family emergency contacts cannot be deleted by Admin'
+        });
       }
 
       await pool.query('DELETE FROM sos_contacts WHERE id = $1', [contactId]);

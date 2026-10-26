@@ -26,7 +26,16 @@ export default function AdminSOSContacts() {
 
   // Configuration modal
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Add Single Emergency Contact form
+  const [addForm, setAddForm] = useState({
+    contact_type: 'medical',
+    name: '',
+    phone: '',
+    designation: '',
+  });
 
   // Form State: Medical, Police
   const [medicalForm, setMedicalForm] = useState({
@@ -189,6 +198,59 @@ export default function AdminSOSContacts() {
     setOtherServices((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Delete single emergency contact (All allowed except Family Emergency)
+  const handleDeleteContact = async (contactId, contactName, contactType) => {
+    if (contactType === 'family') {
+      toast.error('Family Emergency contacts cannot be deleted by Admin');
+      return;
+    }
+    if (!contactId) {
+      toast.error('This default contact has not been created yet');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to delete "${contactName || 'this emergency contact'}"?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/sos/contacts/${contactId}`);
+      toast.success(`${contactName || 'Emergency contact'} deleted successfully`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete emergency contact');
+    }
+  };
+
+  // Add single emergency contact
+  const handleAddSingleContact = async (e) => {
+    e.preventDefault();
+    if (!addForm.name.trim() || !addForm.phone.trim()) {
+      toast.error('Name and Phone number are required');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await api.post('/sos/contacts/single', {
+        contact_type: addForm.contact_type,
+        name: addForm.name.trim(),
+        phone: addForm.phone.trim(),
+        designation: addForm.designation.trim() || undefined,
+      });
+      toast.success('New emergency contact added successfully!');
+      setIsAddModalOpen(false);
+      setAddForm({
+        contact_type: 'medical',
+        name: '',
+        phone: '',
+        designation: '',
+      });
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add emergency contact');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Save all SOS contacts matching the SOS situations
   const handleSaveContacts = async (e) => {
     e.preventDefault();
@@ -286,17 +348,24 @@ export default function AdminSOSContacts() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={fetchData}
             title="Refresh contacts"
-            className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+            className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
           >
             <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600' : ''}`} />
           </button>
           <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition"
+          >
+            <HiPlus className="w-4 h-4" />
+            <span>+ Add Emergency Contact</span>
+          </button>
+          <button
             onClick={() => setIsConfigModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-lg shadow-sm transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition"
           >
             <HiPencilSquare className="w-4 h-4" />
             <span>Configure Contacts</span>
@@ -333,9 +402,21 @@ export default function AdminSOSContacts() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 flex items-center gap-1">
                     🏥 Medical Emergency
                   </span>
-                  <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
-                    🩺
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {medicalContact?.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteContact(medicalContact.id, medicalContact.name, 'medical')}
+                        title="Delete Medical Emergency Contact"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <HiTrash className="w-4 h-4 text-red-500" />
+                      </button>
+                    )}
+                    <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                      🩺
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -366,12 +447,24 @@ export default function AdminSOSContacts() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsConfigModalOpen(true)}
-                className="mt-4 w-full py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
-              >
-                Configure Medical
-              </button>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  onClick={() => setIsConfigModalOpen(true)}
+                  className="flex-1 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                >
+                  Configure Medical
+                </button>
+                {medicalContact?.id && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteContact(medicalContact.id, medicalContact.name, 'medical')}
+                    className="p-2 text-red-600 bg-rose-50 hover:bg-red-100 rounded-lg transition"
+                    title="Delete Medical Contact"
+                  >
+                    <HiTrash className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* 2. Police Emergency Contact */}
@@ -381,9 +474,21 @@ export default function AdminSOSContacts() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 flex items-center gap-1">
                     🚓 Police Emergency
                   </span>
-                  <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                    👮
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {policeContact?.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteContact(policeContact.id, policeContact.name, 'police')}
+                        title="Delete Police Emergency Contact"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <HiTrash className="w-4 h-4 text-red-500" />
+                      </button>
+                    )}
+                    <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                      👮
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -414,12 +519,24 @@ export default function AdminSOSContacts() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsConfigModalOpen(true)}
-                className="mt-4 w-full py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
-              >
-                Configure Police
-              </button>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  onClick={() => setIsConfigModalOpen(true)}
+                  className="flex-1 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                >
+                  Configure Police
+                </button>
+                {policeContact?.id && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteContact(policeContact.id, policeContact.name, 'police')}
+                    className="p-2 text-red-600 bg-blue-50 hover:bg-red-100 rounded-lg transition"
+                    title="Delete Police Contact"
+                  >
+                    <HiTrash className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* 3. Family Emergency Notice */}
@@ -429,8 +546,8 @@ export default function AdminSOSContacts() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
                     <HiHeart className="w-3 h-3 text-purple-600" /> Family Emergency
                   </span>
-                  <span className="text-[10px] font-bold text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-md">
-                    2 Contacts Allowed
+                  <span className="text-[10px] font-bold text-purple-700 bg-purple-100/70 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    🔒 Resident Personal • Protected
                   </span>
                 </div>
 
@@ -501,20 +618,30 @@ export default function AdminSOSContacts() {
                     className="p-4 rounded-xl border border-amber-200/70 bg-amber-50/20 hover:bg-amber-50/50 transition flex flex-col justify-between space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm flex-shrink-0">
                           {r.name.charAt(0) || 'M'}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
-                              Member #{idx + 1} {idx === 0 ? '(Mandatory)' : ''}
+                              Member #{idx + 1} {idx === 0 ? '(Lead)' : ''}
                             </span>
                           </div>
-                          <h4 className="text-sm font-bold text-gray-900 mt-0.5">{r.name}</h4>
-                          <p className="text-xs text-gray-500">{r.designation || 'Resident Responder'}</p>
+                          <h4 className="text-sm font-bold text-gray-900 mt-0.5 truncate">{r.name}</h4>
+                          <p className="text-xs text-gray-500 truncate">{r.designation || 'Resident Responder'}</p>
                         </div>
                       </div>
+                      {r.id && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteContact(r.id, r.name, 'member')}
+                          title="Delete Resident Responder"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0"
+                        >
+                          <HiTrash className="w-4 h-4 text-red-500" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="bg-white rounded-lg p-2.5 border border-amber-100 flex items-center justify-between text-xs">
@@ -572,18 +699,28 @@ export default function AdminSOSContacts() {
                     className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition flex flex-col justify-between space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-sm">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-sm flex-shrink-0">
                           {idx === 0 ? '🔥' : '⚠️'}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-900">
                             Service #{idx + 1}
                           </span>
-                          <h4 className="text-sm font-bold text-gray-900 mt-0.5">{o.name}</h4>
-                          <p className="text-xs text-gray-500">{o.designation || 'Emergency Helpline'}</p>
+                          <h4 className="text-sm font-bold text-gray-900 mt-0.5 truncate">{o.name}</h4>
+                          <p className="text-xs text-gray-500 truncate">{o.designation || 'Emergency Helpline'}</p>
                         </div>
                       </div>
+                      {o.id && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteContact(o.id, o.name, 'other')}
+                          title="Delete Emergency Helpline"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0"
+                        >
+                          <HiTrash className="w-4 h-4 text-red-500" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="bg-white rounded-lg p-2.5 border border-slate-200 flex items-center justify-between text-xs">
@@ -929,6 +1066,92 @@ export default function AdminSOSContacts() {
             >
               {submitting && <HiArrowPath className="w-3.5 h-3.5 animate-spin" />}
               <span>Save Emergency Contacts</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Add Single Emergency Contact */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="➕ Add Emergency Contact"
+        size="md"
+      >
+        <form onSubmit={handleAddSingleContact} className="space-y-4 py-1">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Emergency Category / Type *
+            </label>
+            <select
+              value={addForm.contact_type}
+              onChange={(e) => setAddForm({ ...addForm, contact_type: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            >
+              <option value="medical">🏥 Medical Emergency (Ambulance / Hospital / Doctor)</option>
+              <option value="police">🚓 Police Emergency (Station / Security / Patrol)</option>
+              <option value="member">🏡 Resident Emergency Responder (President / Secretary)</option>
+              <option value="fire">🔥 Fire Outbreak & Rescue (Fire Station 101)</option>
+              <option value="other">⚠️ Other Helpline (Gate Security, EB, Ambulance, Snake, etc.)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Contact / Service Name *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. City General Hospital or Gate 1 Guard"
+              value={addForm.name}
+              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Phone Number / Hotline *
+            </label>
+            <input
+              type="tel"
+              required
+              placeholder="e.g. 108 or 9876543210"
+              value={addForm.phone}
+              onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Designation / Role / Instructions
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 24x7 Emergency Room, Main Gate Intercom"
+              value={addForm.designation}
+              onChange={(e) => setAddForm({ ...addForm, designation: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2"
+            >
+              {submitting && <HiArrowPath className="w-3.5 h-3.5 animate-spin" />}
+              <span>Save Emergency Contact</span>
             </button>
           </div>
         </form>
