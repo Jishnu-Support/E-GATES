@@ -249,22 +249,22 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Medical Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-white hover:from-rose-100 hover:to-rose-50 hover:border-rose-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-50 to-white dark:from-rose-950/40 dark:to-slate-900 hover:from-rose-100 hover:to-rose-50 dark:hover:from-rose-900/50 dark:hover:to-slate-850 hover:border-rose-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                   🏥
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-rose-950 truncate">
+                  <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
                     Medical Emergency
                   </h4>
-                  <p className="text-[11px] text-rose-700 font-medium truncate">
+                  <p className="text-[11px] text-rose-700 dark:text-rose-300 font-medium truncate">
                     Ambulance (108), Hospital, Emergency Doctor
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-xl">
+              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100/80 dark:bg-rose-950/80 px-2.5 py-1 rounded-xl">
                 <span>Call & WhatsApp</span>
                 <span className="text-xs">⚡</span>
               </div>
@@ -275,39 +275,39 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Police Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 hover:to-blue-50 hover:border-blue-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/40 dark:to-slate-900 hover:from-blue-100 hover:to-blue-50 dark:hover:from-blue-900/50 dark:hover:to-slate-850 hover:border-blue-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                   🚓
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-blue-950 truncate">
+                  <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
                     Police Emergency
                   </h4>
-                  <p className="text-[11px] text-blue-700 font-medium truncate">
+                  <p className="text-[11px] text-blue-700 dark:text-blue-300 font-medium truncate">
                     Police Station (100), Intruder, Layout Security
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded-xl">
+              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/80 dark:bg-blue-950/80 px-2.5 py-1 rounded-xl">
                 <span>Call & WhatsApp</span>
                 <span className="text-xs">⚡</span>
               </div>
             </button>
 
             {/* 3. Family Emergency (2 Contacts with User Choice) */}
-            <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-r from-purple-50/80 to-white p-3.5 space-y-2.5 transition">
+            <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-900/60 bg-gradient-to-r from-purple-50/80 to-white dark:from-purple-950/40 dark:to-slate-900 p-3.5 space-y-2.5 transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                     👨‍👩‍👧‍👦
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-purple-950 truncate">
+                    <h4 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 truncate">
                       Family Emergency
                     </h4>
-                    <p className="text-[11px] text-purple-700 font-medium truncate">
+                    <p className="text-[11px] text-purple-700 dark:text-purple-300 font-medium truncate">
                       {familyContacts.length > 1
                         ? `2 Family Contacts (${familyContacts[0].name} & ${familyContacts[1].name})`
                         : familyContacts.length === 1
@@ -318,7 +318,7 @@ export default function FloatingSOS() {
                 </div>
 
                 {familyContacts.length > 1 && (
-                  <span className="text-[10px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/80 px-2 py-0.5 rounded-full">
                     Choose Contact
                   </span>
                 )}
@@ -380,39 +380,39 @@ export default function FloatingSOS() {
               type="button"
               onClick={() => handleTriggerWithAction('Resident Emergency')}
               disabled={isSending}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-white hover:from-amber-100 hover:to-amber-50 hover:border-amber-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-amber-200 dark:border-amber-900/60 bg-gradient-to-r from-amber-50 to-white dark:from-amber-950/40 dark:to-slate-900 hover:from-amber-100 hover:to-amber-50 dark:hover:from-amber-900/50 dark:hover:to-slate-850 hover:border-amber-400 transition transform active:scale-[0.98] cursor-pointer shadow-xs text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-11 h-11 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                   🏘️
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-amber-950 truncate">
+                  <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
                     Resident Emergency
                   </h4>
-                  <p className="text-[11px] text-amber-700 font-medium truncate">
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium truncate">
                     Association President, Secretary & Responders ({residentRespondersList.length} Active)
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-xl">
+              <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl">
                 <span>Call & WhatsApp</span>
                 <span className="text-xs">⚡</span>
               </div>
             </button>
 
             {/* 5. Other Emergency (Fire, Security Gate, EB, Multi-Service Choice) */}
-            <div className="rounded-2xl border-2 border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5 transition">
+            <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/80 p-3.5 space-y-2.5 transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-slate-700 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                     🔥
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-slate-900">
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
                       Other Emergency & Fire
                     </h4>
-                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                       Fire (101), Security Gate, EB, Snake, or Custom issue
                     </p>
                   </div>
@@ -421,7 +421,7 @@ export default function FloatingSOS() {
                 <button
                   type="button"
                   onClick={() => setShowOtherInput(!showOtherInput)}
-                  className="text-xs font-bold text-primary-600 hover:text-primary-800 underline cursor-pointer"
+                  className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 underline cursor-pointer"
                 >
                   {showOtherInput ? 'Hide Box' : '+ Add Details'}
                 </button>

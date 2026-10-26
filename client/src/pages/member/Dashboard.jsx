@@ -200,20 +200,20 @@ export default function MemberDashboard() {
   return (
     <div className="space-y-6">
       {/* Association Name Prominently Displayed in the Middle / Center */}
-      <div className="text-center py-4 sm:py-5 px-3 sm:px-6 bg-gradient-to-b from-blue-50/80 to-white rounded-2xl sm:rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-xs font-bold uppercase tracking-wider mb-2">
+      <div className="text-center py-4 sm:py-5 px-3 sm:px-6 bg-gradient-to-b from-blue-50/90 via-blue-50/40 to-white dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 rounded-2xl sm:rounded-3xl border border-blue-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 border border-primary-200/60 dark:border-primary-800/60 text-xs font-bold uppercase tracking-wider mb-2 shadow-xs">
           <HiBuildingOffice2 className="w-4 h-4" />
           <span>Resident Portal</span>
         </div>
 
-        <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight break-words">
+        <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight break-words">
           {assocName}
         </h1>
 
-        <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-lg mx-auto">
-          Welcome back, <strong className="text-gray-800">{user?.name}</strong>{' '}
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1 max-w-lg mx-auto">
+          Welcome back, <strong className="text-gray-800 dark:text-white font-bold">{user?.name}</strong>{' '}
           {user?.door_no ? `(Door #${user.door_no})` : ''} • Member Code:{' '}
-          <span className="font-mono font-bold text-primary-700">{user?.member_code || 'PENDING'}</span>
+          <span className="font-mono font-bold text-primary-700 dark:text-cyan-400">{user?.member_code || 'PENDING'}</span>
         </p>
       </div>
 

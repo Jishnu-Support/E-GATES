@@ -192,6 +192,39 @@
     border-color: rgba(239, 68, 68, 0.3) !important;
   }
 
+  /* Universal Dark Mode Gradients: ensure light gradients gracefully darken in dark mode */
+  .dark .to-white {
+    --tw-gradient-to: #0f172a var(--tw-gradient-to-position) !important;
+  }
+  .dark .from-blue-50,
+  .dark .from-blue-50\/80,
+  .dark .from-blue-50\/90 {
+    --tw-gradient-from: #1e293b var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .dark .from-purple-50,
+  .dark .from-purple-50\/80 {
+    --tw-gradient-from: #2e1065 var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .dark .from-rose-50,
+  .dark .from-rose-50\/80 {
+    --tw-gradient-from: #4c0519 var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .dark .from-amber-50,
+  .dark .from-amber-50\/80 {
+    --tw-gradient-from: #451a03 var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .dark .border-blue-100,
+  .dark .border-blue-200 {
+    border-color: #334155 !important;
+  }
+  .dark .bg-primary-100 {
+    background-color: rgba(14, 116, 144, 0.3) !important;
+  }
+
   /* Preserve White Text and White Logo Container */
   .dark .text-white {
     color: #ffffff !important;
