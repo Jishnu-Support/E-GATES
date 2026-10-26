@@ -633,15 +633,24 @@ const sosController = {
         [targetAssocId]
       );
 
-      // 2. If a member or specific user is calling, get their personal family emergency contacts (up to 2)
+      // 2. If a member or admin is calling, get family emergency contacts
       let familyContacts = [];
-      const targetUserId = role === 'member' ? currentUserId : (req.query.user_id ? parseInt(req.query.user_id, 10) : null);
-      if (targetUserId) {
+      if (role === 'member') {
         const famRes = await pool.query(
           `SELECT sc.* FROM sos_contacts sc
            WHERE sc.user_id = $1 AND sc.contact_type = 'family'
            ORDER BY sc.id ASC LIMIT 2`,
-          [targetUserId]
+          [currentUserId]
+        );
+        familyContacts = famRes.rows;
+      } else {
+        const famRes = await pool.query(
+          `SELECT sc.*, u.name as linked_user_name, u.door_no as linked_user_door
+           FROM sos_contacts sc
+           LEFT JOIN users u ON sc.user_id = u.id
+           WHERE sc.association_id = $1 AND sc.contact_type = 'family'
+           ORDER BY sc.id ASC`,
+          [targetAssocId]
         );
         familyContacts = famRes.rows;
       }
@@ -939,19 +948,29 @@ const sosController = {
         });
       }
 
+      // Family Emergency contacts cannot be edited by Admin
+      if (existing.contact_type === 'family' && role !== 'member') {
+        return res.status(403).json({
+          success: false,
+          message: 'Family emergency contacts cannot be edited by Admin'
+        });
+      }
+
       const updateQuery = `
         UPDATE sos_contacts
         SET name = COALESCE($1, name),
             phone = COALESCE($2, phone),
             designation = COALESCE($3, designation),
-            user_id = COALESCE($4, user_id)
-        WHERE id = $5
+            contact_type = COALESCE($4, contact_type),
+            user_id = COALESCE($5, user_id)
+        WHERE id = $6
         RETURNING *
       `;
       const result = await pool.query(updateQuery, [
         name ? name.trim() : null,
         phone ? phone.trim() : null,
         designation ? designation.trim() : null,
+        req.body.contact_type ? req.body.contact_type.trim() : null,
         user_id ? parseInt(user_id, 10) : null,
         contactId
       ]);

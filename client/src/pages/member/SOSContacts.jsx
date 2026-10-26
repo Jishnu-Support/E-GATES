@@ -1,21 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   HiShieldExclamation,
   HiPhone,
-  HiUser,
-  HiHeart,
   HiPencilSquare,
-  HiCheckCircle,
-  HiArrowPath,
-  HiExclamationTriangle,
   HiTrash,
   HiPlus,
-  HiBuildingOffice2,
-  HiMapPin,
-  HiShieldCheck,
-  HiFire,
-  HiUserGroup,
+  HiArrowPath,
   HiChatBubbleOvalLeftEllipsis,
+  HiLockClosed,
+  HiMagnifyingGlass,
+  HiMapPin,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,19 +18,40 @@ import api from '../../services/api';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
+const EMERGENCY_TYPE_INFO = {
+  family: { label: 'Family Emergency', icon: '👨‍👩‍👧', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  medical: { label: 'Medical Emergency', icon: '🏥', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  ambulance: { label: 'Medical Emergency', icon: '🚑', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  police: { label: 'Police Emergency', icon: '🚓', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  member: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  resident: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  fire: { label: 'Fire Emergency', icon: '🔥', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  other: { label: 'Emergency Helpline', icon: '⚠️', color: 'bg-slate-100 text-slate-800 border-slate-200' },
+};
+
+const RELATION_PRESETS = [
+  'Spouse',
+  'Father',
+  'Mother',
+  'Son',
+  'Daughter',
+  'Brother',
+  'Sister',
+  'Guardian',
+  'Relative / Neighbor',
+];
+
 export default function MemberSOSContacts() {
   const { user } = useAuth();
-  const { triggerSOS, isSending, cancelSOS, showCancel, cancelCountdown, resetSOS, isTriggered, lastAlert, getCoordinates } = useSOS();
+  const { getCoordinates } = useSOS();
 
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
-  const [medicalContact, setMedicalContact] = useState(null);
-  const [policeContact, setPoliceContact] = useState(null);
-  const [memberResponders, setMemberResponders] = useState([]);
-  const [otherContactsList, setOtherContactsList] = useState([]);
   const [familyContacts, setFamilyContacts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
-  // Disabled Emergency Preferences (User choice for all emergencies EXCEPT family)
+  // Disabled Emergencies Preferences (Resident choice for non-family)
   const [disabledEmergencies, setDisabledEmergencies] = useState(() => {
     try {
       const saved = localStorage.getItem('disabled_emergencies');
@@ -46,107 +61,31 @@ export default function MemberSOSContacts() {
     }
   });
 
-  const handleToggleEmergency = async (type, displayName) => {
-    if (type === 'family' || type === 'Family Emergency') {
-      toast.error('Family Emergency is protected and cannot be disabled');
-      return;
-    }
-
-    const isCurrentlyDisabled = disabledEmergencies.includes(type);
-    const updated = isCurrentlyDisabled
-      ? disabledEmergencies.filter((t) => t !== type)
-      : [...disabledEmergencies, type];
-
-    setDisabledEmergencies(updated);
-    try {
-      localStorage.setItem('disabled_emergencies', JSON.stringify(updated));
-      await api.put('/sos/preferences', { disabled_emergencies: updated });
-      toast.success(
-        isCurrentlyDisabled
-          ? `${displayName} enabled for your portal`
-          : `${displayName} disabled for your portal`
-      );
-    } catch (err) {
-      console.error('Failed to sync emergency preferences:', err);
-    }
-  };
-
-  // Edit Family Contacts Modal State (Up to 2 contacts)
+  // Family Add / Edit Modal State
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
+  const [editingFamily, setEditingFamily] = useState(null);
+  const [familyFormData, setFamilyFormData] = useState({
+    name: '',
+    phone: '',
+    designation: 'Spouse',
+  });
   const [submittingFamily, setSubmittingFamily] = useState(false);
-  const [familyForms, setFamilyForms] = useState([
-    { name: '', phone: '', designation: 'Spouse' },
-    { name: '', phone: '', designation: 'Father' },
-  ]);
-
-  const relationPresets = [
-    'Spouse',
-    'Father',
-    'Mother',
-    'Son',
-    'Daughter',
-    'Brother',
-    'Sister',
-    'Guardian',
-    'Relative / Neighbor',
-  ];
 
   const fetchContacts = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get('/sos/contacts');
-      const rawAll = res.data?.data || [];
+      const all = res.data?.data || [];
       const defaults = res.data?.defaultContacts || [];
-
-      setContacts(rawAll);
-
-      // Parse up to 2 family contacts
       const fams = res.data?.familyContacts || (res.data?.familyContact ? [res.data.familyContact] : []);
-      setFamilyContacts(fams);
 
-      if (fams.length > 0) {
-        setFamilyForms([
-          {
-            id: fams[0]?.id || null,
-            name: fams[0]?.name || '',
-            phone: fams[0]?.phone || '',
-            designation: fams[0]?.designation || 'Spouse',
-          },
-          {
-            id: fams[1]?.id || null,
-            name: fams[1]?.name || '',
-            phone: fams[1]?.phone || '',
-            designation: fams[1]?.designation || 'Father',
-          },
-        ]);
-      } else {
-        setFamilyForms([
-          { name: '', phone: '', designation: 'Spouse' },
-          { name: '', phone: '', designation: 'Father' },
-        ]);
-      }
+      setFamilyContacts(Array.isArray(fams) ? fams : []);
 
-      // Parse medical contact
-      const med = res.data?.medicalContact || defaults.find(
-        (c) => c.contact_type === 'medical' || c.contact_type === 'ambulance' || c.designation?.toLowerCase().includes('medical') || c.designation?.toLowerCase().includes('ambulance')
-      ) || null;
-      setMedicalContact(med);
+      // Combine family contacts and association default contacts into one unified list
+      // Family contacts appear first so resident easily sees and manages them
+      const unified = [...fams, ...defaults.filter((c) => c.contact_type !== 'family')];
+      setContacts(unified);
 
-      // Parse police contact
-      const pol = res.data?.policeContact || defaults.find((c) => c.contact_type === 'police') || null;
-      setPoliceContact(pol);
-
-      // Parse resident member responders
-      const members = res.data?.memberContacts || defaults.filter(
-        (c) => c.contact_type === 'member' || c.contact_type === 'resident'
-      );
-      setMemberResponders(members);
-
-      // Parse other emergency services (Fire, Security Gate, EB Breakdown, etc.)
-      const oths = res.data?.otherContacts || defaults.filter((c) => c.contact_type === 'other' || c.contact_type === 'fire');
-      setOtherContactsList(oths);
-
-      // Parse user's disabled emergencies preferences
       if (res.data?.disabled_emergencies && Array.isArray(res.data.disabled_emergencies)) {
         setDisabledEmergencies(res.data.disabled_emergencies);
         try {
@@ -165,51 +104,124 @@ export default function MemberSOSContacts() {
     fetchContacts();
   }, [fetchContacts]);
 
-  const handleOpenAddEditFamily = () => {
+  // Toggle Disable / Enable for non-family emergency
+  const handleToggleEmergency = async (typeKey, displayName) => {
+    if (typeKey === 'family' || typeKey === 'Family Emergency') {
+      toast.error('Family Emergency is your personal contact and cannot be disabled');
+      return;
+    }
+
+    const isCurrentlyDisabled = disabledEmergencies.includes(typeKey);
+    const updated = isCurrentlyDisabled
+      ? disabledEmergencies.filter((t) => t !== typeKey)
+      : [...disabledEmergencies, typeKey];
+
+    setDisabledEmergencies(updated);
+    try {
+      localStorage.setItem('disabled_emergencies', JSON.stringify(updated));
+      await api.put('/sos/preferences', { disabled_emergencies: updated });
+      toast.success(
+        isCurrentlyDisabled
+          ? `${displayName} enabled for your portal`
+          : `${displayName} disabled for your portal`
+      );
+    } catch (err) {
+      console.error('Failed to sync emergency preferences:', err);
+    }
+  };
+
+  // Open Family Modal for Add
+  const handleOpenAddFamily = () => {
+    if (familyContacts.length >= 2) {
+      toast.error('You can have up to 2 family emergency contacts.');
+      return;
+    }
+    setEditingFamily(null);
+    setFamilyFormData({
+      name: '',
+      phone: '',
+      designation: familyContacts.length === 0 ? 'Spouse' : 'Father',
+    });
     setIsFamilyModalOpen(true);
   };
 
+  // Open Family Modal for Edit
+  const handleOpenEditFamily = (fContact) => {
+    setEditingFamily(fContact);
+    setFamilyFormData({
+      name: fContact.name || '',
+      phone: fContact.phone || '',
+      designation: fContact.designation || 'Family Kin',
+    });
+    setIsFamilyModalOpen(true);
+  };
+
+  // Save Family Contact
   const handleSaveFamily = async (e) => {
     e.preventDefault();
-
-    const validList = familyForms
-      .filter((c) => c.name && c.phone && c.name.trim() && c.phone.trim())
-      .map((c) => ({
-        name: c.name.trim(),
-        phone: c.phone.trim(),
-        designation: (c.designation || 'Family / Relative').trim(),
-      }));
-
-    if (validList.length === 0) {
-      toast.error('Please enter at least one family contact (Name and Phone)');
+    if (!familyFormData.name.trim() || !familyFormData.phone.trim()) {
+      toast.error('Please enter family member name and phone number');
       return;
     }
 
     try {
       setSubmittingFamily(true);
-      const res = await api.post('/sos/family-contact', { contacts: validList });
-      toast.success(res.data?.message || 'Family emergency contacts saved successfully!');
+      let updatedList = [];
+
+      if (editingFamily?.id) {
+        // Update existing family contact in list
+        updatedList = familyContacts.map((f) =>
+          f.id === editingFamily.id
+            ? {
+                ...f,
+                name: familyFormData.name.trim(),
+                phone: familyFormData.phone.trim(),
+                designation: familyFormData.designation.trim() || 'Family Kin',
+              }
+            : f
+        );
+      } else {
+        // Add new contact to list
+        updatedList = [
+          ...familyContacts,
+          {
+            name: familyFormData.name.trim(),
+            phone: familyFormData.phone.trim(),
+            designation: familyFormData.designation.trim() || 'Family Kin',
+          },
+        ].slice(0, 2);
+      }
+
+      await api.post('/sos/family-contacts', { contacts: updatedList });
+      toast.success(
+        editingFamily
+          ? `Family contact "${familyFormData.name}" updated successfully!`
+          : `Family contact "${familyFormData.name}" added successfully!`
+      );
       setIsFamilyModalOpen(false);
       fetchContacts();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to save family emergency contacts');
+      toast.error(err.response?.data?.message || 'Failed to save family emergency contact');
     } finally {
       setSubmittingFamily(false);
     }
   };
 
-  const handleDeleteSingleFamily = async (contactId) => {
-    if (!window.confirm('Are you sure you want to remove this family emergency contact?')) return;
+  // Delete Single Family Contact
+  const handleDeleteFamily = async (contactId, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name || 'this family contact'}?`)) {
+      return;
+    }
     try {
       await api.delete(`/sos/family-contact/${contactId}`);
       toast.success('Family emergency contact removed');
       fetchContacts();
     } catch (err) {
-      toast.error('Failed to remove family contact');
+      toast.error(err.response?.data?.message || 'Failed to remove family contact');
     }
   };
 
-  // Compile resident address
+  // Compile Address
   const compileAddress = () => {
     const parts = [];
     if (user?.door_no) parts.push(`Door/Flat #${user.door_no}`);
@@ -217,32 +229,30 @@ export default function MemberSOSContacts() {
     if (user?.layout_name) parts.push(`Layout: ${user.layout_name}`);
     if (user?.taluk) parts.push(`Taluk: ${user.taluk}`);
     if (user?.district) parts.push(`District: ${user.district}`);
+    if (user?.state) parts.push(`State: ${user.state || 'Tamil Nadu'}`);
     return parts.length > 0 ? parts.join(', ') : 'Registered Association Residence';
   };
 
-  const formatWaPhone = (phoneStr) => {
-    if (!phoneStr) return '';
-    const digits = String(phoneStr).replace(/\D/g, '');
-    if (digits.length === 10) return `91${digits}`;
-    return digits;
-  };
-
-  const openWhatsAppWithLocation = async (phone, recipientRole = 'Emergency Responder') => {
-    if (!phone) {
-      toast.error('No phone number available for WhatsApp');
+  // WhatsApp with Live GPS & Address
+  const openWhatsAppWithLocation = async (phone, responderName) => {
+    const clean = String(phone || '').replace(/\D/g, '');
+    if (!clean) {
+      toast.error('Invalid phone number');
       return;
     }
-    const cleanPhone = formatWaPhone(phone);
+    const cleanPhone = clean.length === 10 ? `91${clean}` : clean;
+
     let coords = { latitude: null, longitude: null };
     try {
       coords = await getCoordinates();
     } catch (e) {
-      console.warn('Fast GPS coords lookup fallback:', e);
+      console.warn('GPS location lookup:', e);
     }
 
-    const mapsLink = (coords.latitude && coords.longitude)
-      ? `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`
-      : 'Location Coordinates Pending';
+    const mapsLink =
+      coords.latitude && coords.longitude
+        ? `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`
+        : 'Location Coordinates Pending';
 
     const msg = [
       `🚨 *EMERGENCY SOS ALERT!*`,
@@ -252,788 +262,327 @@ export default function MemberSOSContacts() {
       `*ATTENTION:* Urgent assistance required!`,
     ].join('\n');
 
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
+  // Filtered contacts list
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((c) => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch =
+        !q ||
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.includes(q) ||
+        c.designation?.toLowerCase().includes(q) ||
+        c.contact_type?.toLowerCase().includes(q);
+
+      const matchType = filterType === 'all' || c.contact_type === filterType;
+      return matchSearch && matchType;
+    });
+  }, [contacts, searchQuery, filterType]);
+
+  const cleanPhone = (p) => String(p || '').replace(/\D/g, '');
+
   return (
-    <div className="space-y-6">
-      {/* 1. Page Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-700 via-rose-700 to-amber-700 p-6 sm:p-8 text-white shadow-xl shadow-red-950/20">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-rose-200 text-xs font-semibold">
-              <HiShieldExclamation className="w-4 h-4 text-rose-400" />
-              <span>SOS Emergency Preparedness & Contacts</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Emergency SOS Contacts
-            </h1>
-            <p className="text-rose-100 text-xs sm:text-sm leading-relaxed">
-              Contacts configured to respond to your emergencies: <strong>Medical (108)</strong>, <strong>Police (100)</strong>, <strong>2 Family Contacts</strong>, <strong>Resident Responders</strong>, and <strong>Fire & Helplines</strong>.
-            </p>
-          </div>
+    <div className="space-y-5">
+      {/* Clean, Simple Header */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+            <HiShieldExclamation className="w-7 h-7 text-red-600" />
+            <span>Emergency SOS Contacts</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Personal family contacts and community emergency responders.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={fetchContacts}
+            title="Refresh"
+            className="p-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin text-primary-600' : ''}`} />
+          </button>
+          {familyContacts.length < 2 && (
             <button
-              type="button"
-              onClick={handleOpenAddEditFamily}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-rose-950/40 transition"
+              onClick={handleOpenAddFamily}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer"
             >
-              <HiPencilSquare className="w-4 h-4" />
-              <span>{familyContacts.length > 0 ? 'Manage 2 Family Contacts' : '+ Add Family Contacts'}</span>
+              <HiPlus className="w-4 h-4" />
+              <span>+ Add Family Contact ({familyContacts.length}/2)</span>
             </button>
-            <button
-              type="button"
-              onClick={fetchContacts}
-              title="Refresh Contacts"
-              className="p-2.5 bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 rounded-2xl transition text-white"
-            >
-              <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* 2. Notice Explaining Rules */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <HiShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="font-bold text-gray-900 text-sm">Synchronized SOS Emergency Categories</p>
-            <p className="text-gray-500 mt-0.5 leading-relaxed">
-              • <strong>Family Emergency (2 Contacts):</strong> You can configure 2 personal family members and choose either one when triggering SOS.<br />
-              • <strong>Medical & Police:</strong> Hospital (108) and Police Station (100) configured by Administration.<br />
-              • <strong>Resident Responders:</strong> Community guardians (President, Secretary) alerted on Resident Emergency.<br />
-              • <strong>Other Services:</strong> Public safety helplines including Fire & Rescue (101) and Security Gate.
-            </p>
-          </div>
+      {/* Search & Filter Bar */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <HiMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search name, phone, emergency..."
+            className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          {[
+            { key: 'all', label: 'All Contacts' },
+            { key: 'family', label: 'Family' },
+            { key: 'medical', label: 'Medical' },
+            { key: 'police', label: 'Police' },
+            { key: 'member', label: 'Responders' },
+            { key: 'fire', label: 'Fire' },
+            { key: 'other', label: 'Other' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilterType(tab.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                filterType === tab.key
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* Unified Contacts Grid */}
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-gray-400 gap-3 bg-white rounded-3xl border border-gray-100">
-          <LoadingSpinner message="Loading emergency responders..." />
+        <div className="py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 text-center">
+          <LoadingSpinner message="Loading emergency contacts..." />
+        </div>
+      ) : filteredContacts.length === 0 ? (
+        <div className="py-16 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-400 flex items-center justify-center text-xl mx-auto">
+            📞
+          </div>
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+            No contacts found matching filter.
+          </p>
+          {familyContacts.length < 2 && (
+            <button
+              onClick={handleOpenAddFamily}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold shadow-xs hover:bg-purple-700 transition"
+            >
+              <HiPlus className="w-4 h-4" />
+              <span>Add Family Member</span>
+            </button>
+          )}
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* SECTION A: Primary Emergency Contacts Grid (Medical, Police) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* 1. Medical Emergency */}
-            <div className={`bg-white rounded-2xl p-5 border-2 shadow-sm flex flex-col justify-between transition ${
-              disabledEmergencies.includes('medical')
-                ? 'border-gray-200 opacity-75 bg-gray-50/50'
-                : 'border-rose-100 hover:border-rose-300'
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                      disabledEmergencies.includes('medical')
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'bg-rose-100 text-rose-800'
-                    }`}>
-                      🏥 Medical Emergency
-                    </span>
-                    {disabledEmergencies.includes('medical') && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                        DISABLED BY YOU
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleEmergency('medical', 'Medical Emergency')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                        disabledEmergencies.includes('medical')
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
-                      }`}
-                    >
-                      {disabledEmergencies.includes('medical') ? '✓ Enable' : '✕ Disable'}
-                    </button>
-                    <span className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
-                      🩺
-                    </span>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredContacts.map((contact) => {
+            const isFamily = contact.contact_type === 'family';
+            const typeInfo = EMERGENCY_TYPE_INFO[contact.contact_type] || EMERGENCY_TYPE_INFO.other;
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold">
-                      +
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 truncate">
-                        {medicalContact ? medicalContact.name : '108 Ambulance / Emergency Medical'}
-                      </h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {medicalContact ? medicalContact.designation : 'Ambulance (108), Hospital, Doctor'}
-                      </p>
-                    </div>
-                  </div>
+            // Map contact_type to preference key for disable toggle
+            const prefKey =
+              contact.contact_type === 'medical' || contact.contact_type === 'ambulance' ? 'medical'
+              : contact.contact_type === 'police' ? 'police'
+              : contact.contact_type === 'member' || contact.contact_type === 'resident' ? 'resident'
+              : contact.contact_type === 'family' ? 'family'
+              : 'other';
 
-                  <div className="bg-rose-50/50 rounded-xl p-3 border border-rose-100/70">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Emergency Phone</span>
-                    <a
-                      href={`tel:${medicalContact ? medicalContact.phone : '108'}`}
-                      className="text-xs font-bold text-rose-700 hover:underline flex items-center gap-1.5"
-                    >
-                      <HiPhone className="w-3.5 h-3.5 text-rose-600" />
-                      <span>{medicalContact ? medicalContact.phone : '108 (National Ambulance)'}</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
+            const isDisabled = !isFamily && disabledEmergencies.includes(prefKey);
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <a
-                  href={`tel:${medicalContact ? medicalContact.phone : '108'}`}
-                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                >
-                  <HiPhone className="w-3.5 h-3.5" />
-                  <span>Call</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => openWhatsAppWithLocation(medicalContact?.phone || '108', 'Medical Responder')}
-                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 2. Police Emergency */}
-            <div className={`bg-white rounded-2xl p-5 border-2 shadow-sm flex flex-col justify-between transition ${
-              disabledEmergencies.includes('police')
-                ? 'border-gray-200 opacity-75 bg-gray-50/50'
-                : 'border-blue-100 hover:border-blue-300'
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                      disabledEmergencies.includes('police')
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      🚓 Police Emergency
-                    </span>
-                    {disabledEmergencies.includes('police') && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                        DISABLED BY YOU
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleEmergency('police', 'Police Emergency')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                        disabledEmergencies.includes('police')
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
-                      }`}
-                    >
-                      {disabledEmergencies.includes('police') ? '✓ Enable' : '✕ Disable'}
-                    </button>
-                    <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                      👮
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-base font-bold">
-                      P
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 truncate">
-                        {policeContact ? policeContact.name : 'Local Police Station (100)'}
-                      </h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {policeContact ? policeContact.designation : 'Police Station (100), Intruder, Layout Security'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/70">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Police Hotline</span>
-                    <a
-                      href={`tel:${policeContact ? policeContact.phone : '100'}`}
-                      className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1.5"
-                    >
-                      <HiPhone className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{policeContact ? policeContact.phone : '100 (Police)'}</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <a
-                  href={`tel:${policeContact ? policeContact.phone : '100'}`}
-                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                >
-                  <HiPhone className="w-3.5 h-3.5" />
-                  <span>Call</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => openWhatsAppWithLocation(policeContact?.phone || '100', 'Police Station')}
-                  className="inline-flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION B: Personal Family Emergency Contacts (2 Contacts Allowed) */}
-          <div className="bg-white rounded-3xl p-6 border-2 border-purple-200/90 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xl">👨‍👩‍👧</span>
-                  <h2 className="text-base font-bold text-gray-900">
-                    Personal Family Emergency Contacts ({familyContacts.length}/2 Configured)
-                  </h2>
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
-                    🔒 Always Active • Protected (Cannot be disabled)
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Configure up to 2 personal family contacts. When you tap <strong>Family Emergency</strong>, you can choose which contact to call and WhatsApp.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleOpenAddEditFamily}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
-              >
-                <HiPencilSquare className="w-4 h-4" />
-                <span>{familyContacts.length > 0 ? 'Edit 2 Family Contacts' : '+ Add Family Contacts'}</span>
-              </button>
-            </div>
-
-            {familyContacts.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-400 italic">
-                No personal family contacts added yet. Click "+ Add Family Contacts" to configure Contact 1 & Contact 2.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {familyContacts.map((f, idx) => (
-                  <div
-                    key={f.id || idx}
-                    className="p-4 rounded-2xl border border-purple-200 bg-purple-50/20 hover:bg-purple-50/50 transition flex flex-col justify-between space-y-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-200 text-purple-900">
-                          Family Member #{idx + 1} {idx === 0 ? '(Primary)' : '(Secondary)'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSingleFamily(f.id)}
-                          title="Delete contact"
-                          className="p-1 text-gray-400 hover:text-red-600 transition"
-                        >
-                          <HiTrash className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-sm">
-                          {f.name.charAt(0) || 'F'}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-gray-900 truncate">{f.name}</h4>
-                          <p className="text-xs text-purple-700 font-semibold truncate">{f.designation || 'Family Kin'}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-purple-100 flex items-center justify-between text-xs">
-                        <span className="text-gray-500 font-medium">Mobile Phone:</span>
-                        <a
-                          href={`tel:${f.phone}`}
-                          className="font-bold text-purple-700 hover:underline flex items-center gap-1"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-purple-600" />
-                          <span>{f.phone}</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <a
-                        href={`tel:${f.phone}`}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiPhone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => openWhatsAppWithLocation(f.phone, f.name)}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {familyContacts.length === 1 && (
-                  <button
-                    type="button"
-                    onClick={handleOpenAddEditFamily}
-                    className="p-4 rounded-2xl border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/10 hover:bg-purple-50/30 transition flex flex-col items-center justify-center gap-2 text-purple-700 min-h-[140px]"
-                  >
-                    <HiPlus className="w-6 h-6" />
-                    <span className="text-xs font-bold">+ Add 2nd Family Emergency Contact</span>
-                    <span className="text-[11px] text-gray-400">(Father, Mother, Sibling, etc.)</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* SECTION C: Resident Emergency Responders (Multi-Member List) */}
-          <div className={`bg-white rounded-3xl p-6 border-2 shadow-sm space-y-4 transition ${
-            disabledEmergencies.includes('resident')
-              ? 'border-gray-200 opacity-75 bg-gray-50/50'
-              : 'border-amber-200/80'
-          }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xl">🏡</span>
-                  <h2 className="text-base font-bold text-gray-900">
-                    Resident Emergency Responders ({memberResponders.length})
-                  </h2>
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                    disabledEmergencies.includes('resident')
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {disabledEmergencies.includes('resident') ? 'DISABLED BY YOU' : 'Community Guardians'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Neighbors, Association President, and Executive Members alerted when you trigger a <strong>Resident Emergency</strong>.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleToggleEmergency('resident', 'Resident Emergency')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  disabledEmergencies.includes('resident')
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+            return (
+              <div
+                key={contact.id || `${contact.contact_type}-${contact.phone}`}
+                className={`bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between transition space-y-3 ${
+                  isDisabled
+                    ? 'border-gray-200 dark:border-slate-800 opacity-70 bg-gray-50/50 dark:bg-slate-950/40'
+                    : isFamily
+                    ? 'border-purple-200 dark:border-purple-900/60 hover:border-purple-400'
+                    : 'border-gray-200/80 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'
                 }`}
               >
-                {disabledEmergencies.includes('resident') ? '✓ Enable Resident Emergency' : '✕ Disable Resident Emergency'}
-              </button>
-            </div>
-
-            {memberResponders.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-400 italic">
-                No resident responders configured by Association Admin yet.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {memberResponders.map((r, idx) => (
-                  <div
-                    key={r.id || idx}
-                    className="p-4 rounded-2xl border border-amber-200/70 bg-amber-50/20 hover:bg-amber-50/50 transition flex flex-col justify-between space-y-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900">
-                          Responder #{idx + 1} {idx === 0 ? '(Lead)' : ''}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
-                          {r.name?.charAt(0) || 'R'}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-gray-900 truncate">{r.name}</h4>
-                          <p className="text-xs text-gray-500 truncate">{r.designation || 'Resident Responder'}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-amber-100 flex items-center justify-between text-xs">
-                        <span className="text-gray-400 font-medium">Emergency Phone:</span>
-                        <a
-                          href={`tel:${r.phone}`}
-                          className="font-bold text-amber-800 hover:underline flex items-center gap-1"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{r.phone}</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <a
-                        href={`tel:${r.phone}`}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiPhone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => openWhatsAppWithLocation(r.phone, r.name)}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* SECTION D: Other Emergency Helplines (Fire, Security Gate, EB, Snake, etc.) */}
-          {otherContactsList.length > 0 && (
-            <div className={`bg-white rounded-3xl p-6 border-2 shadow-sm space-y-4 transition ${
-              disabledEmergencies.includes('other')
-                ? 'border-gray-200 opacity-75 bg-gray-50/50'
-                : 'border-slate-300'
-            }`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xl">🔥</span>
-                    <h2 className="text-base font-bold text-gray-900">
-                      Other Emergency Helplines & Services ({otherContactsList.length})
-                    </h2>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                      disabledEmergencies.includes('other')
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-slate-100 text-slate-800'
-                    }`}>
-                      {disabledEmergencies.includes('other') ? 'DISABLED BY YOU' : 'Public Safety & Gate Helplines'}
-                    </span>
+                  {/* Top Bar: Badge & Actions */}
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${typeInfo.color}`}
+                      >
+                        <span>{typeInfo.icon}</span>
+                        <span>{typeInfo.label}</span>
+                      </span>
+                      {isDisabled && (
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                          DISABLED
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions: ONLY Family Member has Edit/Delete; other emergencies have Disable/Enable toggle */}
+                    <div className="flex items-center gap-1">
+                      {isFamily ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditFamily(contact)}
+                            title="Edit Family Member"
+                            className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg transition cursor-pointer"
+                          >
+                            <HiPencilSquare className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFamily(contact.id, contact.name)}
+                            title="Delete Family Member"
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition cursor-pointer"
+                          >
+                            <HiTrash className="w-4 h-4 text-red-500" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEmergency(prefKey, typeInfo.label)}
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                            isDisabled
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/40'
+                          }`}
+                        >
+                          {isDisabled ? '✓ Enable' : '✕ Disable'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Specialized emergency helplines configured for the layout (Fire, Main Gate Security, Electricity Board).
-                  </p>
+
+                  {/* Name & Role */}
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
+                      {contact.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {contact.designation || (isFamily ? 'Personal Family' : 'Emergency Responder')}
+                    </p>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleToggleEmergency('other', 'Other Emergency & Fire')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    disabledEmergencies.includes('other')
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
-                  }`}
-                >
-                  {disabledEmergencies.includes('other') ? '✓ Enable Other Emergencies' : '✕ Disable Other Emergencies'}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {otherContactsList.map((o, idx) => (
-                  <div
-                    key={o.id || idx}
-                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition flex flex-col justify-between space-y-3"
+                {/* Phone & Direct Call / WhatsApp */}
+                <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <a
+                    href={`tel:${contact.phone}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-800 dark:text-gray-200 hover:text-purple-600 transition"
                   >
-                    <div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-900 mb-2 inline-block">
-                        Helpline #{idx + 1}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center text-lg font-bold">
-                          {idx === 0 ? '🔥' : '⚠️'}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-gray-900 truncate">{o.name}</h4>
-                          <p className="text-xs text-gray-500 truncate">{o.designation || 'Emergency Helpline'}</p>
-                        </div>
-                      </div>
+                    <HiPhone className="w-3.5 h-3.5 text-purple-600" />
+                    <span>{contact.phone}</span>
+                  </a>
 
-                      <div className="mt-3 bg-white rounded-xl p-2.5 border border-slate-200 flex items-center justify-between text-xs">
-                        <span className="text-gray-500 font-medium">Helpline:</span>
-                        <a
-                          href={`tel:${o.phone}`}
-                          className="font-bold text-slate-900 hover:underline flex items-center gap-1"
-                        >
-                          <HiPhone className="w-3.5 h-3.5 text-slate-600" />
-                          <span>{o.phone}</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <a
-                        href={`tel:${o.phone}`}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiPhone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => openWhatsAppWithLocation(o.phone, o.name)}
-                        className="inline-flex items-center justify-center gap-1.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition"
-                      >
-                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={`tel:${contact.phone}`}
+                      className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-gray-700 dark:text-gray-300 rounded-lg text-xs font-semibold transition"
+                    >
+                      Call
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => openWhatsAppWithLocation(contact.phone, contact.name)}
+                      className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-400 rounded-lg transition cursor-pointer"
+                      title="Send WhatsApp SOS with Live GPS & Home Address"
+                    >
+                      <HiChatBubbleOvalLeftEllipsis className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* SECTION E: Instant Distress Trigger Beacon */}
-          <div className="bg-red-50 border border-red-200 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
-                <HiShieldExclamation className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-red-950">
-                  Instant Emergency Distress Beacon
-                </h3>
-                <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
-                  Triggers an automated emergency broadcast to all association responders and your family contacts with live GPS coordinates.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => triggerSOS('Immediate Distress')}
-                disabled={isSending}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-red-600/30 transition disabled:opacity-50"
-              >
-                <HiShieldExclamation className="w-5 h-5 animate-pulse" />
-                <span>{isSending ? 'Dispatching SOS...' : '🚨 Trigger Instant SOS'}</span>
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* MODAL: Configure 2 Personal Family Emergency Contacts */}
+      {/* Modal: Add / Edit Family Contact */}
       <Modal
         isOpen={isFamilyModalOpen}
         onClose={() => setIsFamilyModalOpen(false)}
-        title="Configure 2 Family Emergency Contacts"
-        size="lg"
+        title={editingFamily ? '✏️ Edit Family Contact' : '👨‍👩‍👧 Add Family Emergency Contact'}
+        size="md"
       >
-        <form onSubmit={handleSaveFamily} className="space-y-5 max-h-[75vh] overflow-y-auto px-1 pr-2">
-          <p className="text-xs text-gray-500 leading-relaxed">
-            Configure up to 2 personal family members. When you touch <strong>Family Emergency</strong> in the SOS menu, you will be given the choice to alert either contact immediately.
-          </p>
-
-          {/* Contact 1 */}
-          <div className="p-4 bg-purple-50/40 rounded-2xl border border-purple-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-purple-950 uppercase flex items-center gap-1.5">
-                <span>👨‍👩‍👧</span> 1. Family Contact #1 (Primary) *
-              </h4>
-              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
-                Primary Kin
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Family Member Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={familyForms[0]?.name || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[0] = { ...updated[0], name: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. Priya Murali"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Mobile Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={familyForms[0]?.phone || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[0] = { ...updated[0], phone: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. 9876543210"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Relationship / Role *
-                </label>
-                <div className="flex flex-wrap gap-1.5 mb-1.5">
-                  {relationPresets.map((rel) => (
-                    <button
-                      type="button"
-                      key={rel}
-                      onClick={() => {
-                        const updated = [...familyForms];
-                        updated[0] = { ...updated[0], designation: rel };
-                        setFamilyForms(updated);
-                      }}
-                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
-                        familyForms[0]?.designation === rel
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      {rel}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  value={familyForms[0]?.designation || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[0] = { ...updated[0], designation: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. Spouse / Father / Sister"
-                  className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSaveFamily} className="space-y-4 py-1">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Family Member Name *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Priya Murali"
+              value={familyFormData.name}
+              onChange={(e) => setFamilyFormData({ ...familyFormData, name: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
           </div>
 
-          {/* Contact 2 */}
-          <div className="p-4 bg-purple-50/40 rounded-2xl border border-purple-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-purple-950 uppercase flex items-center gap-1.5">
-                <span>👨‍👩‍👦</span> 2. Family Contact #2 (Secondary / Optional)
-              </h4>
-              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
-                Secondary Kin
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Family Member Name
-                </label>
-                <input
-                  type="text"
-                  value={familyForms[1]?.name || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[1] = { ...updated[1], name: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. K. Senthil"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Mobile Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={familyForms[1]?.phone || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[1] = { ...updated[1], phone: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. 9876543211"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Relationship / Role
-                </label>
-                <div className="flex flex-wrap gap-1.5 mb-1.5">
-                  {relationPresets.map((rel) => (
-                    <button
-                      type="button"
-                      key={rel}
-                      onClick={() => {
-                        const updated = [...familyForms];
-                        updated[1] = { ...updated[1], designation: rel };
-                        setFamilyForms(updated);
-                      }}
-                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
-                        familyForms[1]?.designation === rel
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      {rel}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  value={familyForms[1]?.designation || ''}
-                  onChange={(e) => {
-                    const updated = [...familyForms];
-                    updated[1] = { ...updated[1], designation: e.target.value };
-                    setFamilyForms(updated);
-                  }}
-                  placeholder="e.g. Father / Mother / Brother / Guardian"
-                  className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs focus:ring-1 focus:ring-purple-500"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Mobile Phone Number *
+            </label>
+            <input
+              type="tel"
+              required
+              placeholder="e.g. 9876543210"
+              value={familyFormData.phone}
+              onChange={(e) => setFamilyFormData({ ...familyFormData, phone: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Relationship / Designation *
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {RELATION_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setFamilyFormData({ ...familyFormData, designation: preset })}
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition cursor-pointer ${
+                    familyFormData.designation === preset
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Or type custom relation (e.g. Brother, Guardian)"
+              value={familyFormData.designation}
+              onChange={(e) => setFamilyFormData({ ...familyFormData, designation: e.target.value })}
+              className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
-              disabled={submittingFamily}
               onClick={() => setIsFamilyModalOpen(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition"
+              className="px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submittingFamily}
-              className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
+              className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2 cursor-pointer"
             >
-              {submittingFamily ? 'Saving...' : 'Save 2 Family Contacts'}
+              {submittingFamily && <HiArrowPath className="w-3.5 h-3.5 animate-spin" />}
+              <span>{editingFamily ? 'Save Family Member' : 'Add Family Member'}</span>
             </button>
           </div>
         </form>
