@@ -19,14 +19,46 @@ import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const EMERGENCY_TYPE_INFO = {
-  family: { label: 'Family Emergency', icon: '👨‍👩‍👧', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  medical: { label: 'Medical Emergency', icon: '🏥', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  ambulance: { label: 'Medical Emergency', icon: '🚑', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  police: { label: 'Police Emergency', icon: '🚓', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  member: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  resident: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  fire: { label: 'Fire Emergency', icon: '🔥', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  other: { label: 'Emergency Helpline', icon: '⚠️', color: 'bg-slate-100 text-slate-800 border-slate-200' },
+  family: {
+    label: 'Family Emergency',
+    icon: '👨‍👩‍👧',
+    color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800/60',
+  },
+  medical: {
+    label: 'Medical Emergency',
+    icon: '🏥',
+    color: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60',
+  },
+  ambulance: {
+    label: 'Medical Emergency',
+    icon: '🚑',
+    color: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60',
+  },
+  police: {
+    label: 'Police Emergency',
+    icon: '🚓',
+    color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800/60',
+  },
+  member: {
+    label: 'Resident Responder',
+    icon: '🏡',
+    color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800/60',
+  },
+  resident: {
+    label: 'Resident Responder',
+    icon: '🏡',
+    color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800/60',
+  },
+  fire: {
+    label: 'Fire Emergency',
+    icon: '🔥',
+    color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/70 dark:text-orange-300 dark:border-orange-800/60',
+  },
+  other: {
+    label: 'Emergency Helpline',
+    icon: '⚠️',
+    color: 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700',
+  },
 };
 
 const RELATION_PRESETS = [
@@ -50,16 +82,6 @@ export default function MemberSOSContacts() {
   const [familyContacts, setFamilyContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
-
-  // Disabled Emergencies Preferences (Resident choice for non-family)
-  const [disabledEmergencies, setDisabledEmergencies] = useState(() => {
-    try {
-      const saved = localStorage.getItem('disabled_emergencies');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
 
   // Family Add / Edit Modal State
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
@@ -85,13 +107,6 @@ export default function MemberSOSContacts() {
       // Family contacts appear first so resident easily sees and manages them
       const unified = [...fams, ...defaults.filter((c) => c.contact_type !== 'family')];
       setContacts(unified);
-
-      if (res.data?.disabled_emergencies && Array.isArray(res.data.disabled_emergencies)) {
-        setDisabledEmergencies(res.data.disabled_emergencies);
-        try {
-          localStorage.setItem('disabled_emergencies', JSON.stringify(res.data.disabled_emergencies));
-        } catch (e) {}
-      }
     } catch (err) {
       console.error('Failed to load SOS contacts:', err);
       toast.error('Failed to load emergency contacts');
@@ -103,32 +118,6 @@ export default function MemberSOSContacts() {
   useEffect(() => {
     fetchContacts();
   }, [fetchContacts]);
-
-  // Toggle Disable / Enable for non-family emergency
-  const handleToggleEmergency = async (typeKey, displayName) => {
-    if (typeKey === 'family' || typeKey === 'Family Emergency') {
-      toast.error('Family Emergency is your personal contact and cannot be disabled');
-      return;
-    }
-
-    const isCurrentlyDisabled = disabledEmergencies.includes(typeKey);
-    const updated = isCurrentlyDisabled
-      ? disabledEmergencies.filter((t) => t !== typeKey)
-      : [...disabledEmergencies, typeKey];
-
-    setDisabledEmergencies(updated);
-    try {
-      localStorage.setItem('disabled_emergencies', JSON.stringify(updated));
-      await api.put('/sos/preferences', { disabled_emergencies: updated });
-      toast.success(
-        isCurrentlyDisabled
-          ? `${displayName} enabled for your portal`
-          : `${displayName} disabled for your portal`
-      );
-    } catch (err) {
-      console.error('Failed to sync emergency preferences:', err);
-    }
-  };
 
   // Open Family Modal for Add
   const handleOpenAddFamily = () => {
@@ -384,79 +373,46 @@ export default function MemberSOSContacts() {
             const isFamily = contact.contact_type === 'family';
             const typeInfo = EMERGENCY_TYPE_INFO[contact.contact_type] || EMERGENCY_TYPE_INFO.other;
 
-            // Map contact_type to preference key for disable toggle
-            const prefKey =
-              contact.contact_type === 'medical' || contact.contact_type === 'ambulance' ? 'medical'
-              : contact.contact_type === 'police' ? 'police'
-              : contact.contact_type === 'member' || contact.contact_type === 'resident' ? 'resident'
-              : contact.contact_type === 'family' ? 'family'
-              : 'other';
-
-            const isDisabled = !isFamily && disabledEmergencies.includes(prefKey);
-
             return (
               <div
                 key={contact.id || `${contact.contact_type}-${contact.phone}`}
                 className={`bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between transition space-y-3 ${
-                  isDisabled
-                    ? 'border-gray-200 dark:border-slate-800 opacity-70 bg-gray-50/50 dark:bg-slate-950/40'
-                    : isFamily
+                  isFamily
                     ? 'border-purple-200 dark:border-purple-900/60 hover:border-purple-400'
                     : 'border-gray-200/80 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div>
-                  {/* Top Bar: Badge & Actions */}
+                  {/* Top Bar: Badge & Actions (Only Family has Edit/Delete) */}
                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${typeInfo.color}`}
-                      >
-                        <span>{typeInfo.icon}</span>
-                        <span>{typeInfo.label}</span>
-                      </span>
-                      {isDisabled && (
-                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                          DISABLED
-                        </span>
-                      )}
-                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${typeInfo.color}`}
+                    >
+                      <span>{typeInfo.icon}</span>
+                      <span>{typeInfo.label}</span>
+                    </span>
 
-                    {/* Actions: ONLY Family Member has Edit/Delete; other emergencies have Disable/Enable toggle */}
-                    <div className="flex items-center gap-1">
-                      {isFamily ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditFamily(contact)}
-                            title="Edit Family Member"
-                            className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg transition cursor-pointer"
-                          >
-                            <HiPencilSquare className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteFamily(contact.id, contact.name)}
-                            title="Delete Family Member"
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition cursor-pointer"
-                          >
-                            <HiTrash className="w-4 h-4 text-red-500" />
-                          </button>
-                        </>
-                      ) : (
+                    {/* Actions: ONLY Family Member has Edit/Delete; non-family emergencies are managed by Admin */}
+                    {isFamily && (
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => handleToggleEmergency(prefKey, typeInfo.label)}
-                          className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
-                            isDisabled
-                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                              : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/40'
-                          }`}
+                          onClick={() => handleOpenEditFamily(contact)}
+                          title="Edit Family Member"
+                          className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg transition cursor-pointer"
                         >
-                          {isDisabled ? '✓ Enable' : '✕ Disable'}
+                          <HiPencilSquare className="w-4 h-4" />
                         </button>
-                      )}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFamily(contact.id, contact.name)}
+                          title="Delete Family Member"
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition cursor-pointer"
+                        >
+                          <HiTrash className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Name & Role */}

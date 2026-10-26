@@ -16,14 +16,46 @@ import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const EMERGENCY_TYPE_INFO = {
-  medical: { label: 'Medical Emergency', icon: '🏥', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  ambulance: { label: 'Medical Emergency', icon: '🚑', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  police: { label: 'Police Emergency', icon: '🚓', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  member: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  resident: { label: 'Resident Responder', icon: '🏡', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  fire: { label: 'Fire Emergency', icon: '🔥', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  family: { label: 'Family Emergency', icon: '👨‍👩‍👧', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  other: { label: 'Other Emergency / Helpline', icon: '⚠️', color: 'bg-slate-100 text-slate-800 border-slate-200' },
+  medical: {
+    label: 'Medical Emergency',
+    icon: '🏥',
+    color: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60',
+  },
+  ambulance: {
+    label: 'Medical Emergency',
+    icon: '🚑',
+    color: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800/60',
+  },
+  police: {
+    label: 'Police Emergency',
+    icon: '🚓',
+    color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800/60',
+  },
+  member: {
+    label: 'Resident Responder',
+    icon: '🏡',
+    color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800/60',
+  },
+  resident: {
+    label: 'Resident Responder',
+    icon: '🏡',
+    color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800/60',
+  },
+  fire: {
+    label: 'Fire Emergency',
+    icon: '🔥',
+    color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/70 dark:text-orange-300 dark:border-orange-800/60',
+  },
+  family: {
+    label: 'Family Emergency',
+    icon: '👨‍👩‍👧',
+    color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800/60',
+  },
+  other: {
+    label: 'Other Emergency / Helpline',
+    icon: '⚠️',
+    color: 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700',
+  },
 };
 
 export default function AdminSOSContacts() {
