@@ -254,10 +254,10 @@ export default function AdminDashboard() {
       {/* Page Header (Minimal) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {assocDisplayName}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {associationInfo?.city ? `${associationInfo.city} • ` : ''}
             {associationInfo?.address || 'Community Administration Portal'}
           </p>
@@ -266,10 +266,10 @@ export default function AdminDashboard() {
           <button
             onClick={fetchDashboardData}
             title="Refresh dashboard"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm transition cursor-pointer"
           >
-            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin text-primary-600' : ''}`} />
-            <span>Refresh</span>
+            <HiArrowPath className={`w-4 h-4 text-gray-500 dark:text-gray-300 ${loading ? 'animate-spin text-primary-600 dark:text-primary-400' : ''}`} />
+            <span className="text-gray-700 dark:text-gray-200">Refresh</span>
           </button>
         </div>
       </div>

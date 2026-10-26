@@ -63,6 +63,13 @@
     border-color: #334155 !important;
   }
 
+  .dark button.bg-white,
+  .dark a.bg-white {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+  }
+
   .dark .bg-gray-50,
   .dark .bg-gray-50\/40,
   .dark .bg-gray-50\/50,
