@@ -20,7 +20,7 @@ const errorHandler = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File size exceeds allowed limit (Max 3GB per event video/photo, 10MB for audio, 5MB for documents).',
+        message: 'File size exceeds allowed limit (Max 200MB per event video/photo, 10MB for audio, 5MB for documents).',
         error: err.message,
       });
     }

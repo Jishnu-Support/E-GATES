@@ -159,15 +159,15 @@ export default function EventCaptures() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // File selection for Upload (up to 3GB per file)
+  // File selection for Upload (up to 200MB per file)
   const handleFilesSelect = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const MAX_FILE_SIZE = 3 * 1024 * 1024 * 1024; // 3GB per file
+    const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB per file
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
     if (oversized.length > 0) {
-      toast.error(`File exceeds 3GB limit: ${oversized.map((f) => f.name).join(', ')}`);
+      toast.error(`File exceeds 200MB limit: ${oversized.map((f) => f.name).join(', ')}`);
     }
 
     const validFiles = files.filter((f) => f.size <= MAX_FILE_SIZE);
@@ -931,7 +931,7 @@ export default function EventCaptures() {
               <label className="block text-xs font-bold text-gray-700">
                 Upload Event Videos & Photos (Optional)
               </label>
-              <span className="text-[11px] text-gray-400">Max 20 files, up to 3GB each</span>
+              <span className="text-[11px] text-gray-400">Max 20 files, up to 200MB each</span>
             </div>
             <input
               type="file"
