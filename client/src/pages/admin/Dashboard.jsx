@@ -115,19 +115,16 @@ export default function AdminDashboard() {
 
       const activePollsCount = rawPolls.filter((p) => p.status === 'active').length;
       const openComplaintsCount = rawComplaints.filter((c) => c.status === 'open' || c.status === 'in_progress').length;
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      const sosTodayCount = rawSos.filter((s) => {
-        const d = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
-        return d === todayStr;
-      }).length;
+      const activeSosCount = rawSos.filter(
+        (s) => s.status === 'triggered' || s.status === 'in_progress'
+      ).length;
 
       setStats({
         totalMembers: membersOnly.length,
         pendingApprovals: rawPending.length,
         activePolls: activePollsCount,
         openComplaints: openComplaintsCount,
-        sosToday: sosTodayCount,
+        activeSos: activeSosCount,
       });
     } catch (err) {
       console.error('Error fetching admin dashboard:', err);
@@ -182,6 +179,62 @@ export default function AdminDashboard() {
   const activeSosAlerts = useMemo(() => {
     return sosList.filter((s) => s.status === 'triggered' || s.status === 'in_progress');
   }, [sosList]);
+
+  const [resolvingSos, setResolvingSos] = useState(false);
+
+  // Quick Resolve single SOS alert directly from Dashboard
+  const handleResolveSingleSos = async (alertId) => {
+    try {
+      await api.put(`/sos/${alertId}/resolve`, {
+        status: 'resolved',
+        notes: 'Marked resolved by Admin on Dashboard',
+      });
+      toast.success('SOS alert marked as resolved');
+      setSosList((prev) =>
+        prev.map((s) => (s.id === alertId ? { ...s, status: 'resolved' } : s))
+      );
+      setStats((prev) => ({
+        ...prev,
+        activeSos: Math.max(0, (prev.activeSos || 1) - 1),
+      }));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to resolve alert');
+    }
+  };
+
+  // Quick Resolve ALL active SOS alerts directly from Dashboard
+  const handleResolveAllSos = async () => {
+    if (!window.confirm(`Mark all ${activeSosAlerts.length} active emergency alerts as resolved?`)) {
+      return;
+    }
+    try {
+      setResolvingSos(true);
+      await Promise.all(
+        activeSosAlerts.map((s) =>
+          api.put(`/sos/${s.id}/resolve`, {
+            status: 'resolved',
+            notes: 'Batch resolved by Admin on Dashboard',
+          }).catch((e) => console.error(e))
+        )
+      );
+      toast.success('All active alerts marked as resolved');
+      setSosList((prev) =>
+        prev.map((s) =>
+          s.status === 'triggered' || s.status === 'in_progress'
+            ? { ...s, status: 'resolved' }
+            : s
+        )
+      );
+      setStats((prev) => ({
+        ...prev,
+        activeSos: 0,
+      }));
+    } catch (err) {
+      toast.error('Failed to resolve all alerts');
+    } finally {
+      setResolvingSos(false);
+    }
+  };
 
   // Upcoming Community Events
   const upcomingEvents = useMemo(() => {
@@ -309,11 +362,11 @@ export default function AdminDashboard() {
           onClick={() => openModal('complaints')}
         />
         <StatsCard
-          title="Active SOS (Today)"
-          value={stats.sosToday}
+          title="Active SOS"
+          value={stats.activeSos || 0}
           icon={HiShieldExclamation}
-          variant={stats.sosToday > 0 ? 'red' : 'blue'}
-          subtitle="Distress alerts"
+          variant={stats.activeSos > 0 ? 'red' : 'emerald'}
+          subtitle={stats.activeSos > 0 ? `${stats.activeSos} Ongoing distress` : 'All Clear'}
           onClick={() => openModal('sos')}
         />
       </div>
@@ -561,14 +614,14 @@ export default function AdminDashboard() {
           </div>
 
           {/* SECTION 2: ACTIVE SOS ALERTS */}
-          <div className="bg-white rounded-2xl p-5 border border-red-100 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-red-100 dark:border-red-950/60 shadow-sm space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/70 text-red-600 dark:text-red-400 flex items-center justify-center">
                   <HiShieldExclamation className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
                     Active SOS Emergency Alerts
                     {activeSosAlerts.length > 0 && (
                       <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
@@ -577,21 +630,33 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate('/admin/sos-alerts')}
-                className="text-xs font-bold text-red-600 hover:text-red-800 inline-flex items-center gap-1"
-              >
-                Command Center &rarr;
-              </button>
+              <div className="flex items-center gap-2">
+                {activeSosAlerts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResolveAllSos}
+                    disabled={resolvingSos}
+                    className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
+                  >
+                    ✓ Resolve All ({activeSosAlerts.length})
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate('/admin/sos-alerts')}
+                  className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 inline-flex items-center gap-1 cursor-pointer"
+                >
+                  Command Center &rarr;
+                </button>
+              </div>
             </div>
 
             {/* Active Distress Signals */}
             {activeSosAlerts.length === 0 ? (
-              <div className="py-4 bg-emerald-50/50 rounded-xl border border-emerald-100 p-3 flex items-center gap-2 text-xs text-emerald-800">
-                <HiCheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div className="py-4 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/40 p-3 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+                <HiCheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                 <div>
                   <p className="font-bold">All Clear in Association</p>
-                  <p className="text-[11px] text-emerald-700">No active emergency distress signals at this time.</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300">No active emergency distress signals at this time.</p>
                 </div>
               </div>
             ) : (
@@ -599,26 +664,34 @@ export default function AdminDashboard() {
                 {activeSosAlerts.map((sos) => (
                   <div
                     key={sos.id}
-                    className="p-3 bg-red-50/80 rounded-xl border border-red-200 flex items-center justify-between gap-3 animate-pulse"
+                    className="p-3 bg-red-50/80 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-extrabold text-red-700 uppercase">
+                        <span className="text-xs font-extrabold text-red-700 dark:text-red-400 uppercase">
                           🚨 {sos.emergency_type || 'SOS Alarm'}
                         </span>
-                        <span className="text-[10px] text-gray-500">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
                           {sos.created_at ? format(new Date(sos.created_at), 'hh:mm a') : ''}
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-gray-900 mt-0.5">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white mt-0.5">
                         {sos.user_name} (Door: {sos.user_door_no || 'N/A'}, {sos.user_street || ''})
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleResolveSingleSos(sos.id)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+                        title="Mark alert as resolved"
+                      >
+                        ✓ Resolve
+                      </button>
                       <a
                         href={`tel:${sos.user_phone}`}
-                        className="px-2.5 py-1 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 flex items-center gap-1"
+                        className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 rounded-lg text-xs font-bold hover:bg-red-50 dark:hover:bg-slate-700 flex items-center gap-1"
                       >
                         <HiPhone className="w-3 h-3" /> Call
                       </a>
