@@ -31,15 +31,9 @@ router.post(
   [
     body('emergency_type')
       .optional()
-      .isIn([
-        'Medical', 'Medical Emergency',
-        'Fire', 'Fire Outbreak', 'Fire Incident',
-        'Theft/Intruder', 'Theft / Intruder',
-        'Women Safety',
-        'Immediate Distress', 'Immediate Emergency Distress',
-        'Other', 'Other Emergency', 'General Emergency'
-      ])
-      .withMessage('Invalid emergency type'),
+      .trim()
+      .isString()
+      .withMessage('Emergency type must be text'),
     validate
   ],
   sosController.trigger

@@ -226,20 +226,20 @@ export default function FloatingSOS() {
     ];
     const waEncoded = encodeURIComponent(waTextLines.join('\n'));
 
-    // 4. Trigger Phone Call
-    const cleanCallPhone = targetPhone.replace(/\D/g, '');
-    const callUrl = `tel:${cleanCallPhone || targetPhone}`;
-    window.location.href = callUrl;
-
-    // 5. Open WhatsApp with Original Map Location link
+    // 4. FIRST PREFERENCE: Open WhatsApp immediately so browser never blocks it and message opens first
     const formattedWa = formatWaPhone(targetPhone);
     const waUrl = formattedWa
-      ? `https://wa.me/${formattedWa}?text=${waEncoded}`
-      : `https://wa.me/?text=${waEncoded}`;
+      ? `https://api.whatsapp.com/send?phone=${formattedWa}&text=${waEncoded}`
+      : `https://api.whatsapp.com/send?text=${waEncoded}`;
 
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+    // 5. SECOND: Trigger Phone Call right after WhatsApp opens
+    const cleanCallPhone = targetPhone.replace(/\D/g, '');
+    const callUrl = `tel:${cleanCallPhone || targetPhone}`;
     setTimeout(() => {
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    }, 450);
+      window.location.href = callUrl;
+    }, 800);
 
     // 6. Record and broadcast SOS Alert in Backend
     const alertNote = [
