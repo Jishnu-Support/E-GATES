@@ -152,10 +152,10 @@ export default function MemberSOSContacts() {
     fetchContacts();
   }, [fetchContacts]);
 
-  // Open Family Modal for Add
+  // Open Family Modal for Add (Allow adding multiple family members)
   const handleOpenAddFamily = () => {
-    if (familyContacts.length >= 2) {
-      toast.error('You can have up to 2 family emergency contacts.');
+    if (familyContacts.length >= 10) {
+      toast.error('You can add up to 10 family emergency contacts.');
       return;
     }
     setEditingFamily(null);
@@ -211,7 +211,7 @@ export default function MemberSOSContacts() {
             phone: familyFormData.phone.trim(),
             designation: familyFormData.designation.trim() || 'Family Kin',
           },
-        ].slice(0, 2);
+        ];
       }
 
       await api.post('/sos/family-contacts', { contacts: updatedList });
@@ -327,15 +327,13 @@ export default function MemberSOSContacts() {
           >
             <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin text-primary-600' : ''}`} />
           </button>
-          {familyContacts.length < 2 && (
-            <button
-              onClick={handleOpenAddFamily}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer"
-            >
-              <HiPlus className="w-4 h-4" />
-              <span>+ Add Family Contact ({familyContacts.length}/2)</span>
-            </button>
-          )}
+          <button
+            onClick={handleOpenAddFamily}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer"
+          >
+            <HiPlus className="w-4 h-4" />
+            <span>Add Family Contact</span>
+          </button>
         </div>
       </div>
 
@@ -390,15 +388,13 @@ export default function MemberSOSContacts() {
           <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
             No contacts found matching filter.
           </p>
-          {familyContacts.length < 2 && (
-            <button
-              onClick={handleOpenAddFamily}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold shadow-xs hover:bg-purple-700 transition"
-            >
-              <HiPlus className="w-4 h-4" />
-              <span>Add Family Member</span>
-            </button>
-          )}
+          <button
+            onClick={handleOpenAddFamily}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold shadow-xs hover:bg-purple-700 transition cursor-pointer"
+          >
+            <HiPlus className="w-4 h-4" />
+            <span>Add Family Member</span>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

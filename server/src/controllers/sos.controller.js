@@ -643,7 +643,7 @@ const sosController = {
         const famRes = await pool.query(
           `SELECT sc.* FROM sos_contacts sc
            WHERE sc.user_id = $1 AND sc.contact_type = 'family'
-           ORDER BY sc.id ASC LIMIT 2`,
+           ORDER BY sc.id ASC`,
           [currentUserId]
         );
         familyContacts = famRes.rows;
@@ -759,10 +759,10 @@ const sosController = {
         }
       }
 
-      // Filter valid contacts (at most 2 allowed)
+      // Filter valid contacts (allow multiple family members)
       const validContacts = rawList
         .filter((c) => c && c.name && c.phone && c.name.trim() && c.phone.trim())
-        .slice(0, 2);
+        .slice(0, 10);
 
       if (validContacts.length === 0) {
         return res.status(400).json({ success: false, message: 'At least one family contact with name and phone is required' });
