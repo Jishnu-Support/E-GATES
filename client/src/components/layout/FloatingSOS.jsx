@@ -31,12 +31,32 @@ export default function FloatingSOS() {
   const [dispatchedContact, setDispatchedContact] = useState(null);
   const [dispatchedCoords, setDispatchedCoords] = useState({ latitude: null, longitude: null });
 
+  // Preferred contacts chosen by the resident in their SOS Contacts page
+  const [preferredContacts, setPreferredContacts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('preferred_sos_contacts');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
   // Clear any legacy disabled_emergencies cache from user's browser
   useEffect(() => {
     try {
       localStorage.removeItem('disabled_emergencies');
     } catch (e) {}
   }, []);
+
+  // Sync latest preferred contacts from localStorage whenever modal opens
+  useEffect(() => {
+    if (showTypeSelector) {
+      try {
+        const saved = localStorage.getItem('preferred_sos_contacts');
+        if (saved) setPreferredContacts(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, [showTypeSelector]);
 
   // Fetch configured SOS contacts on mount or when alert triggers
   useEffect(() => {
@@ -116,43 +136,26 @@ export default function FloatingSOS() {
     return list;
   }, [emergencyContacts]);
 
-  // Preference selection state for each of the 5 categories (user can choose only one)
-  const [selectedFamilyId, setSelectedFamilyId] = useState(null);
-  const [selectedMedicalId, setSelectedMedicalId] = useState(null);
-  const [selectedPoliceId, setSelectedPoliceId] = useState(null);
-  const [selectedResidentId, setSelectedResidentId] = useState(null);
-  const [selectedFireId, setSelectedFireId] = useState(null);
+  // Resolve the EXACT ONE preferred contact for each of the 5 emergencies
+  const activeFamily = useMemo(() => {
+    return familyList.find((f) => f.id === preferredContacts.family) || familyList[0] || null;
+  }, [familyList, preferredContacts.family]);
 
-  // Set default selection when lists load or change
-  useEffect(() => {
-    if (familyList.length > 0 && (!selectedFamilyId || !familyList.some((f) => f.id === selectedFamilyId))) {
-      setSelectedFamilyId(familyList[0].id);
-    }
-  }, [familyList, selectedFamilyId]);
+  const activeMedical = useMemo(() => {
+    return medicalList.find((m) => m.id === preferredContacts.medical) || medicalList[0] || null;
+  }, [medicalList, preferredContacts.medical]);
 
-  useEffect(() => {
-    if (medicalList.length > 0 && (!selectedMedicalId || !medicalList.some((m) => m.id === selectedMedicalId))) {
-      setSelectedMedicalId(medicalList[0].id);
-    }
-  }, [medicalList, selectedMedicalId]);
+  const activePolice = useMemo(() => {
+    return policeList.find((p) => p.id === preferredContacts.police) || policeList[0] || null;
+  }, [policeList, preferredContacts.police]);
 
-  useEffect(() => {
-    if (policeList.length > 0 && (!selectedPoliceId || !policeList.some((p) => p.id === selectedPoliceId))) {
-      setSelectedPoliceId(policeList[0].id);
-    }
-  }, [policeList, selectedPoliceId]);
+  const activeResident = useMemo(() => {
+    return residentList.find((r) => r.id === preferredContacts.resident) || residentList[0] || null;
+  }, [residentList, preferredContacts.resident]);
 
-  useEffect(() => {
-    if (residentList.length > 0 && (!selectedResidentId || !residentList.some((r) => r.id === selectedResidentId))) {
-      setSelectedResidentId(residentList[0].id);
-    }
-  }, [residentList, selectedResidentId]);
-
-  useEffect(() => {
-    if (fireList.length > 0 && (!selectedFireId || !fireList.some((f) => f.id === selectedFireId))) {
-      setSelectedFireId(fireList[0].id);
-    }
-  }, [fireList, selectedFireId]);
+  const activeFire = useMemo(() => {
+    return fireList.find((f) => f.id === preferredContacts.fire) || fireList[0] || null;
+  }, [fireList, preferredContacts.fire]);
 
   // Floating SOS button is only displayed for resident members
   if (user?.role !== 'member') {
@@ -182,8 +185,8 @@ export default function FloatingSOS() {
     return digits;
   };
 
-  // Immediate Action: Confirm choice, notify, dial phone, open WhatsApp with Original Map Location, and broadcast
-  const handleConfirmAndAlert = async (emergencyType, targetContact) => {
+  // Immediate Action: Call, open WhatsApp with Original Map Location, and broadcast
+  const handleAlertEmergency = async (emergencyType, targetContact) => {
     if (isSending || !targetContact) return;
 
     setDispatchedContact(targetContact);
@@ -213,8 +216,8 @@ export default function FloatingSOS() {
     const waTextLines = [
       `🚨 *EMERGENCY SOS ALERT!*`,
       `*EMERGENCY TYPE:* ${emergencyType}`,
-      `*ALERTED RESPONDER:* ${targetContact.name} (${targetContact.designation || 'Emergency Contact'})`,
-      `*RESIDENT SENDER:* ${user?.name || 'Resident'} (${user?.phone || 'N/A'}${user?.door_no ? `, Door #${user.door_no}` : ''})`,
+      `*RESPONDER:* ${targetContact.name} (${targetContact.designation || 'Emergency Responder'})`,
+      `*RESIDENT:* ${user?.name || 'Resident'} (${user?.phone || 'N/A'}${user?.door_no ? `, Door #${user.door_no}` : ''})`,
       `*HOME ADDRESS:* ${residentAddress}`,
       `*ASSOCIATION:* ${user?.association_name || 'Community Layout'}`,
       `*ORIGINAL MAP LOCATION:* ${mapsLink}`,
@@ -288,7 +291,7 @@ export default function FloatingSOS() {
         </button>
       </div>
 
-      {/* MODAL 1: Exactly 5 Simple, Clear Emergencies with Preference Choice */}
+      {/* MODAL 1: Exactly 5 Simple Emergencies (Single Contact Selected in SOS Contacts) */}
       <Modal
         isOpen={showTypeSelector && !isTriggered}
         onClose={() => setShowTypeSelector(false)}
@@ -296,13 +299,17 @@ export default function FloatingSOS() {
         size="md"
       >
         <div className="space-y-3.5 py-1">
+          {/* Header instructions */}
           <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 rounded-2xl">
             <p className="text-xs font-semibold text-red-900 dark:text-red-200 leading-snug">
-              ⚡ <strong>Instant Emergency Reaction:</strong> Choose your preferred contact and tap <strong>Confirm & Alert</strong> to immediately call and send your <strong>Home Address</strong> & <strong>Original Map Location</strong> via WhatsApp!
+              ⚡ <strong>Instant Emergency Reaction:</strong> Touching any emergency below immediately calls your chosen contact and transmits your <strong>Home Address</strong> & <strong>Original Map Location</strong> via WhatsApp!
+            </p>
+            <p className="text-[10px] text-red-700 dark:text-red-300 font-medium mt-1">
+              💡 <em>To change which number is active for any emergency, select your preference in the Emergency SOS Contacts page.</em>
             </p>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {/* 1. FAMILY EMERGENCY */}
             <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-900/60 bg-gradient-to-r from-purple-50/70 to-white dark:from-purple-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
               <div className="flex items-center gap-3">
@@ -310,115 +317,36 @@ export default function FloatingSOS() {
                   👨‍👩‍👧
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 truncate">
-                      Family Emergency
-                    </h4>
-                    {familyList.length > 1 && (
-                      <span className="text-[10px] font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded-full">
-                        Choose 1 Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-purple-700 dark:text-purple-300 font-medium truncate">
-                    Personal family kin, relatives & guardians ({familyList.length} registered)
-                  </p>
+                  <h4 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 truncate">
+                    Family Emergency
+                  </h4>
+                  {activeFamily ? (
+                    <p className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold truncate">
+                      {activeFamily.name} ({activeFamily.designation || 'Family Kin'}) • {activeFamily.phone}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-gray-500 italic truncate">
+                      No family member saved yet (Default Helpline: 112)
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {familyList.length === 0 ? (
-                <div className="pt-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                    No family member registered yet. (Add up to 2 in SOS Contacts)
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Family Emergency', { name: 'Emergency Services', phone: '112', designation: 'National Helpline' })}
-                    disabled={isSending}
-                    className="mt-2 w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <span>Confirm & Alert National Helpline (112) ⚡</span>
-                  </button>
-                </div>
-              ) : familyList.length === 1 ? (
-                <div className="pt-1 space-y-2">
-                  <div className="p-2.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-white/80 dark:bg-slate-900/80 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-purple-950 dark:text-purple-100">{familyList[0].name}</p>
-                      <p className="text-[11px] text-purple-700 dark:text-purple-300">
-                        {familyList[0].designation || 'Family Kin'} • {familyList[0].phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/70 px-2 py-1 rounded-lg">
-                      Ready
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Family Emergency', familyList[0])}
-                    disabled={isSending}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span>Confirm & Alert {familyList[0].name} (Call & WhatsApp ⚡)</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1 space-y-2">
-                  <p className="text-[11px] font-bold text-purple-900 dark:text-purple-200">
-                    Choose preference (select only 1):
-                  </p>
-                  <div className="space-y-1.5">
-                    {familyList.map((f, idx) => {
-                      const isSelected = selectedFamilyId === f.id;
-                      return (
-                        <label
-                          key={f.id || idx}
-                          onClick={() => setSelectedFamilyId(f.id)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
-                              ? 'border-purple-600 bg-purple-100/70 dark:bg-purple-950/80 ring-1 ring-purple-500'
-                              : 'border-purple-200 dark:border-purple-900/40 bg-white/60 dark:bg-slate-900/60 hover:bg-purple-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="radio"
-                              name="family-choice"
-                              checked={isSelected}
-                              onChange={() => setSelectedFamilyId(f.id)}
-                              className="w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate">
-                                {f.name}
-                              </p>
-                              <p className="text-[11px] text-purple-700 dark:text-purple-300 truncate">
-                                {f.designation || 'Family Kin'} • {f.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300">
-                            #{idx + 1}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const chosen = familyList.find((f) => f.id === selectedFamilyId) || familyList[0];
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleConfirmAndAlert('Family Emergency', chosen)}
-                        disabled={isSending}
-                        className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                      >
-                        <span>Confirm & Alert {chosen?.name} (Call & WhatsApp ⚡)</span>
-                      </button>
-                    );
-                  })()}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() =>
+                  handleAlertEmergency(
+                    'Family Emergency',
+                    activeFamily || { name: 'Emergency Helpline', phone: '112', designation: 'National Helpline' }
+                  )
+                }
+                disabled={isSending}
+                className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>
+                  Alert {activeFamily ? activeFamily.name : 'Family Helpline'} (Call & WhatsApp ⚡)
+                </span>
+              </button>
             </div>
 
             {/* 2. MEDICAL EMERGENCY */}
@@ -428,101 +356,25 @@ export default function FloatingSOS() {
                   🏥
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
-                      Medical Emergency
-                    </h4>
-                    {medicalList.length > 1 && (
-                      <span className="text-[10px] font-bold text-rose-800 dark:text-rose-300 bg-rose-100 dark:bg-rose-950 px-2 py-0.5 rounded-full">
-                        Choose 1 Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-rose-700 dark:text-rose-300 font-medium truncate">
-                    Ambulance (108), Hospital, Emergency Doctor
+                  <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
+                    Medical Emergency
+                  </h4>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-300 font-semibold truncate">
+                    {activeMedical?.name} • {activeMedical?.phone}
                   </p>
                 </div>
               </div>
 
-              {medicalList.length === 1 ? (
-                <div className="pt-1 space-y-2">
-                  <div className="p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/60 bg-white/80 dark:bg-slate-900/80 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-rose-950 dark:text-rose-100">{medicalList[0].name}</p>
-                      <p className="text-[11px] text-rose-700 dark:text-rose-300">
-                        {medicalList[0].designation || 'Medical Responder'} • {medicalList[0].phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/70 px-2 py-1 rounded-lg">
-                      Ready
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Medical Emergency', medicalList[0])}
-                    disabled={isSending}
-                    className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span>Confirm & Alert {medicalList[0].name} (Call & WhatsApp ⚡)</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1 space-y-2">
-                  <p className="text-[11px] font-bold text-rose-900 dark:text-rose-200">
-                    Choose preference (select only 1):
-                  </p>
-                  <div className="space-y-1.5">
-                    {medicalList.map((m, idx) => {
-                      const isSelected = selectedMedicalId === m.id;
-                      return (
-                        <label
-                          key={m.id || idx}
-                          onClick={() => setSelectedMedicalId(m.id)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
-                              ? 'border-rose-600 bg-rose-100/70 dark:bg-rose-950/80 ring-1 ring-rose-500'
-                              : 'border-rose-200 dark:border-rose-900/40 bg-white/60 dark:bg-slate-900/60 hover:bg-rose-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="radio"
-                              name="medical-choice"
-                              checked={isSelected}
-                              onChange={() => setSelectedMedicalId(m.id)}
-                              className="w-4 h-4 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-rose-950 dark:text-rose-100 truncate">
-                                {m.name}
-                              </p>
-                              <p className="text-[11px] text-rose-700 dark:text-rose-300 truncate">
-                                {m.designation || 'Medical Responder'} • {m.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300">
-                            #{idx + 1}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const chosen = medicalList.find((m) => m.id === selectedMedicalId) || medicalList[0];
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleConfirmAndAlert('Medical Emergency', chosen)}
-                        disabled={isSending}
-                        className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                      >
-                        <span>Confirm & Alert {chosen?.name} (Call & WhatsApp ⚡)</span>
-                      </button>
-                    );
-                  })()}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => handleAlertEmergency('Medical Emergency', activeMedical)}
+                disabled={isSending}
+                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>
+                  Alert {activeMedical?.name} (Call & WhatsApp ⚡)
+                </span>
+              </button>
             </div>
 
             {/* 3. POLICE EMERGENCY */}
@@ -532,101 +384,25 @@ export default function FloatingSOS() {
                   🚓
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
-                      Police Emergency
-                    </h4>
-                    {policeList.length > 1 && (
-                      <span className="text-[10px] font-bold text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-2 py-0.5 rounded-full">
-                        Choose 1 Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-blue-700 dark:text-blue-300 font-medium truncate">
-                    Police Station (100), Intruder, Layout Security
+                  <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
+                    Police Emergency
+                  </h4>
+                  <p className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold truncate">
+                    {activePolice?.name} • {activePolice?.phone}
                   </p>
                 </div>
               </div>
 
-              {policeList.length === 1 ? (
-                <div className="pt-1 space-y-2">
-                  <div className="p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-white/80 dark:bg-slate-900/80 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-blue-950 dark:text-blue-100">{policeList[0].name}</p>
-                      <p className="text-[11px] text-blue-700 dark:text-blue-300">
-                        {policeList[0].designation || 'Police Responder'} • {policeList[0].phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/70 px-2 py-1 rounded-lg">
-                      Ready
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Police Emergency', policeList[0])}
-                    disabled={isSending}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span>Confirm & Alert {policeList[0].name} (Call & WhatsApp ⚡)</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1 space-y-2">
-                  <p className="text-[11px] font-bold text-blue-900 dark:text-blue-200">
-                    Choose preference (select only 1):
-                  </p>
-                  <div className="space-y-1.5">
-                    {policeList.map((p, idx) => {
-                      const isSelected = selectedPoliceId === p.id;
-                      return (
-                        <label
-                          key={p.id || idx}
-                          onClick={() => setSelectedPoliceId(p.id)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
-                              ? 'border-blue-600 bg-blue-100/70 dark:bg-blue-950/80 ring-1 ring-blue-500'
-                              : 'border-blue-200 dark:border-blue-900/40 bg-white/60 dark:bg-slate-900/60 hover:bg-blue-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="radio"
-                              name="police-choice"
-                              checked={isSelected}
-                              onChange={() => setSelectedPoliceId(p.id)}
-                              className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-blue-950 dark:text-blue-100 truncate">
-                                {p.name}
-                              </p>
-                              <p className="text-[11px] text-blue-700 dark:text-blue-300 truncate">
-                                {p.designation || 'Police Responder'} • {p.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
-                            #{idx + 1}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const chosen = policeList.find((p) => p.id === selectedPoliceId) || policeList[0];
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleConfirmAndAlert('Police Emergency', chosen)}
-                        disabled={isSending}
-                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                      >
-                        <span>Confirm & Alert {chosen?.name} (Call & WhatsApp ⚡)</span>
-                      </button>
-                    );
-                  })()}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => handleAlertEmergency('Police Emergency', activePolice)}
+                disabled={isSending}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>
+                  Alert {activePolice?.name} (Call & WhatsApp ⚡)
+                </span>
+              </button>
             </div>
 
             {/* 4. RESIDENT RESPONSE */}
@@ -636,101 +412,25 @@ export default function FloatingSOS() {
                   🏡
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
-                      Resident Response
-                    </h4>
-                    {residentList.length > 1 && (
-                      <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full">
-                        Choose 1 Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium truncate">
-                    President, Secretary & Community Responders ({residentList.length} available)
+                  <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
+                    Resident Response
+                  </h4>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold truncate">
+                    {activeResident?.name} ({activeResident?.designation || 'Committee'}) • {activeResident?.phone}
                   </p>
                 </div>
               </div>
 
-              {residentList.length === 1 ? (
-                <div className="pt-1 space-y-2">
-                  <div className="p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-white/80 dark:bg-slate-900/80 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-amber-950 dark:text-amber-100">{residentList[0].name}</p>
-                      <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                        {residentList[0].designation || 'Resident Responder'} • {residentList[0].phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/70 px-2 py-1 rounded-lg">
-                      Ready
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Resident Response', residentList[0])}
-                    disabled={isSending}
-                    className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span>Confirm & Alert {residentList[0].name} (Call & WhatsApp ⚡)</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1 space-y-2">
-                  <p className="text-[11px] font-bold text-amber-900 dark:text-amber-200">
-                    Choose preference (select only 1):
-                  </p>
-                  <div className="space-y-1.5">
-                    {residentList.map((r, idx) => {
-                      const isSelected = selectedResidentId === r.id;
-                      return (
-                        <label
-                          key={r.id || idx}
-                          onClick={() => setSelectedResidentId(r.id)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
-                              ? 'border-amber-600 bg-amber-100/70 dark:bg-amber-950/80 ring-1 ring-amber-500'
-                              : 'border-amber-200 dark:border-amber-900/40 bg-white/60 dark:bg-slate-900/60 hover:bg-amber-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="radio"
-                              name="resident-choice"
-                              checked={isSelected}
-                              onChange={() => setSelectedResidentId(r.id)}
-                              className="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-amber-950 dark:text-amber-100 truncate">
-                                {r.name}
-                              </p>
-                              <p className="text-[11px] text-amber-700 dark:text-amber-300 truncate">
-                                {r.designation || 'Resident Responder'} • {r.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                            #{idx + 1}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const chosen = residentList.find((r) => r.id === selectedResidentId) || residentList[0];
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleConfirmAndAlert('Resident Response', chosen)}
-                        disabled={isSending}
-                        className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                      >
-                        <span>Confirm & Alert {chosen?.name} (Call & WhatsApp ⚡)</span>
-                      </button>
-                    );
-                  })()}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => handleAlertEmergency('Resident Response', activeResident)}
+                disabled={isSending}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>
+                  Alert {activeResident?.name} (Call & WhatsApp ⚡)
+                </span>
+              </button>
             </div>
 
             {/* 5. FIRE EMERGENCY */}
@@ -740,101 +440,25 @@ export default function FloatingSOS() {
                   🔥
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-sm font-extrabold text-orange-950 dark:text-orange-200 truncate">
-                      Fire Emergency
-                    </h4>
-                    {fireList.length > 1 && (
-                      <span className="text-[10px] font-bold text-orange-800 dark:text-orange-300 bg-orange-100 dark:bg-orange-950 px-2 py-0.5 rounded-full">
-                        Choose 1 Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-orange-700 dark:text-orange-300 font-medium truncate">
-                    Fire Station (101), Firefighters & Emergency Rescue
+                  <h4 className="text-sm font-extrabold text-orange-950 dark:text-orange-200 truncate">
+                    Fire Emergency
+                  </h4>
+                  <p className="text-[11px] text-orange-700 dark:text-orange-300 font-semibold truncate">
+                    {activeFire?.name} • {activeFire?.phone}
                   </p>
                 </div>
               </div>
 
-              {fireList.length === 1 ? (
-                <div className="pt-1 space-y-2">
-                  <div className="p-2.5 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-white/80 dark:bg-slate-900/80 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-orange-950 dark:text-orange-100">{fireList[0].name}</p>
-                      <p className="text-[11px] text-orange-700 dark:text-orange-300">
-                        {fireList[0].designation || 'Fire Responder'} • {fireList[0].phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/70 px-2 py-1 rounded-lg">
-                      Ready
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleConfirmAndAlert('Fire Emergency', fireList[0])}
-                    disabled={isSending}
-                    className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    <span>Confirm & Alert {fireList[0].name} (Call & WhatsApp ⚡)</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-1 space-y-2">
-                  <p className="text-[11px] font-bold text-orange-900 dark:text-orange-200">
-                    Choose preference (select only 1):
-                  </p>
-                  <div className="space-y-1.5">
-                    {fireList.map((fi, idx) => {
-                      const isSelected = selectedFireId === fi.id;
-                      return (
-                        <label
-                          key={fi.id || idx}
-                          onClick={() => setSelectedFireId(fi.id)}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
-                              ? 'border-orange-600 bg-orange-100/70 dark:bg-orange-950/80 ring-1 ring-orange-500'
-                              : 'border-orange-200 dark:border-orange-900/40 bg-white/60 dark:bg-slate-900/60 hover:bg-orange-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="radio"
-                              name="fire-choice"
-                              checked={isSelected}
-                              onChange={() => setSelectedFireId(fi.id)}
-                              className="w-4 h-4 text-orange-600 focus:ring-orange-500 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-orange-950 dark:text-orange-100 truncate">
-                                {fi.name}
-                              </p>
-                              <p className="text-[11px] text-orange-700 dark:text-orange-300 truncate">
-                                {fi.designation || 'Fire Responder'} • {fi.phone}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold text-orange-700 dark:text-orange-300">
-                            #{idx + 1}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const chosen = fireList.find((fi) => fi.id === selectedFireId) || fireList[0];
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => handleConfirmAndAlert('Fire Emergency', chosen)}
-                        disabled={isSending}
-                        className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                      >
-                        <span>Confirm & Alert {chosen?.name} (Call & WhatsApp ⚡)</span>
-                      </button>
-                    );
-                  })()}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => handleAlertEmergency('Fire Emergency', activeFire)}
+                disabled={isSending}
+                className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>
+                  Alert {activeFire?.name} (Call & WhatsApp ⚡)
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -858,7 +482,7 @@ export default function FloatingSOS() {
                 <div>
                   <h3 className="text-base font-extrabold">EMERGENCY ASSISTANCE INITIATED</h3>
                   <p className="text-xs text-rose-100">
-                    Dialer dialed & WhatsApp message transmitted with your live address & location.
+                    Phone dialer opened & WhatsApp message sent with your live address & location.
                   </p>
                 </div>
               </div>

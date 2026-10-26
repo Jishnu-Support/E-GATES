@@ -83,6 +83,39 @@ export default function MemberSOSContacts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
+  // User's Preferred SOS Contacts (Choose which contact to trigger in SOS popup)
+  const [preferredContacts, setPreferredContacts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('preferred_sos_contacts');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const getCategoryKey = (contactType) => {
+    if (contactType === 'family') return 'family';
+    if (contactType === 'medical' || contactType === 'ambulance') return 'medical';
+    if (contactType === 'police') return 'police';
+    if (contactType === 'member' || contactType === 'resident') return 'resident';
+    if (contactType === 'fire') return 'fire';
+    return 'other';
+  };
+
+  const handleSetPreferred = (contact) => {
+    const cat = getCategoryKey(contact.contact_type);
+    const updated = {
+      ...preferredContacts,
+      [cat]: contact.id,
+    };
+    setPreferredContacts(updated);
+    try {
+      localStorage.setItem('preferred_sos_contacts', JSON.stringify(updated));
+      api.put('/sos/preferences', { preferred_contacts: updated }).catch(() => {});
+    } catch (e) {}
+    toast.success(`⭐ "${contact.name}" is now your active contact for ${contact.contact_type.toUpperCase()} in the SOS button!`);
+  };
+
   // Family Add / Edit Modal State
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
   const [editingFamily, setEditingFamily] = useState(null);
@@ -372,6 +405,11 @@ export default function MemberSOSContacts() {
           {filteredContacts.map((contact) => {
             const isFamily = contact.contact_type === 'family';
             const typeInfo = EMERGENCY_TYPE_INFO[contact.contact_type] || EMERGENCY_TYPE_INFO.other;
+            const catKey = getCategoryKey(contact.contact_type);
+            const peers = contacts.filter((c) => getCategoryKey(c.contact_type) === catKey);
+            const isPreferred =
+              preferredContacts[catKey] === contact.id ||
+              (!preferredContacts[catKey] && peers[0]?.id === contact.id);
 
             return (
               <div
@@ -424,6 +462,25 @@ export default function MemberSOSContacts() {
                       {contact.designation || (isFamily ? 'Personal Family' : 'Emergency Responder')}
                     </p>
                   </div>
+
+                  {/* Category Preference Badge / Selector (If category has multiple contacts) */}
+                  {peers.length > 1 && (
+                    <div className="pt-2">
+                      {isPreferred ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                          <span>⭐ Active in SOS Button</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPreferred(contact)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-gray-100 dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-gray-700 dark:text-gray-300 hover:text-amber-800 dark:hover:text-amber-300 border border-gray-200 dark:border-slate-700 transition cursor-pointer"
+                        >
+                          <span>🔘 Choose for SOS Button</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Phone & Direct Call / WhatsApp */}
