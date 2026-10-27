@@ -17,6 +17,7 @@ import api from '../../services/api';
 import { useSocket } from '../../hooks/useSocket';
 import DataTable from '../../components/common/DataTable';
 import Modal from '../../components/common/Modal';
+import LocationMap from '../../components/common/LocationMap';
 
 export default function AdminSOSAlerts() {
   const { socket, isConnected } = useSocket();
@@ -478,45 +479,15 @@ export default function AdminSOSAlerts() {
                 </p>
               </div>
 
-              {/* Map embed / preview */}
-              <div className="bg-white p-3.5 rounded-xl border border-gray-200 flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block mb-1">
-                    GPS Geolocation
-                  </span>
-                  {selectedAlert.latitude && selectedAlert.longitude ? (
-                    <div className="space-y-1">
-                      <p className="font-mono text-gray-700">
-                        Lat: {selectedAlert.latitude}, Lng: {selectedAlert.longitude}
-                      </p>
-                      <div className="mt-2 h-28 rounded-lg overflow-hidden border border-gray-200">
-                        <iframe
-                          title="Alert Location Map"
-                          width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          scrolling="no"
-                          src={`https://maps.google.com/maps?q=${selectedAlert.latitude},${selectedAlert.longitude}&z=16&output=embed`}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-28 flex items-center justify-center text-gray-400 bg-gray-50 rounded-lg italic">
-                      No GPS coordinates provided
-                    </div>
-                  )}
-                </div>
-
-                {selectedAlert.latitude && selectedAlert.longitude && (
-                  <a
-                    href={`https://maps.google.com/?q=${selectedAlert.latitude},${selectedAlert.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 text-primary-600 hover:text-primary-800 font-semibold text-center block text-xs"
-                  >
-                    Open in Full Google Maps &rarr;
-                  </a>
-                )}
+              {/* Real Interactive Map Location */}
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200">
+                <LocationMap
+                  latitude={selectedAlert.latitude}
+                  longitude={selectedAlert.longitude}
+                  address={selectedAlert.resident_address || (selectedAlert.door_no ? `Door #${selectedAlert.door_no}` : '')}
+                  title="Alert Location Map"
+                  height="h-44"
+                />
               </div>
             </div>
 

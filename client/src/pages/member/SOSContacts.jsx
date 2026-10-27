@@ -93,6 +93,28 @@ export default function MemberSOSContacts() {
     }
   });
 
+  // Dedicated ONE-TAP SOS Primary Contact: Instantly called when tapping SOS button once
+  const [primaryOneTapId, setPrimaryOneTapId] = useState(() => {
+    try {
+      return localStorage.getItem('preferred_sos_primary') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+
+  const handleSetOneTapPrimary = (contact) => {
+    const contactIdStr = String(contact.id);
+    setPrimaryOneTapId(contactIdStr);
+    try {
+      localStorage.setItem('preferred_sos_primary', contactIdStr);
+      api.put('/sos/preferences', { primary_contact_id: contact.id }).catch(() => {});
+    } catch (e) {}
+    toast.success(
+      `⭐ "${contact.name}" (${contact.phone}) is now your ONE-TAP SOS CONTACT!\nTouching the floating SOS button once will call & WhatsApp them immediately without asking anything.`,
+      { duration: 6000 }
+    );
+  };
+
   const getCategoryKey = (contactType) => {
     if (contactType === 'family') return 'family';
     if (contactType === 'medical' || contactType === 'ambulance') return 'medical';
@@ -303,6 +325,16 @@ export default function MemberSOSContacts() {
     });
   }, [contacts, searchQuery, filterType]);
 
+  // Active One-Tap SOS Contact
+  const activeOneTapContact = useMemo(() => {
+    if (primaryOneTapId) {
+      const found = contacts.find((c) => String(c.id) === String(primaryOneTapId));
+      if (found) return found;
+    }
+    if (familyContacts.length > 0) return familyContacts[0];
+    return contacts[0] || null;
+  }, [contacts, familyContacts, primaryOneTapId]);
+
   const cleanPhone = (p) => String(p || '').replace(/\D/g, '');
 
   return (
@@ -334,6 +366,44 @@ export default function MemberSOSContacts() {
             <HiPlus className="w-4 h-4" />
             <span>Add Family Contact</span>
           </button>
+        </div>
+      </div>
+
+      {/* Active One-Tap SOS Highlight Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 rounded-2xl p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl flex-shrink-0 shadow-inner">
+            🚨
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2.5 py-0.5 rounded-full text-white">
+                One-Tap Instant SOS Target
+              </span>
+              <span className="text-[10px] bg-amber-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">
+                Active
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black mt-1">
+              {activeOneTapContact ? activeOneTapContact.name : 'Emergency Contact'}{' '}
+              <span className="text-rose-200 text-xs sm:text-sm font-semibold">
+                ({activeOneTapContact?.phone || '112'} • {activeOneTapContact?.designation || 'Emergency Responder'})
+              </span>
+            </h3>
+            <p className="text-[11px] sm:text-xs text-rose-100 mt-0.5 leading-snug">
+              ⚡ Tapping the floating SOS button once immediately dials this number and transmits your live home address & map location via WhatsApp with zero confirmation.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`tel:${activeOneTapContact?.phone || '112'}`}
+            className="px-3.5 py-2 bg-white text-red-600 hover:bg-rose-50 rounded-xl text-xs font-black shadow-sm transition flex items-center gap-1.5"
+          >
+            <HiPhone className="w-4 h-4" />
+            <span>Call Now</span>
+          </a>
         </div>
       </div>
 
@@ -457,6 +527,24 @@ export default function MemberSOSContacts() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {contact.designation || (isFamily ? 'Personal Family' : 'Emergency Responder')}
                     </p>
+                  </div>
+
+                  {/* One-Tap SOS Quick Designation */}
+                  <div className="pt-2 flex items-center justify-between gap-2">
+                    {String(contact.id) === String(activeOneTapContact?.id) ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xs">
+                        <span>⭐ One-Tap SOS Contact</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSetOneTapPrimary(contact)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 transition cursor-pointer"
+                        title="Set this contact as the number called immediately when tapping the SOS button"
+                      >
+                        <span>⭐ Set as 1-Tap SOS</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Category Preference Badge / Selector (If category has multiple contacts) */}
