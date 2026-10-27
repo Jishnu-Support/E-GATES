@@ -321,25 +321,25 @@ export default function FloatingSOS() {
 
   return (
     <>
-      {/* Floating SOS Trigger (Fixed Bottom-Right) */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating SOS Trigger (Fixed Bottom-Right, Fully Visible on Mobile & Desktop) */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 select-none">
         {/* ONE-TAP SOS BUTTON (Instantly calls & sends WhatsApp to saved contact) */}
         <button
           type="button"
           onClick={handleOneTapSOS}
           disabled={isSending}
-          className="relative group p-4 sm:p-5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-2xl shadow-red-600/50 hover:shadow-red-600/70 hover:scale-105 active:scale-95 transition duration-200 cursor-pointer flex items-center justify-center border-4 border-white dark:border-gray-800"
+          className="relative group px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-2xl shadow-red-600/50 hover:shadow-red-600/70 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center border-2 sm:border-4 border-white dark:border-slate-800 ring-2 ring-red-500/30"
           title={`One-Tap SOS: Immediately calls & sends WhatsApp to ${primaryContact?.name || 'Emergency Contact'}`}
           aria-label="Instant Emergency SOS"
         >
-          <span className="absolute -inset-1 rounded-full bg-red-600/40 animate-ping opacity-75 pointer-events-none" />
-          <div className="relative flex items-center gap-2">
-            <HiShieldExclamation className="w-8 h-8 sm:w-9 sm:h-9 animate-pulse" />
-            <div className="text-left hidden sm:block">
-              <span className="font-black text-sm tracking-wider uppercase block leading-none">
+          <span className="absolute -inset-1 rounded-full bg-red-600/30 animate-ping opacity-75 pointer-events-none" />
+          <div className="relative flex items-center gap-1.5 sm:gap-2">
+            <HiShieldExclamation className="w-6 h-6 sm:w-8 sm:h-8 animate-pulse text-white flex-shrink-0" />
+            <div className="text-left flex flex-col justify-center">
+              <span className="font-black text-xs sm:text-sm tracking-wider uppercase leading-none text-white drop-shadow-xs">
                 SOS
               </span>
-              <span className="text-[10px] text-rose-100 font-semibold leading-tight block truncate max-w-[120px]">
+              <span className="text-[9px] sm:text-[10px] text-rose-100 font-bold leading-tight truncate max-w-[85px] sm:max-w-[120px]">
                 {primaryContact ? primaryContact.name : '1-Tap Alert'}
               </span>
             </div>
