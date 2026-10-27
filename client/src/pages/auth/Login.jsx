@@ -24,10 +24,10 @@ export default function Login() {
   const location = useLocation();
 
   // 3 Distinct Tabs: 'super_admin' | 'admin' | 'member'
-  const [activeTab, setActiveTab] = useState('super_admin');
+  const [activeTab, setActiveTab] = useState(location.state?.role || 'super_admin');
   const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

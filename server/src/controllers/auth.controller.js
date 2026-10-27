@@ -706,69 +706,148 @@ const authController = {
   },
 
   /**
-   * Request password reset token
+   * Self-service password reset lookup & OTP generation
    */
   async forgotPassword(req, res, next) {
     try {
-      const { email } = req.body;
+      const { identifier, email, phone, member_code } = req.body;
+      const lookupVal = (identifier || email || phone || member_code || '').trim();
 
-      if (!email) {
+      if (!lookupVal) {
         return res.status(400).json({
           success: false,
-          message: 'Email address is required'
+          message: 'Please provide your registered Email, Mobile Phone Number, or Member Code.'
         });
       }
 
+      // Find user by email, phone, or member_code
       const userResult = await pool.query(
-        'SELECT id, name, email FROM users WHERE LOWER(email) = LOWER($1)',
-        [email.trim()]
+        `SELECT u.id, u.name, u.email, u.phone, u.role, u.is_main_admin, u.member_code, u.door_no, u.status,
+                a.name as association_name
+         FROM users u
+         LEFT JOIN associations a ON u.association_id = a.id
+         WHERE LOWER(u.email) = LOWER($1) 
+            OR u.phone = $1 
+            OR UPPER(u.member_code) = UPPER($1)
+            OR LOWER(u.name) = LOWER($1)`,
+        [lookupVal]
       );
 
-      if (userResult.rows.length > 0) {
-        const user = userResult.rows[0];
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-        await pool.query(
-          'UPDATE users SET reset_token = $1, reset_token_expires = $2, updated_at = NOW() WHERE id = $3',
-          [resetToken, resetExpires, user.id]
-        );
-
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
-
-        try {
-          if (emailService && typeof emailService.sendResetPasswordEmail === 'function') {
-            await emailService.sendResetPasswordEmail(user.email, resetUrl);
-          } else if (emailService && typeof emailService.sendEmail === 'function') {
-            await emailService.sendEmail({
-              to: user.email,
-              subject: 'Password Reset Request',
-              html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                  <h2>Password Reset Request</h2>
-                  <p>Hello ${user.name},</p>
-                  <p>You requested a password reset for your Layout Association account.</p>
-                  <p>Click the link below to set a new password (valid for 1 hour):</p>
-                  <p><a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
-                  <p>If you did not request this, please ignore this email.</p>
-                  <hr/>
-                  <p style="font-size: 12px; color: #6b7280;">Powered by JishnuInfotech</p>
-                </div>
-              `
-            });
-          }
-        } catch (mailErr) {
-          console.error('Failed to send reset email:', mailErr.message);
-        }
-
-        await logAudit(user.id, 'FORGOT_PASSWORD_REQUEST', 'users', user.id, { email: user.email }, req.ip);
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No registered user or administrator found matching that Email, Phone, or Member Code.'
+        });
       }
 
-      // Generic response for security
-      res.json({
+      const user = userResult.rows[0];
+
+      if (user.status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account registration is currently pending approval.'
+        });
+      }
+
+      if (user.status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account registration was rejected or deactivated. Please contact your association administrator.'
+        });
+      }
+
+      // Generate 6-digit verification OTP and a secure reset token
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const compositeToken = `${resetToken}:${otp}`;
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await pool.query(
+        'UPDATE users SET reset_token = $1, reset_token_expires = $2, updated_at = NOW() WHERE id = $3',
+        [compositeToken, resetExpires, user.id]
+      );
+
+      // Mask phone: e.g. 98****3210
+      const maskedPhone = user.phone && user.phone.length >= 6
+        ? `${user.phone.slice(0, 2)}${'*'.repeat(Math.max(2, user.phone.length - 4))}${user.phone.slice(-2)}`
+        : user.phone || 'Not registered';
+
+      // Mask email: e.g. a***z@gmail.com
+      let maskedEmail = user.email || '';
+      if (maskedEmail.includes('@')) {
+        const [local, domain] = maskedEmail.split('@');
+        maskedEmail = local.length > 2
+          ? `${local[0]}${'*'.repeat(local.length - 2)}${local.slice(-1)}@${domain}`
+          : `${local[0]}*@${domain}`;
+      }
+
+      const designation = user.is_main_admin
+        ? 'Main Association Admin'
+        : user.role === 'super_admin'
+        ? 'Super Admin'
+        : user.role === 'admin'
+        ? 'Layout Admin'
+        : 'Resident Member';
+
+      // Send email if SMTP configured
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+      try {
+        if (emailService && (typeof emailService.sendResetPasswordEmail === 'function' || typeof emailService.sendEmail === 'function')) {
+          const emailBody = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+              <h2 style="color: #166534; margin-top: 0;">Password Reset Verification</h2>
+              <p>Hello <strong>${user.name}</strong>,</p>
+              <p>You requested a self-service password reset for your Layout Association account.</p>
+              <div style="background-color: #f0fdf4; border: 1px dashed #22c55e; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <p style="margin: 0; font-size: 13px; color: #166534; text-transform: uppercase; font-weight: bold;">Your 6-Digit Verification Code</p>
+                <h1 style="margin: 8px 0; font-size: 32px; letter-spacing: 6px; color: #15803d;">${otp}</h1>
+                <p style="margin: 0; font-size: 12px; color: #64748b;">This code is valid for 1 hour.</p>
+              </div>
+              <p>Or click the button below to reset your password directly:</p>
+              <p style="text-align: center; margin: 24px 0;">
+                <a href="${resetUrl}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password Now</a>
+              </p>
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #64748b; margin: 0;">If you did not request this, you can safely ignore this email.</p>
+            </div>
+          `;
+
+          if (typeof emailService.sendEmail === 'function') {
+            await emailService.sendEmail({
+              to: user.email,
+              subject: 'Your Password Reset Verification Code: ' + otp,
+              html: emailBody
+            });
+          } else {
+            await emailService.sendResetPasswordEmail(user.email, resetUrl);
+          }
+        }
+      } catch (mailErr) {
+        console.warn('Notice: Email notification could not be sent (SMTP not configured or failed):', mailErr.message);
+      }
+
+      await logAudit(user.id, 'FORGOT_PASSWORD_REQUEST', 'users', user.id, { identifier: lookupVal }, req.ip);
+
+      return res.json({
         success: true,
-        message: 'If an account exists with that email, a password reset link has been sent.'
+        message: 'Account verified successfully. You can now set your new password.',
+        data: {
+          token: resetToken,
+          otp: otp,
+          user: {
+            id: user.id,
+            name: user.name,
+            masked_email: maskedEmail,
+            masked_phone: maskedPhone,
+            member_code: user.member_code,
+            door_no: user.door_no,
+            role: user.role,
+            designation: designation,
+            association_name: user.association_name
+          }
+        }
       });
     } catch (error) {
       next(error);
@@ -776,16 +855,16 @@ const authController = {
   },
 
   /**
-   * Reset password with valid token
+   * Reset password with valid token or OTP
    */
   async resetPassword(req, res, next) {
     try {
-      const { token, password } = req.body;
+      const { token, otp, user_id, password } = req.body;
 
-      if (!token || !password) {
+      if ((!token && !otp && !user_id) || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Reset token and new password are required'
+          message: 'Reset verification and new password are required'
         });
       }
 
@@ -796,15 +875,39 @@ const authController = {
         });
       }
 
-      const userResult = await pool.query(
-        'SELECT id, email, name FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
-        [token]
-      );
+      // Look up user by matching reset_token (either exact match, composite part before colon, composite part after colon, or user_id + otp)
+      let userResult;
 
-      if (userResult.rows.length === 0) {
+      if (token) {
+        userResult = await pool.query(
+          `SELECT id, email, name, phone, member_code FROM users 
+           WHERE reset_token_expires > NOW()
+             AND (
+               reset_token = $1
+               OR split_part(reset_token, ':', 1) = $1
+               OR split_part(reset_token, ':', 2) = $1
+             )`,
+          [token.trim()]
+        );
+      }
+
+      if ((!userResult || userResult.rows.length === 0) && otp && user_id) {
+        userResult = await pool.query(
+          `SELECT id, email, name, phone, member_code FROM users 
+           WHERE id = $1
+             AND reset_token_expires > NOW()
+             AND (
+               split_part(reset_token, ':', 2) = $2
+               OR reset_token = $2
+             )`,
+          [user_id, otp.trim()]
+        );
+      }
+
+      if (!userResult || userResult.rows.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Password reset token is invalid or has expired'
+          message: 'Verification code or reset link is invalid or has expired. Please try again.'
         });
       }
 
@@ -819,11 +922,14 @@ const authController = {
       // Invalidate existing refresh tokens
       await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [user.id]);
 
-      await logAudit(user.id, 'PASSWORD_RESET_SUCCESS', 'users', user.id, { email: user.email }, req.ip);
+      await logAudit(user.id, 'PASSWORD_RESET_SUCCESS', 'users', user.id, { email: user.email, self_service: true }, req.ip);
 
       res.json({
         success: true,
-        message: 'Password has been reset successfully. You may now log in.'
+        message: 'Password has been updated successfully! You can now log in with your new password.',
+        data: {
+          loginIdentifier: user.email || user.phone || user.member_code
+        }
       });
     } catch (error) {
       next(error);

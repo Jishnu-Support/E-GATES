@@ -124,29 +124,24 @@ router.post('/logout', authController.logout);
 
 /**
  * @route   POST /api/v1/auth/forgot-password
- * @desc    Send password reset email
+ * @desc    Self-service password reset lookup & OTP generation
  * @access  Public
  */
 router.post(
   '/forgot-password',
   authLimiter,
-  [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-    validate
-  ],
   authController.forgotPassword
 );
 
 /**
  * @route   POST /api/v1/auth/reset-password
- * @desc    Reset password with token
+ * @desc    Reset password with token or self-service session
  * @access  Public
  */
 router.post(
   '/reset-password',
   authLimiter,
   [
-    body('token').notEmpty().withMessage('Reset token is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
     validate
   ],
