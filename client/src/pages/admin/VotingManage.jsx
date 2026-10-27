@@ -722,20 +722,20 @@ export default function AdminVotingManage() {
                   <div
                     key={poll.id}
                     onClick={() => fetchPollDetail(poll.id)}
-                    className={`p-4 cursor-pointer transition ${
+                    className={`p-4 cursor-pointer transition border-b border-gray-100 dark:border-slate-800/80 ${
                       isSelected
-                        ? 'bg-primary-50/60 dark:bg-primary-950/40 border-l-4 border-primary-600'
+                        ? 'bg-blue-50/90 dark:bg-slate-800 border-l-4 border-l-primary-600 dark:border-l-cyan-400'
                         : 'hover:bg-gray-50 dark:hover:bg-slate-800/60'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           poll.poll_type === 'election'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            ? 'bg-amber-100 dark:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-600'
                             : poll.poll_type === 'resolution_passing'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-purple-100 dark:bg-purple-900/70 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-600'
+                            : 'bg-blue-100 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-600'
                         }`}
                       >
                         {poll.poll_type === 'election'
@@ -746,10 +746,10 @@ export default function AdminVotingManage() {
                       </span>
 
                       <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
                           isClosed
-                            ? 'bg-gray-100 text-gray-600'
-                            : 'bg-green-100 text-green-800 animate-pulse'
+                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-slate-600'
+                            : 'bg-emerald-100 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-600 animate-pulse'
                         }`}
                       >
                         {isClosed ? 'Closed' : 'Live Active'}
@@ -759,22 +759,22 @@ export default function AdminVotingManage() {
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{poll.title}</h3>
 
                     {poll.poll_type === 'election' && (
-                      <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                      <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300 mt-0.5">
                         {poll.internal_officer_name ? `Officers: ${poll.internal_officer_name} & ${poll.external_officer_name || 'External'}` : 'Association Committee Election'}
                       </p>
                     )}
                     {poll.service_category && (
-                      <p className="text-[11px] font-medium text-blue-600 dark:text-cyan-400">
+                      <p className="text-[11px] font-medium text-blue-600 dark:text-cyan-300 mt-0.5">
                         Category: {poll.service_category}
                       </p>
                     )}
                     {poll.resolution_task_type && (
-                      <p className="text-[11px] font-medium text-purple-600 dark:text-purple-400">
+                      <p className="text-[11px] font-medium text-purple-600 dark:text-purple-300 mt-0.5">
                         Task: {poll.resolution_task_type}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 font-semibold mt-2 pt-1 border-t border-gray-100 dark:border-slate-700/60">
                       <span>{poll.total_votes || 0} votes cast</span>
                       <span>
                         Ends {poll.end_date ? format(new Date(poll.end_date), 'dd MMM yyyy') : ''}

@@ -393,31 +393,50 @@ export default function MemberVotingPage() {
                     onClick={() => fetchPollDetail(p.id)}
                     className={`p-3.5 rounded-xl cursor-pointer transition border ${
                       isSelected
-                        ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-300 dark:border-primary-600 ring-1 ring-primary-300 dark:ring-primary-600'
-                        : 'bg-white dark:bg-slate-800/80 hover:bg-gray-50 dark:hover:bg-slate-800 border-gray-100 dark:border-slate-700/80'
+                        ? 'bg-blue-50/90 dark:bg-slate-800 border-blue-400 dark:border-cyan-400 ring-2 ring-blue-400/40 dark:ring-cyan-400/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-900/90 hover:bg-gray-50 dark:hover:bg-slate-800/80 border-gray-200 dark:border-slate-800'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                           p.poll_type === 'election'
-                            ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60'
+                            ? 'bg-amber-100 dark:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-600'
                             : isActive
-                            ? 'bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800/60'
-                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-600'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-600'
+                            : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-slate-600'
                         }`}
                       >
-                        {p.poll_type === 'election' ? '🗳️ Election' : p.status}
+                        {p.poll_type === 'election' ? '🗳️ Election' : p.status === 'active' ? 'Active' : 'Closed'}
                       </span>
                       {p.is_anonymous && (
-                        <span className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold">Anonymous</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                          🔒 Anonymous
+                        </span>
                       )}
                     </div>
 
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{p.title}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">{p.description}</p>
+                    <h3 className={`text-sm font-bold line-clamp-1 ${
+                      isSelected
+                        ? 'text-primary-950 dark:text-white'
+                        : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {p.title}
+                    </h3>
+                    
+                    <p className={`text-xs line-clamp-2 mt-1 font-medium ${
+                      isSelected
+                        ? 'text-slate-700 dark:text-slate-200'
+                        : 'text-slate-600 dark:text-slate-300'
+                    }`}>
+                      {p.description || 'No description provided'}
+                    </p>
 
-                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+                    <div className={`mt-2.5 flex items-center justify-between text-[11px] font-semibold pt-2 border-t ${
+                      isSelected
+                        ? 'border-blue-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        : 'border-gray-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-400'
+                    }`}>
                       <span>Ends: {p.end_date ? format(new Date(p.end_date), 'dd MMM yyyy') : '—'}</span>
                     </div>
                   </div>
