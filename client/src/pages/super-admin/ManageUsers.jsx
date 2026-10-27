@@ -137,7 +137,7 @@ export default function ManageUsers() {
 
 
 
-  // Handle Edit User
+  // Handle Edit User (Super Admin editing any user, Association Admin, or Super Admin)
   const handleOpenEdit = (user) => {
     setEditUser(user);
     setEditForm({
@@ -145,26 +145,40 @@ export default function ManageUsers() {
       email: user.email || '',
       phone: user.phone || '',
       password: '',
+      member_code: user.member_code || '',
       door_no: user.door_no || '',
       street: user.street || '',
+      layout_name: user.layout_name || '',
+      taluk: user.taluk || '',
+      district: user.district || '',
+      state: user.state || 'Tamil Nadu',
+      role: user.role || 'member',
+      status: user.status || 'approved',
     });
   };
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editUser) return;
-    if (!editForm.name.trim() || !editForm.email.trim()) {
-      toast.error('Name and email are required');
+    if (!editForm.name.trim() || !editForm.phone.trim()) {
+      toast.error('Full Name and Phone Number are required');
       return;
     }
     try {
       setIsSavingEdit(true);
       const payload = {
         name: editForm.name.trim(),
-        email: editForm.email.trim().toLowerCase(),
+        email: editForm.email ? editForm.email.trim().toLowerCase() : '',
         phone: editForm.phone.trim(),
         door_no: editForm.door_no.trim(),
         street: editForm.street.trim(),
+        layout_name: editForm.layout_name.trim(),
+        taluk: editForm.taluk.trim(),
+        district: editForm.district.trim(),
+        state: editForm.state.trim(),
+        member_code: editForm.member_code.trim(),
+        role: editForm.role,
+        status: editForm.status,
       };
       if (editForm.password && editForm.password.trim()) {
         if (editForm.password.trim().length < 6) {
@@ -175,7 +189,15 @@ export default function ManageUsers() {
         payload.password = editForm.password.trim();
       }
       await api.put(`/users/${editUser.id}`, payload);
-      toast.success(`${editUser.role === 'super_admin' ? 'Super Admin' : 'User'} "${editForm.name}" updated successfully!`);
+      toast.success(
+        `${
+          editUser.role === 'super_admin'
+            ? 'Super Admin'
+            : editUser.role === 'admin'
+            ? 'Association Admin'
+            : 'Member'
+        } "${editForm.name}" updated successfully!`
+      );
       setEditUser(null);
       fetchData();
     } catch (err) {
@@ -418,17 +440,21 @@ export default function ManageUsers() {
                           <span>Digital ID</span>
                         </button>
 
-                        {/* Edit option for Super Admin only */}
-                        {user.role === 'super_admin' && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(user)}
-                            className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition"
-                            title="Edit Super Admin"
-                          >
-                            <HiPencilSquare className="w-4 h-4" />
-                          </button>
-                        )}
+                        {/* Edit option for all users, including Association Admins and Members */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(user)}
+                          className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
+                          title={
+                            user.role === 'super_admin'
+                              ? 'Edit Super Admin Details'
+                              : user.role === 'admin'
+                              ? 'Edit Association Admin Details'
+                              : 'Edit Member Details'
+                          }
+                        >
+                          <HiPencilSquare className="w-4 h-4" />
+                        </button>
 
                         {/* Delete User */}
                         {user.email === 'superadmin@association.com' || user.member_code === '000001' ? (
@@ -548,86 +574,248 @@ export default function ManageUsers() {
         </form>
       </Modal>
 
-      {/* EDIT SUPER ADMIN MODAL */}
+      {/* EDIT USER / ADMIN / SUPER ADMIN MODAL */}
       <Modal
         isOpen={Boolean(editUser)}
         onClose={() => setEditUser(null)}
-        title={`Edit Super Admin (#${editUser?.member_code || '000001'})`}
-        size="md"
+        title={
+          editUser?.role === 'super_admin'
+            ? `Edit Super Admin (${editUser?.name})`
+            : editUser?.role === 'admin'
+            ? `Edit Association Admin: ${editUser?.name}`
+            : `Edit Member Details: ${editUser?.name}`
+        }
+        size="lg"
       >
-        <form onSubmit={handleSaveEdit} className="space-y-4">
-          <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-purple-900 dark:text-purple-200 text-xs font-medium flex items-center gap-2">
-            <HiShieldCheck className="w-5 h-5 text-purple-600 flex-shrink-0" />
-            <span>
-              Editing platform-level <strong>Super Administrator</strong> credentials and contact details.
+        <form onSubmit={handleSaveEdit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-purple-900 dark:text-purple-200 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HiShieldCheck className="w-5 h-5 text-purple-600 flex-shrink-0" />
+              <span>
+                Editing account: <strong>{editUser?.name}</strong>{' '}
+                {editUser?.association_name ? `(${editUser.association_name})` : '(Platform Super Admin)'}
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-200 text-purple-900 dark:bg-purple-900 dark:text-purple-200">
+              {editUser?.role === 'super_admin'
+                ? 'Super Admin'
+                : editUser?.is_main_admin
+                ? 'Main Admin'
+                : editUser?.role === 'admin'
+                ? 'Layout Admin'
+                : 'Resident'}
             </span>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
-            />
+          {/* Section 1: Personal Info */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-1">
+              Personal Information
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Member Code (ID)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.member_code}
+                  onChange={(e) => setEditForm({ ...editForm, member_code: e.target.value })}
+                  placeholder="e.g. 000001 or KCC-001"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white font-mono font-bold"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                required
-                value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                required
-                value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white font-mono"
-              />
+          {/* Section 2: Address Information */}
+          <div className="space-y-3 pt-2">
+            <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-1">
+              Address & Layout Information
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Door / Plot / Flat No
+                </label>
+                <input
+                  type="text"
+                  value={editForm.door_no}
+                  onChange={(e) => setEditForm({ ...editForm, door_no: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Street / Cross Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.street}
+                  onChange={(e) => setEditForm({ ...editForm, street: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Layout Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.layout_name}
+                  onChange={(e) => setEditForm({ ...editForm, layout_name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Taluk / Area
+                </label>
+                <input
+                  type="text"
+                  value={editForm.taluk}
+                  onChange={(e) => setEditForm({ ...editForm, taluk: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  District
+                </label>
+                <input
+                  type="text"
+                  value={editForm.district}
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  State
+                </label>
+                <input
+                  type="text"
+                  value={editForm.state}
+                  onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              New Password <span className="font-normal text-gray-400 text-[11px]">(leave blank to keep current)</span>
-            </label>
-            <input
-              type="password"
-              value={editForm.password}
-              onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-              placeholder="Enter new password if changing..."
-              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
-            />
+          {/* Section 3: Privilege & Status */}
+          <div className="space-y-3 pt-2">
+            <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-1">
+              Role & Account Status
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Account Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                >
+                  <option value="member">Resident Member</option>
+                  <option value="admin">Layout Administrator</option>
+                  <option value="super_admin">Platform Super Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Account Status
+                </label>
+                <select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+                >
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Security (Password) */}
+          <div className="space-y-2 pt-2">
+            <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-1">
+              Security Credentials (Optional)
+            </h4>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                New Password <span className="font-normal text-gray-400 text-[11px]">(leave blank to keep current)</span>
+              </label>
+              <input
+                type="password"
+                minLength={6}
+                value={editForm.password}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Enter new password if changing..."
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
+              />
+            </div>
           </div>
 
           <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setEditUser(null)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSavingEdit}
-              className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
             >
               {isSavingEdit ? 'Saving...' : 'Save Changes'}
             </button>

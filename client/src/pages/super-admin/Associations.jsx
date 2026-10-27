@@ -69,6 +69,103 @@ export default function Associations() {
   const [selectedRoleAction, setSelectedRoleAction] = useState('admin'); // 'admin' | 'member'
   const [isAdminLoading, setIsAdminLoading] = useState(false);
 
+  // Edit Association Admin Modal State (Super Admin editing layout admin details)
+  const [isEditAdminModalOpen, setIsEditAdminModalOpen] = useState(false);
+  const [targetAdminAssoc, setTargetAdminAssoc] = useState(null);
+  const [targetAdminUser, setTargetAdminUser] = useState(null);
+  const [isSubmittingAdminEdit, setIsSubmittingAdminEdit] = useState(false);
+  const [adminEditForm, setAdminEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    door_no: '',
+    street: '',
+    taluk: '',
+    district: '',
+    state: 'Tamil Nadu',
+    member_code: '',
+    password: '',
+  });
+
+  const handleOpenEditAssocAdmin = async (assoc) => {
+    setTargetAdminAssoc(assoc);
+    setIsSubmittingAdminEdit(false);
+    try {
+      // Find the admin user for this association
+      const res = await api.get('/users', { params: { association_id: assoc.id, role: 'admin' } });
+      const admins = res.data?.data || [];
+      const foundAdmin = admins.find(u => u.is_main_admin) || admins[0];
+
+      if (!foundAdmin) {
+        toast.error(`No administrator found for "${assoc.name}". Please assign or add an admin first.`);
+        return;
+      }
+
+      setTargetAdminUser(foundAdmin);
+      setAdminEditForm({
+        name: foundAdmin.name || '',
+        email: foundAdmin.email || '',
+        phone: foundAdmin.phone || '',
+        door_no: foundAdmin.door_no || '',
+        street: foundAdmin.street || '',
+        taluk: foundAdmin.taluk || '',
+        district: foundAdmin.district || assoc.city || '',
+        state: foundAdmin.state || 'Tamil Nadu',
+        member_code: foundAdmin.member_code || '',
+        password: '',
+      });
+      setIsEditAdminModalOpen(true);
+    } catch (err) {
+      toast.error('Failed to load association admin details');
+    }
+  };
+
+  const handleSaveAssocAdmin = async (e) => {
+    e.preventDefault();
+    if (!targetAdminUser) return;
+    if (!adminEditForm.name.trim()) {
+      toast.error('Admin name is required');
+      return;
+    }
+    if (!adminEditForm.phone.trim()) {
+      toast.error('Admin phone is required');
+      return;
+    }
+    try {
+      setIsSubmittingAdminEdit(true);
+      const payload = {
+        name: adminEditForm.name.trim(),
+        email: adminEditForm.email ? adminEditForm.email.trim().toLowerCase() : '',
+        phone: adminEditForm.phone.trim(),
+        door_no: adminEditForm.door_no.trim(),
+        street: adminEditForm.street.trim(),
+        taluk: adminEditForm.taluk.trim(),
+        district: adminEditForm.district.trim(),
+        state: adminEditForm.state.trim(),
+        member_code: adminEditForm.member_code.trim(),
+      };
+      if (adminEditForm.password && adminEditForm.password.trim()) {
+        if (adminEditForm.password.trim().length < 6) {
+          toast.error('Password must be at least 6 characters');
+          setIsSubmittingAdminEdit(false);
+          return;
+        }
+        payload.password = adminEditForm.password.trim();
+      }
+
+      await api.put(`/users/${targetAdminUser.id}`, payload);
+      toast.success(`Administrator details for "${adminEditForm.name}" updated successfully!`);
+      setIsEditAdminModalOpen(false);
+      setTargetAdminUser(null);
+      setTargetAdminAssoc(null);
+      fetchAssociations();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update admin details');
+    } finally {
+      setIsSubmittingAdminEdit(false);
+    }
+  };
+
   // Fetch all associations
   const fetchAssociations = useCallback(async () => {
     try {
@@ -567,18 +664,33 @@ export default function Associations() {
                   {assoc.address || 'Address details not provided.'}
                 </p>
 
-                {/* Main Association Admin Mention */}
+                {/* Main Association Admin Mention with Direct Edit Action */}
                 <div className="bg-purple-50/80 border border-purple-100 rounded-xl px-2.5 py-1.5 mb-3 flex items-center justify-between text-[11px]">
                   <span className="font-bold text-purple-800 flex items-center gap-1">
-                    <span>🛡️</span> Main Association Admin:
+                    <span>🛡️</span> Main Admin:
                   </span>
-                  <span className="font-semibold text-purple-950 truncate max-w-[140px]">
-                    {assoc.main_admin_name && assoc.main_admin_name !== 'None Assigned'
-                      ? assoc.main_admin_name
-                      : (assoc.admin_names && assoc.admin_names !== 'None Assigned'
-                          ? assoc.admin_names.split(',')[0]
-                          : 'None Assigned')}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-semibold text-purple-950 truncate max-w-[120px]" title={assoc.main_admin_name}>
+                      {assoc.main_admin_name && assoc.main_admin_name !== 'None Assigned'
+                        ? assoc.main_admin_name
+                        : (assoc.admin_names && assoc.admin_names !== 'None Assigned'
+                            ? assoc.admin_names.split(',')[0]
+                            : 'None Assigned')}
+                    </span>
+                    {(assoc.main_admin_id || (assoc.main_admin_name && assoc.main_admin_name !== 'None Assigned')) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditAssocAdmin(assoc);
+                        }}
+                        className="p-1 rounded hover:bg-purple-200/70 text-purple-700 transition cursor-pointer"
+                        title="Edit Association Admin Details"
+                      >
+                        <HiPencil className="w-3.5 h-3.5 text-purple-700" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Counts Banner */}
@@ -606,9 +718,19 @@ export default function Associations() {
                 </button>
 
                 <div className="flex items-center gap-1.5">
+                  {(assoc.main_admin_id || (assoc.main_admin_name && assoc.main_admin_name !== 'None Assigned')) && (
+                    <button
+                      onClick={() => handleOpenEditAssocAdmin(assoc)}
+                      className="p-1.5 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-lg transition cursor-pointer"
+                      title="Edit Association Administrator Details"
+                    >
+                      <HiShieldCheck className="w-4 h-4 text-purple-600" />
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleOpenEdit(assoc)}
-                    className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                    className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition cursor-pointer"
                     title="Edit Association"
                   >
                     <HiPencil className="w-4 h-4" />
@@ -1182,6 +1304,177 @@ export default function Associations() {
               </div>
             </form>
         </div>
+      </Modal>
+
+      {/* EDIT ASSOCIATION ADMIN DETAILS MODAL */}
+      <Modal
+        isOpen={isEditAdminModalOpen}
+        onClose={() => {
+          setIsEditAdminModalOpen(false);
+          setTargetAdminUser(null);
+          setTargetAdminAssoc(null);
+        }}
+        title={`Edit Administrator Details: ${targetAdminUser?.name || 'Association Admin'}`}
+        size="lg"
+      >
+        <form onSubmit={handleSaveAssocAdmin} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-900 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HiShieldCheck className="w-5 h-5 text-purple-600 flex-shrink-0" />
+              <span>
+                Editing Main Admin for: <strong>{targetAdminAssoc?.name}</strong>
+              </span>
+            </div>
+            <span className="font-mono text-[11px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+              ID #{targetAdminUser?.id}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Admin Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={adminEditForm.name}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, name: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Admin Phone Number *
+              </label>
+              <input
+                type="tel"
+                required
+                value={adminEditForm.phone}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, phone: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Admin Email Address
+              </label>
+              <input
+                type="email"
+                value={adminEditForm.email}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, email: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Member Code (e.g. 000001 or KCC-001)
+              </label>
+              <input
+                type="text"
+                value={adminEditForm.member_code}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, member_code: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Door / Office No
+              </label>
+              <input
+                type="text"
+                value={adminEditForm.door_no}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, door_no: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Street / Road
+              </label>
+              <input
+                type="text"
+                value={adminEditForm.street}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, street: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Taluk / Area
+              </label>
+              <input
+                type="text"
+                value={adminEditForm.taluk}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, taluk: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                District / City
+              </label>
+              <input
+                type="text"
+                value={adminEditForm.district}
+                onChange={(e) => setAdminEditForm({ ...adminEditForm, district: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Reset Admin Password <span className="font-normal text-gray-400 text-[11px]">(leave blank to keep current)</span>
+            </label>
+            <input
+              type="password"
+              minLength={6}
+              value={adminEditForm.password}
+              onChange={(e) => setAdminEditForm({ ...adminEditForm, password: e.target.value })}
+              placeholder="Enter new password if changing..."
+              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="pt-4 border-t flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditAdminModalOpen(false);
+                setTargetAdminUser(null);
+                setTargetAdminAssoc(null);
+              }}
+              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingAdminEdit}
+              className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            >
+              {isSubmittingAdminEdit ? (
+                <>
+                  <HiArrowPath className="w-4 h-4 animate-spin" />
+                  <span>Saving Admin Details...</span>
+                </>
+              ) : (
+                <>
+                  <HiShieldCheck className="w-4 h-4" />
+                  <span>Save Admin Details</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* DELETE ASSOCIATION CONFIRM DIALOG */}

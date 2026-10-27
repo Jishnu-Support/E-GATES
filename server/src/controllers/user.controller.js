@@ -613,11 +613,20 @@ const userController = {
         });
       }
 
-      if (requesterRole === 'admin' && existingUser.association_id !== requesterAssocId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Cannot update users outside your association'
-        });
+      if (requesterRole === 'admin') {
+        if (existingUser.association_id !== requesterAssocId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Cannot update users outside your association'
+          });
+        }
+        // Only Main Admin or Super Admin can edit Main Admin accounts
+        if (existingUser.is_main_admin && !req.user.is_main_admin && existingUser.id !== requesterId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Only the Main Association Admin or Super Admin can modify Main Admin details'
+          });
+        }
       }
 
       const {
@@ -632,7 +641,13 @@ const userController = {
         district,
         state,
         language,
-        role: updatedRole
+        role: updatedRole,
+        blood_group,
+        dob,
+        aadhaar_number,
+        status: updatedStatus,
+        rejection_reason,
+        member_code
       } = req.body;
 
       // Check email uniqueness if changed
@@ -649,6 +664,24 @@ const userController = {
           });
         }
         emailToSave = email.trim().toLowerCase();
+      }
+
+      // Check member_code uniqueness if changed (Admin / Super Admin only)
+      let memberCodeToSave = null;
+      if (member_code && member_code.trim() !== existingUser.member_code) {
+        if (requesterRole === 'super_admin' || (requesterRole === 'admin' && req.user.is_main_admin)) {
+          const codeCheck = await pool.query(
+            'SELECT id FROM users WHERE member_code = $1 AND id != $2',
+            [member_code.trim(), targetId]
+          );
+          if (codeCheck.rows.length > 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Member code is already in use by another user'
+            });
+          }
+          memberCodeToSave = member_code.trim();
+        }
       }
 
       // Hash password if provided
@@ -671,6 +704,15 @@ const userController = {
           });
         }
         roleToSave = updatedRole;
+      }
+
+      // Status change restriction
+      let statusToSave = null;
+      if (updatedStatus && (requesterRole === 'super_admin' || requesterRole === 'admin')) {
+        const validStatuses = ['approved', 'pending', 'rejected'];
+        if (validStatuses.includes(updatedStatus)) {
+          statusToSave = updatedStatus;
+        }
       }
 
       // Handle proof document uploads if provided
@@ -708,12 +750,18 @@ const userController = {
             eb_bill_proof = COALESCE($13, eb_bill_proof),
             property_tax_receipt = COALESCE($14, property_tax_receipt),
             profile_photo = COALESCE($15, profile_photo),
+            blood_group = COALESCE($16, blood_group),
+            dob = COALESCE($17, dob),
+            aadhaar_number = COALESCE($18, aadhaar_number),
+            status = COALESCE($19, status),
+            rejection_reason = COALESCE($20, rejection_reason),
+            member_code = COALESCE($21, member_code),
             updated_at = NOW()
-        WHERE id = $16
+        WHERE id = $22
         RETURNING id, name, email, phone, role, is_main_admin, association_id, member_code,
                   door_no, street, layout_name, taluk, district, state,
                   eb_bill_proof, property_tax_receipt, profile_photo, created_at,
-                  language, status, updated_at
+                  language, status, blood_group, dob, aadhaar_number, rejection_reason, updated_at
       `;
 
       const values = [
@@ -732,6 +780,12 @@ const userController = {
         ebBillProof,
         propertyTaxReceipt,
         profilePhoto,
+        blood_group !== undefined ? (blood_group ? blood_group.trim() : null) : null,
+        dob !== undefined ? (dob ? dob.trim() : null) : null,
+        aadhaar_number !== undefined ? (aadhaar_number ? aadhaar_number.trim() : null) : null,
+        statusToSave,
+        rejection_reason !== undefined ? (rejection_reason ? rejection_reason.trim() : null) : null,
+        memberCodeToSave,
         targetId
       ];
 
