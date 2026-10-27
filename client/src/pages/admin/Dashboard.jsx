@@ -22,6 +22,7 @@ import {
   HiBookmark,
   HiSpeakerWave,
   HiPaperClip,
+  HiMegaphone,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -30,6 +31,7 @@ import api, { getFileUrl } from '../../services/api';
 import StatsCard from '../../components/common/StatsCard';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -67,6 +69,41 @@ export default function AdminDashboard() {
   const [activeDrilldown, setActiveDrilldown] = useState(null);
   const [modalSearch, setModalSearch] = useState('');
   const [modalFilter, setModalFilter] = useState('all');
+
+  // Scrolling Announcement state for quick Admin setting & submit
+  const [isScrollingModalOpen, setIsScrollingModalOpen] = useState(false);
+  const [scrollingText, setScrollingText] = useState('');
+  const [isScrollingActive, setIsScrollingActive] = useState(true);
+  const [savingScrolling, setSavingScrolling] = useState(false);
+
+  const fetchScrollingAnnouncement = useCallback(async () => {
+    try {
+      const res = await api.get('/news/scrolling-announcement');
+      if (res.data?.data) {
+        setScrollingText(res.data.data.scrolling_announcement || '');
+        setIsScrollingActive(Boolean(res.data.data.is_scrolling_active));
+      }
+    } catch (err) {
+      // Silently catch
+    }
+  }, []);
+
+  const handleSaveScrolling = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      setSavingScrolling(true);
+      await api.put('/news/scrolling-announcement', {
+        scrolling_announcement: scrollingText,
+        is_scrolling_active: isScrollingActive,
+      });
+      toast.success('Scrolling announcement submitted and live for residents!');
+      setIsScrollingModalOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update scrolling announcement');
+    } finally {
+      setSavingScrolling(false);
+    }
+  };
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -136,7 +173,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchScrollingAnnouncement();
+  }, [fetchDashboardData, fetchScrollingAnnouncement]);
 
   const assocDisplayName =
     associationInfo?.name || user?.association_name || 'Layout Association Portal';
@@ -316,6 +354,14 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsScrollingModalOpen(true)}
+            title="Set scrolling announcement for residents"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+          >
+            <HiMegaphone className="w-4 h-4 text-amber-300" />
+            <span>Set Scrolling Ticker</span>
+          </button>
           <button
             onClick={fetchDashboardData}
             title="Refresh dashboard"
@@ -1087,6 +1133,98 @@ export default function AdminDashboard() {
           </div>
         </div>
       </Modal>
+
+      {/* Scrolling Announcement Configuration Modal for Admin */}
+      {isScrollingModalOpen && (
+        <Modal
+          isOpen={isScrollingModalOpen}
+          onClose={() => setIsScrollingModalOpen(false)}
+          title="📢 Configure Resident Scrolling Announcement"
+          size="lg"
+        >
+          <div className="space-y-4 p-2">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Enter messages to scroll continuously across the top of the Resident Portal. One message per line, up to 6 messages.
+              </p>
+            </div>
+
+            {/* Live Preview Strip */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                <HiEye className="w-3.5 h-3.5 text-emerald-600" />
+                Live Preview (How residents see it)
+              </span>
+              <ScrollingAnnouncement
+                previewMode={true}
+                previewText={scrollingText}
+                previewActive={isScrollingActive}
+              />
+            </div>
+
+            {/* Textarea Input */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Announcement Lines (Press Enter for next message)
+              </label>
+              <textarea
+                rows={4}
+                value={scrollingText}
+                onChange={(e) => setScrollingText(e.target.value)}
+                placeholder={"Jishnu Infotech\nJishnu Learning Labs\nWater tank maintenance scheduled this Saturday 9 AM"}
+                className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-mono leading-relaxed"
+              />
+              <div className="flex justify-between items-center text-[11px] text-gray-400 mt-1">
+                <span>Separate multiple messages with a new line.</span>
+                <span className="font-semibold text-gray-500 dark:text-gray-400">
+                  {scrollingText.split('\n').filter((l) => l.trim()).length} / 6 messages
+                </span>
+              </div>
+            </div>
+
+            {/* Active Toggle & Submit Buttons */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={isScrollingActive}
+                  onChange={(e) => setIsScrollingActive(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                />
+                <span>Enable ticker on resident portal</span>
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsScrollingModalOpen(false)}
+                  className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveScrolling}
+                  disabled={savingScrolling}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer"
+                >
+                  {savingScrolling ? (
+                    <>
+                      <HiArrowPath className="w-3.5 h-3.5 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <HiCheckCircle className="w-4 h-4" />
+                      <span>Submit Announcement</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

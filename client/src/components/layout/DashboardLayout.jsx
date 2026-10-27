@@ -6,6 +6,7 @@ import Footer from './Footer';
 import FloatingSOS from './FloatingSOS';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorBoundary from '../common/ErrorBoundary';
+import ScrollingAnnouncement from '../common/ScrollingAnnouncement';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardLayout({ children }) {
@@ -24,6 +25,9 @@ export default function DashboardLayout({ children }) {
           onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
           associationName={user?.association_name}
         />
+
+        {/* User-Only Live Scrolling Announcement Strip (matching reference header) */}
+        <ScrollingAnnouncement />
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 sm:pb-20">

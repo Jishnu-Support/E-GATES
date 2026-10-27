@@ -444,12 +444,12 @@ export default function AdminNewsManage() {
               {savingScrolling ? (
                 <>
                   <HiArrowPath className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
                   <HiCheckCircle className="w-3.5 h-3.5" />
-                  <span>Save Announcement</span>
+                  <span>Submit Announcement</span>
                 </>
               )}
             </button>
