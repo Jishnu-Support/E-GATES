@@ -946,7 +946,7 @@ export default function AdminManageUsers() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         user={selectedUser}
-        associationName={currentUser?.association_name}
+        associationName={selectedUser?.association_name || currentUser?.association_name}
         canManageRoles={canManageRoles}
         onChangeRole={handleOpenRoleModal}
       />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   HiXMark,
   HiShieldCheck,
@@ -19,13 +19,22 @@ export default function DigitalIdCardModal({
   canManageRoles = false,
   onChangeRole,
 }) {
-  const [fullUser, setFullUser] = useState(user || {});
+  const [extraUserData, setExtraUserData] = useState(null);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [loadingExtra, setLoadingExtra] = useState(false);
 
+  // Active user merges incoming user prop with any extra fetched fields.
+  // ALWAYS has immediate data from user prop so nothing is ever blank!
+  const activeUser = useMemo(() => {
+    return {
+      ...(user || {}),
+      ...(extraUserData || {}),
+    };
+  }, [user, extraUserData]);
+
   // Helper to resolve static file paths to backend URL
   const resolveFileUrl = (filePath) => {
-    if (!filePath) return '';
+    if (!filePath || typeof filePath !== 'string') return '';
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
     const base = (typeof window !== 'undefined' && window.location.origin)
       ? window.location.origin
@@ -49,8 +58,11 @@ export default function DigitalIdCardModal({
   };
 
   useEffect(() => {
-    if (!user?.id || !isOpen) return;
-    setFullUser(user);
+    if (!user?.id || !isOpen) {
+      setExtraUserData(null);
+      setFamilyMembers([]);
+      return;
+    }
 
     const fetchExtra = async () => {
       try {
@@ -61,7 +73,7 @@ export default function DigitalIdCardModal({
         ]);
 
         if (userRes.status === 'fulfilled' && userRes.value?.data?.data) {
-          setFullUser((prev) => ({ ...prev, ...userRes.value.data.data }));
+          setExtraUserData(userRes.value.data.data);
         }
         if (familyRes.status === 'fulfilled' && familyRes.value?.data?.data) {
           const list = familyRes.value.data.data || [];
@@ -99,13 +111,14 @@ export default function DigitalIdCardModal({
   if (!isOpen || !user) return null;
 
   const currentAssocName =
-    fullUser.association_name ||
+    activeUser.association_name ||
     associationName ||
-    (fullUser.role === 'super_admin' ? 'Residents Welfare Association' : 'Residents Welfare Association');
+    activeUser.layout_name ||
+    (activeUser.role === 'super_admin' ? 'EGATES Association' : 'Residents Welfare Association');
 
-  const isSuperAdmin = fullUser.role === 'super_admin';
-  const isMainAdmin = fullUser.is_main_admin || fullUser.display_role === 'Main Association Admin';
-  const isLayoutAdmin = fullUser.role === 'admin' && !isMainAdmin;
+  const isSuperAdmin = activeUser.role === 'super_admin';
+  const isMainAdmin = activeUser.is_main_admin || activeUser.display_role === 'Main Association Admin';
+  const isLayoutAdmin = activeUser.role === 'admin' && !isMainAdmin;
 
   const roleTitle = isSuperAdmin
     ? 'Super Administrator'
@@ -151,27 +164,29 @@ export default function DigitalIdCardModal({
         emoji: '👥',
       };
 
-  // Formatted ID: Association name 3 letters + hyphen + 3-digit padded number (e.g. RES-001, GRE-001)
-  const formattedMemberId = React.useMemo(() => {
-    // If user already has a valid 3-letter prefix code like RES-001 or GRE-001
-    if (fullUser.member_code && /^[A-Za-z]{3}-\d+$/i.test(String(fullUser.member_code).trim())) {
-      return String(fullUser.member_code).trim().toUpperCase();
+  // Formatted ID: Association name 3 letters + hyphen + 3-digit padded number (e.g. RES-001, GRE-001, KCC-001)
+  const formattedMemberId = useMemo(() => {
+    const rawCode = String(activeUser.member_code || '').trim().replace(/^#/, '');
+
+    // If user already has a valid 3-letter prefix code like RES-001 or KCC-001 or GRE-001
+    if (rawCode && /^[A-Za-z]{3}-\d+$/i.test(rawCode)) {
+      return rawCode.toUpperCase();
     }
 
     // Association name prefix: take first 3 letters
     const assocName =
-      fullUser.association_name ||
+      activeUser.association_name ||
       associationName ||
-      fullUser.layout_name ||
+      activeUser.layout_name ||
       (isSuperAdmin ? 'EGATES' : 'Residents Welfare Association');
 
-    const cleanLetters = String(assocName).replace(/[^a-zA-Z]/g, '').toUpperCase();
+    const cleanLetters = String(assocName || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
     const prefix = (cleanLetters.slice(0, 3) || 'EGA').padEnd(3, 'A');
 
-    // Extract sequence number (e.g. from existing code or user ID)
-    let seq = fullUser.id || 1;
-    if (fullUser.member_code) {
-      const digitsOnly = String(fullUser.member_code).replace(/\D/g, '');
+    // Extract sequence number (e.g. from existing code digits or user ID)
+    let seq = activeUser.id || 1;
+    if (rawCode) {
+      const digitsOnly = rawCode.replace(/\D/g, '');
       if (digitsOnly.length > 0) {
         const num = parseInt(digitsOnly, 10);
         if (num > 0) {
@@ -180,7 +195,7 @@ export default function DigitalIdCardModal({
       }
     }
     return `${prefix}-${String(seq).padStart(3, '0')}`;
-  }, [fullUser.member_code, fullUser.association_name, fullUser.layout_name, fullUser.id, associationName, isSuperAdmin]);
+  }, [activeUser.member_code, activeUser.association_name, activeUser.layout_name, activeUser.id, associationName, isSuperAdmin]);
 
   const memberCode = formattedMemberId;
 
@@ -194,11 +209,11 @@ export default function DigitalIdCardModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto"
       aria-modal="true"
       role="dialog"
     >
-      <div className="relative my-auto flex flex-col items-center max-w-[94vw]">
+      <div className="relative flex flex-col items-center max-w-[94vw] max-h-[94vh] py-2">
         {/* Floating Controls Above Card: Minimal Header with Close & Print */}
         <div className="w-full flex items-center justify-between pb-2 px-1 text-white">
           <div className="flex items-center gap-1.5 opacity-90">
@@ -213,7 +228,7 @@ export default function DigitalIdCardModal({
               type="button"
               onClick={handlePrint}
               title="Print ID Card"
-              className="p-1.5 bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur-md transition shadow-md border border-white/20 text-xs flex items-center justify-center"
+              className="p-1.5 bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur-md transition shadow-md border border-white/20 text-xs flex items-center justify-center cursor-pointer"
             >
               🖨️
             </button>
@@ -221,7 +236,7 @@ export default function DigitalIdCardModal({
               type="button"
               onClick={onClose}
               title="Close"
-              className="p-1.5 bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur-md transition shadow-md border border-white/20 flex items-center justify-center"
+              className="p-1.5 bg-white/15 hover:bg-white/25 text-white rounded-full backdrop-blur-md transition shadow-md border border-white/20 flex items-center justify-center cursor-pointer"
             >
               <HiXMark className="w-4 h-4" />
             </button>
@@ -231,7 +246,7 @@ export default function DigitalIdCardModal({
         {/* STANDALONE COMPACT DIGITAL ID CARD */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-[310px] sm:w-[325px] max-w-[92vw] max-h-[85vh] overflow-y-auto rounded-3xl shadow-2xl border-2 border-white/30 bg-white text-gray-900 transition-all select-none flex flex-col justify-between relative"
+          className="w-[310px] sm:w-[330px] max-w-[92vw] max-h-[82vh] overflow-y-auto rounded-3xl shadow-2xl border-2 border-white/40 bg-white text-gray-900 transition-all select-none flex flex-col justify-between relative"
         >
           {/* Header Band */}
           <div
@@ -276,32 +291,32 @@ export default function DigitalIdCardModal({
               <div
                 className={`w-20 h-20 max-w-[80px] max-h-[80px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden shadow-md border-2 border-white ring-3 ${roleTheme.ring} bg-gradient-to-tr from-gray-800 to-gray-700 flex items-center justify-center font-black text-2xl text-white`}
               >
-                {fullUser.profile_photo ? (
+                {activeUser.profile_photo ? (
                   <img
-                    src={resolveFileUrl(fullUser.profile_photo)}
-                    alt={fullUser.name}
+                    src={resolveFileUrl(activeUser.profile_photo)}
+                    alt={activeUser.name || 'Resident'}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
                   />
-                ) : fullUser.name ? (
-                  fullUser.name.slice(0, 2).toUpperCase()
                 ) : (
-                  'U'
+                  <span>
+                    {String(activeUser.name || 'User').trim().slice(0, 2).toUpperCase() || 'U'}
+                  </span>
                 )}
               </div>
 
               {/* Status Pill on Photo */}
               <span className="absolute -bottom-2 inset-x-0 mx-auto w-max px-2 py-0.2 bg-emerald-600 text-white font-extrabold text-[8.5px] uppercase tracking-wider rounded-full shadow-sm border border-emerald-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                <span>{fullUser.status === 'approved' ? 'Active' : fullUser.status || 'Active'}</span>
+                <span>{activeUser.status === 'approved' ? 'Active' : activeUser.status || 'Active'}</span>
               </span>
             </div>
 
             {/* Member Name */}
             <h3 className="text-sm sm:text-base font-black text-gray-900 tracking-tight mt-1 line-clamp-1">
-              {fullUser.name}
+              {activeUser.name || 'Community Resident'}
             </h3>
 
             {/* Role Designation Badge */}
@@ -343,7 +358,7 @@ export default function DigitalIdCardModal({
                   🏠 Door / Plot
                 </span>
                 <span className="font-extrabold text-[11px] text-gray-900 truncate block mt-0.5">
-                  {fullUser.door_no ? `#${fullUser.door_no}` : '—'}
+                  {activeUser.door_no ? `#${activeUser.door_no}` : '—'}
                 </span>
               </div>
 
@@ -352,7 +367,7 @@ export default function DigitalIdCardModal({
                   📍 Street
                 </span>
                 <span className="font-semibold text-[11px] text-gray-900 truncate block mt-0.5">
-                  {fullUser.street || '—'}
+                  {activeUser.street || '—'}
                 </span>
               </div>
 
@@ -361,7 +376,7 @@ export default function DigitalIdCardModal({
                   📞 Contact
                 </span>
                 <span className="font-mono font-semibold text-[11px] text-gray-900 truncate block mt-0.5">
-                  {fullUser.phone || '—'}
+                  {activeUser.phone || '—'}
                 </span>
               </div>
 
@@ -370,20 +385,20 @@ export default function DigitalIdCardModal({
                   🩸 Blood Group
                 </span>
                 <span className="font-bold text-[11px] text-rose-600 truncate block mt-0.5">
-                  {familyMembers.find((f) => f.relation?.toLowerCase() === 'self')?.blood_group ||
-                    fullUser.blood_group || (
+                  {familyMembers.find((f) => f?.relation?.toLowerCase() === 'self')?.blood_group ||
+                    activeUser.blood_group || (
                       <span className="text-gray-400 font-normal italic text-[10px]">N/A</span>
                     )}
                 </span>
               </div>
 
-              {(fullUser.layout_name || fullUser.district) && (
+              {(activeUser.layout_name || activeUser.district) && (
                 <div className="col-span-2 p-1.5 px-2 bg-slate-50 rounded-lg border border-gray-200/80 shadow-2xs">
                   <span className="text-[8px] font-bold uppercase text-gray-400 block">
                     Layout / Location
                   </span>
                   <span className="font-semibold text-[10px] text-gray-800 truncate block">
-                    {[fullUser.layout_name, fullUser.taluk ? `${fullUser.taluk} Taluk` : null, fullUser.district]
+                    {[activeUser.layout_name, activeUser.taluk ? `${activeUser.taluk} Taluk` : null, activeUser.district]
                       .filter(Boolean)
                       .join(', ')}
                   </span>
@@ -426,9 +441,9 @@ export default function DigitalIdCardModal({
               type="button"
               onClick={() => {
                 onClose();
-                if (onChangeRole) onChangeRole(fullUser);
+                if (onChangeRole) onChangeRole(activeUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition shadow-lg"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition shadow-lg cursor-pointer"
             >
               <HiShieldCheck className="w-3.5 h-3.5" />
               <span>Change Role</span>
