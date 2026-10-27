@@ -46,8 +46,6 @@ export default function Login() {
       activeBg: 'bg-amber-500 text-white',
       accentColor: 'text-amber-500',
       description: 'System-wide oversight across all layout associations',
-      defaultEmail: 'superadmin@association.com',
-      defaultPass: 'SuperAdmin@123',
     },
     {
       id: 'admin',
@@ -59,8 +57,6 @@ export default function Login() {
       activeBg: 'bg-blue-600 text-white',
       accentColor: 'text-blue-600',
       description: 'Manage residents, complaints, news, and polls for assigned layout',
-      defaultEmail: 'admin@greenfield.com',
-      defaultPass: 'Admin@123',
     },
     {
       id: 'member',
@@ -72,8 +68,6 @@ export default function Login() {
       activeBg: 'bg-emerald-600 text-white',
       accentColor: 'text-emerald-600',
       description: 'House owners & residents portal with emergency SOS and voting',
-      defaultEmail: '',
-      defaultPass: '',
     },
   ];
 
@@ -81,17 +75,10 @@ export default function Login() {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
+    setIdentifier('');
+    setPassword('');
     setErrorMessage('');
     setRoleMismatch(null);
-  };
-
-  const handleQuickAutofill = (tab) => {
-    if (tab.defaultEmail) {
-      setIdentifier(tab.defaultEmail);
-      setPassword(tab.defaultPass || '');
-      setErrorMessage('');
-      setRoleMismatch(null);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -282,20 +269,11 @@ export default function Login() {
             </div>
 
             {/* Active Tab Subtitle Info Banner */}
-            <div className="mt-3 py-2 px-3.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-              <span className="truncate pr-2">
+            <div className="mt-3 py-2 px-3.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 text-xs text-gray-600 dark:text-gray-300">
+              <span className="truncate">
                 📌 <span className="font-semibold">{currentTabInfo.label}:</span>{' '}
                 {currentTabInfo.description}
               </span>
-              {currentTabInfo.defaultEmail && (
-                <button
-                  type="button"
-                  onClick={() => handleQuickAutofill(currentTabInfo)}
-                  className="text-[11px] font-bold text-primary-600 hover:text-primary-700 hover:underline flex-shrink-0"
-                >
-                  Autofill Demo
-                </button>
-              )}
             </div>
           </div>
 
@@ -343,7 +321,7 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
               {/* Identifier Input */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
@@ -358,11 +336,10 @@ export default function Login() {
                   <input
                     type="text"
                     required
+                    autoComplete="username"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={
-                      currentTabInfo.defaultEmail || 'e.g. member@layout.com or 9876543210'
-                    }
+                    placeholder="Enter your registered email or phone"
                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                   />
                 </div>
@@ -388,6 +365,7 @@ export default function Login() {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"

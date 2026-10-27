@@ -914,7 +914,7 @@ export default function Register() {
               {/* FORM 1: ADMIN + ASSOCIATION REGISTRATION FORM */}
               {/* ============================================================== */}
               {activeForm === 'assoc-admin' && (
-                <form onSubmit={handleSubmitAssocAdmin} noValidate className="space-y-8">
+                <form onSubmit={handleSubmitAssocAdmin} noValidate autoComplete="off" className="space-y-8">
                   <div className="bg-purple-50/40 p-4 rounded-2xl border border-purple-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-purple-900 flex items-center gap-2">
@@ -1324,6 +1324,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={assocAdminForm.password}
                           onChange={(e) => {
                             setAssocAdminForm({
@@ -1361,6 +1362,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={assocAdminForm.confirm_password}
                           onChange={(e) => {
                             setAssocAdminForm({
@@ -1433,7 +1435,7 @@ export default function Register() {
               {/* FORM 2: ADMIN REGISTRATION FORM (Existing Layout) */}
               {/* ============================================================== */}
               {activeForm === 'admin' && (
-                <form onSubmit={handleSubmitAdmin} noValidate className="space-y-8">
+                <form onSubmit={handleSubmitAdmin} noValidate autoComplete="off" className="space-y-8">
                   <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-blue-900 flex items-center gap-2">
@@ -1780,6 +1782,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={adminForm.password}
                           onChange={(e) => {
                             setAdminForm({ ...adminForm, password: e.target.value });
@@ -1814,6 +1817,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={adminForm.confirm_password}
                           onChange={(e) => {
                             setAdminForm({
@@ -1886,7 +1890,7 @@ export default function Register() {
               {/* FORM 3: MEMBER REGISTRATION FORM (Resident Member) */}
               {/* ============================================================== */}
               {activeForm === 'member' && (
-                <form onSubmit={handleSubmitMember} noValidate className="space-y-8">
+                <form onSubmit={handleSubmitMember} noValidate autoComplete="off" className="space-y-8">
                   <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-emerald-900 flex items-center gap-2">
@@ -2285,6 +2289,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={memberForm.password}
                           onChange={(e) => {
                             setMemberForm({
@@ -2322,6 +2327,7 @@ export default function Register() {
                         <input
                           type="password"
                           required
+                          autoComplete="new-password"
                           value={memberForm.confirm_password}
                           onChange={(e) => {
                             setMemberForm({
