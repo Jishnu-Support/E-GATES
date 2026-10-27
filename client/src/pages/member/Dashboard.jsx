@@ -170,7 +170,13 @@ export default function MemberDashboard() {
     if (!socket) return;
 
     const handleIncomingSOS = (alert) => {
-      // Siren effect
+      // Do not display community alarm, siren, or toast to the resident who triggered it
+      const alertUserId = alert.user_id || alert.user?.id;
+      if (alertUserId && user?.id && String(alertUserId) === String(user.id)) {
+        return;
+      }
+
+      // Siren effect for neighbors in community
       try {
         const siren = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         siren.play().catch(() => {});
@@ -192,7 +198,7 @@ export default function MemberDashboard() {
     return () => {
       socket.off('sos:trigger', handleIncomingSOS);
     };
-  }, [socket]);
+  }, [socket, user?.id]);
 
 
   const assocName = user?.association_name || 'Layout Association';

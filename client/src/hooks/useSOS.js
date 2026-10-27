@@ -56,10 +56,10 @@ export const useSOS = () => {
       setShowCancel(false);
       setShowTypeSelector(false);
 
-      toast.error(`EMERGENCY SOS (${emergencyType}) TRANSMITTED!`, {
-        duration: 7000,
+      toast.success(`Emergency SOS: (${emergencyType}) Sent Successfully!`, {
+        duration: 6000,
         style: {
-          background: '#dc2626',
+          background: '#059669',
           color: '#ffffff',
           fontWeight: 'bold',
         },

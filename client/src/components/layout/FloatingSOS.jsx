@@ -255,13 +255,7 @@ export default function FloatingSOS() {
     const cleanCallPhone = String(targetPhone).replace(/\D/g, '');
     const formattedWa = formatWaPhone(targetPhone);
 
-    // 2. User feedback toast
-    toast.success(
-      `🚨 EMERGENCY SOS ACTIVATED! Calling ${targetContact.name} (${targetPhone}) & dispatching WhatsApp alert!`,
-      { duration: 6000 }
-    );
-
-    // 3. Pre-filled WhatsApp message with Problem, Recipient, Address, and Original Map Location
+    // 2. Pre-filled WhatsApp message with Problem, Recipient, Address, and Original Map Location
     const waTextLines = [
       `🚨 *EMERGENCY SOS ALERT!*`,
       `*EMERGENCY TYPE:* ${emergencyType}`,
@@ -275,20 +269,20 @@ export default function FloatingSOS() {
     ];
     const waEncoded = encodeURIComponent(waTextLines.join('\n'));
 
-    // 4. STEP 1: Launch WhatsApp immediately
+    // 3. STEP 1: Launch WhatsApp immediately
     const waUrl = formattedWa
       ? `https://api.whatsapp.com/send?phone=${formattedWa}&text=${waEncoded}`
       : `https://api.whatsapp.com/send?text=${waEncoded}`;
 
     window.open(waUrl, '_blank', 'noopener,noreferrer');
 
-    // 5. STEP 2: Immediately initiate Phone Call without asking or waiting
+    // 4. STEP 2: Immediately initiate Phone Call without asking or waiting
     const callUrl = `tel:${cleanCallPhone || targetPhone}`;
     setTimeout(() => {
       window.location.href = callUrl;
     }, 450);
 
-    // 6. Record and broadcast SOS Alert in Backend & WebSockets
+    // 5. Record and broadcast SOS Alert in Backend & WebSockets
     const alertNote = [
       `Emergency: ${emergencyType}`,
       `Target Responder: ${targetContact.name} (${targetContact.phone})`,
@@ -299,9 +293,31 @@ export default function FloatingSOS() {
     await triggerSOS(emergencyType, alertNote);
   };
 
+  // Determine specific emergency category based on contact type
+  const getContactEmergencyType = (contact) => {
+    if (!contact) return 'Family Emergency';
+    if (contact.contact_type === 'family' || familyList.some((f) => String(f.id) === String(contact.id))) {
+      return 'Family Emergency';
+    }
+    if (contact.contact_type === 'medical' || contact.contact_type === 'ambulance') {
+      return 'Medical Emergency';
+    }
+    if (contact.contact_type === 'police') {
+      return 'Police Emergency';
+    }
+    if (contact.contact_type === 'fire') {
+      return 'Fire Emergency';
+    }
+    if (contact.contact_type === 'resident' || contact.contact_type === 'member') {
+      return 'Resident Emergency';
+    }
+    return 'Family Emergency';
+  };
+
   // ONE-TAP SOS: Immediately called when the user taps the SOS button once
   const handleOneTapSOS = () => {
-    executeSOSDispatch('One-Tap Emergency SOS', primaryContact);
+    const emergencyType = getContactEmergencyType(primaryContact);
+    executeSOSDispatch(emergencyType, primaryContact);
   };
 
   return (
