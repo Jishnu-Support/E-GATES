@@ -245,6 +245,7 @@ export default function Register() {
       setAssocAdminProfilePhoto(capturedBlob);
       setAssocAdminPhotoPreview(capturedPreview);
     }
+    clearFieldError('profile_photo');
     closeCameraModal();
   };
 
@@ -272,6 +273,7 @@ export default function Register() {
     }
     setErrorMessage('');
     setPhoto(file);
+    clearFieldError('profile_photo');
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreview(reader.result);
@@ -403,6 +405,9 @@ export default function Register() {
     if (!memberForm.association_id) {
       errs.association_id = 'Please select your layout association';
     }
+    if (!memberProfilePhoto) {
+      errs.profile_photo = 'Profile photo is mandatory';
+    }
     if (!memberForm.name || !memberForm.name.trim()) {
       errs.name = 'Full name is mandatory';
     }
@@ -449,6 +454,9 @@ export default function Register() {
     const errs = {};
     if (!adminForm.association_id) {
       errs.association_id = 'Please select the layout association to administer';
+    }
+    if (!adminProfilePhoto) {
+      errs.profile_photo = 'Profile photo is mandatory';
     }
     if (!adminForm.name || !adminForm.name.trim()) {
       errs.name = 'Administrator full name is mandatory';
@@ -499,6 +507,9 @@ export default function Register() {
     }
     if (!assocAdminForm.association_city || !assocAdminForm.association_city.trim()) {
       errs.association_city = 'City / District is mandatory';
+    }
+    if (!assocAdminProfilePhoto) {
+      errs.profile_photo = 'Main Association Admin profile photo is mandatory';
     }
     if (!assocAdminForm.name || !assocAdminForm.name.trim()) {
       errs.name = 'Main Association Admin full name is mandatory';
@@ -1003,10 +1014,21 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-purple-50/50 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-900/40 flex flex-col sm:flex-row items-center gap-4">
+                    <div
+                      data-field="profile_photo"
+                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row items-center gap-4 ${
+                        fieldErrors.profile_photo
+                          ? 'bg-red-50/60 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                          : 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-100 dark:border-purple-900/40'
+                      }`}
+                    >
                       <div
                         onClick={() => assocAdminPhotoPreview && setViewPhotoModal({ url: assocAdminPhotoPreview, title: 'Main Admin Profile Photo' })}
-                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xl ring-2 ring-purple-200 dark:ring-purple-800/70 flex-shrink-0 shadow-xs relative group ${
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xl ring-2 ${
+                          fieldErrors.profile_photo
+                            ? 'ring-red-500'
+                            : 'ring-purple-200 dark:ring-purple-800/70'
+                        } flex-shrink-0 shadow-xs relative group ${
                           assocAdminPhotoPreview ? 'cursor-pointer hover:ring-purple-400' : ''
                         }`}
                         title={assocAdminPhotoPreview ? 'Click to view full photo' : ''}
@@ -1028,7 +1050,7 @@ export default function Register() {
                       </div>
                       <div className="flex-1 text-center sm:text-left">
                         <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                          Profile Photo (Optional)
+                          Profile Photo * (Mandatory)
                         </label>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your Main Administrator account (PNG, JPG, Max 5MB).
@@ -1105,6 +1127,7 @@ export default function Register() {
                             className="hidden"
                           />
                         </div>
+                        {renderFieldError('profile_photo')}
                       </div>
                     </div>
 
@@ -1465,10 +1488,21 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-blue-50/50 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/40 flex flex-col sm:flex-row items-center gap-4">
+                    <div
+                      data-field="profile_photo"
+                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row items-center gap-4 ${
+                        fieldErrors.profile_photo
+                          ? 'bg-red-50/60 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                          : 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/40'
+                      }`}
+                    >
                       <div
                         onClick={() => adminPhotoPreview && setViewPhotoModal({ url: adminPhotoPreview, title: 'Admin Profile Photo' })}
-                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xl ring-2 ring-blue-200 dark:ring-blue-800/70 flex-shrink-0 shadow-xs relative group ${
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xl ring-2 ${
+                          fieldErrors.profile_photo
+                            ? 'ring-red-500'
+                            : 'ring-blue-200 dark:ring-blue-800/70'
+                        } flex-shrink-0 shadow-xs relative group ${
                           adminPhotoPreview ? 'cursor-pointer hover:ring-blue-400' : ''
                         }`}
                         title={adminPhotoPreview ? 'Click to view full photo' : ''}
@@ -1490,7 +1524,7 @@ export default function Register() {
                       </div>
                       <div className="flex-1 text-center sm:text-left">
                         <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                          Profile Photo (Optional)
+                          Profile Photo * (Mandatory)
                         </label>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your administrator account (PNG, JPG, Max 5MB).
@@ -1567,6 +1601,7 @@ export default function Register() {
                             className="hidden"
                           />
                         </div>
+                        {renderFieldError('profile_photo')}
                       </div>
                     </div>
 
@@ -1906,10 +1941,21 @@ export default function Register() {
                     </h3>
 
                     {/* Profile Photo Upload */}
-                    <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 flex flex-col sm:flex-row items-center gap-4">
+                    <div
+                      data-field="profile_photo"
+                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row items-center gap-4 ${
+                        fieldErrors.profile_photo
+                          ? 'bg-red-50/60 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                          : 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/40'
+                      }`}
+                    >
                       <div
                         onClick={() => memberPhotoPreview && setViewPhotoModal({ url: memberPhotoPreview, title: 'Resident Member Profile Photo' })}
-                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xl ring-2 ring-emerald-200 dark:ring-emerald-800/70 flex-shrink-0 shadow-xs relative group ${
+                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xl ring-2 ${
+                          fieldErrors.profile_photo
+                            ? 'ring-red-500'
+                            : 'ring-emerald-200 dark:ring-emerald-800/70'
+                        } flex-shrink-0 shadow-xs relative group ${
                           memberPhotoPreview ? 'cursor-pointer hover:ring-emerald-400' : ''
                         }`}
                         title={memberPhotoPreview ? 'Click to view full photo' : ''}
@@ -1931,7 +1977,7 @@ export default function Register() {
                       </div>
                       <div className="flex-1 text-center sm:text-left">
                         <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                          Profile Photo (Optional)
+                          Profile Photo * (Mandatory)
                         </label>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
                           Upload portrait profile photo for your resident member account (PNG, JPG, Max 5MB).
@@ -2008,6 +2054,7 @@ export default function Register() {
                             className="hidden"
                           />
                         </div>
+                        {renderFieldError('profile_photo')}
                       </div>
                     </div>
 

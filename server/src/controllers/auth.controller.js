@@ -134,6 +134,13 @@ const authController = {
         ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
         : null;
 
+      if (!profilePhoto) {
+        return res.status(400).json({
+          success: false,
+          message: 'Profile photo is mandatory for registration'
+        });
+      }
+
       // Hash password
       const passwordHash = await bcrypt.hash(password, 12);
 
@@ -334,6 +341,13 @@ const authController = {
       const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
         ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
         : null;
+
+      if (!profilePhoto) {
+        return res.status(400).json({
+          success: false,
+          message: 'Profile photo is mandatory for registration'
+        });
+      }
 
       await client.query('BEGIN');
 
