@@ -6,7 +6,6 @@ import {
   HiHome,
   HiArrowTopRightOnSquare,
   HiCheckCircle,
-  HiBars3BottomLeft,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -322,20 +321,9 @@ export default function FloatingSOS() {
 
   return (
     <>
-      {/* Floating SOS Trigger Controls (Fixed Bottom-Right) */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
-        {/* Secondary: Quick Situations Menu (Optional) */}
-        <button
-          type="button"
-          onClick={() => setShowTypeSelector(true)}
-          className="p-3 rounded-full bg-slate-900/95 hover:bg-slate-800 text-white shadow-xl border-2 border-white/80 dark:border-slate-700 transition hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-          title="Browse Specific Emergency Situations (Family, Medical, Police, Fire, Responder)"
-        >
-          <HiBars3BottomLeft className="w-5 h-5 text-amber-300" />
-          <span className="hidden md:inline text-[11px] text-amber-200">Situations</span>
-        </button>
-
-        {/* Primary: ONE-TAP SOS BUTTON (Instantly calls & sends WhatsApp to saved contact) */}
+      {/* Floating SOS Trigger (Fixed Bottom-Right) */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* ONE-TAP SOS BUTTON (Instantly calls & sends WhatsApp to saved contact) */}
         <button
           type="button"
           onClick={handleOneTapSOS}
