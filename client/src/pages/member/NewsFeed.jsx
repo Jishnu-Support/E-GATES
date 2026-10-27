@@ -17,6 +17,7 @@ import AudioPlayer from '../../components/common/AudioPlayer';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 import Modal from '../../components/common/Modal';
+import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 
 export default function MemberNewsFeed() {
   const [posts, setPosts] = useState([]);
@@ -160,6 +161,9 @@ export default function MemberNewsFeed() {
           <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600 dark:text-cyan-400' : ''}`} />
         </button>
       </div>
+
+      {/* Live Scrolling Announcement Ticker for residents */}
+      <ScrollingAnnouncement />
 
       {/* Filter and Search Bar */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">

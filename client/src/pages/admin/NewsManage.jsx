@@ -15,6 +15,7 @@ import {
   HiEye,
   HiArrowTopRightOnSquare,
   HiArrowDownTray,
+  HiCheckCircle,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -22,6 +23,7 @@ import api, { getFileUrl } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AudioPlayer from '../../components/common/AudioPlayer';
+import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 
 export default function AdminNewsManage() {
   const [posts, setPosts] = useState([]);
@@ -103,9 +105,43 @@ export default function AdminNewsManage() {
     }
   }, []);
 
+  // Scrolling Announcement state (Admin-controlled live ticker for residents)
+  const [scrollingText, setScrollingText] = useState('');
+  const [isScrollingActive, setIsScrollingActive] = useState(true);
+  const [savingScrolling, setSavingScrolling] = useState(false);
+
+  const fetchScrollingAnnouncement = useCallback(async () => {
+    try {
+      const res = await api.get('/news/scrolling-announcement');
+      if (res.data?.data) {
+        setScrollingText(res.data.data.scrolling_announcement || '');
+        setIsScrollingActive(Boolean(res.data.data.is_scrolling_active));
+      }
+    } catch (err) {
+      console.warn('Could not load scrolling announcement:', err.message);
+    }
+  }, []);
+
+  const handleSaveScrolling = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      setSavingScrolling(true);
+      await api.put('/news/scrolling-announcement', {
+        scrolling_announcement: scrollingText,
+        is_scrolling_active: isScrollingActive,
+      });
+      toast.success('Scrolling announcement updated for residents!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update scrolling announcement');
+    } finally {
+      setSavingScrolling(false);
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+    fetchScrollingAnnouncement();
+  }, [fetchPosts, fetchScrollingAnnouncement]);
 
   // Clean recording timer on unmount
   useEffect(() => {
@@ -360,6 +396,94 @@ export default function AdminNewsManage() {
             <HiPlus className="w-4 h-4" />
             <span>Publish Announcement</span>
           </button>
+        </div>
+      </div>
+
+      {/* Scrolling Announcement Management (Admin-controlled, live ticker for residents) */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-700">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-base">
+                📢
+              </span>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Scrolling Announcement
+              </h2>
+              <span
+                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                  isScrollingActive && scrollingText.trim()
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300'
+                }`}
+              >
+                {isScrollingActive && scrollingText.trim() ? 'Live on Resident Portal' : 'Inactive'}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              One message per line, up to six messages. The text scrolls continuously across the header for residents.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={isScrollingActive}
+                onChange={(e) => setIsScrollingActive(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+              />
+              <span>Enable for Residents</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleSaveScrolling}
+              disabled={savingScrolling}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer"
+            >
+              {savingScrolling ? (
+                <>
+                  <HiArrowPath className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <HiCheckCircle className="w-3.5 h-3.5" />
+                  <span>Save Announcement</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Live Preview Bar */}
+        <div className="space-y-1.5">
+          <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+            <HiEye className="w-3.5 h-3.5 text-emerald-600" />
+            Live Preview (How residents see it)
+          </span>
+          <ScrollingAnnouncement
+            previewMode={true}
+            previewText={scrollingText}
+            previewActive={isScrollingActive}
+          />
+        </div>
+
+        {/* Textarea Input */}
+        <div>
+          <textarea
+            rows={3}
+            value={scrollingText}
+            onChange={(e) => setScrollingText(e.target.value)}
+            placeholder={"Jishnu Infotech\nJishnu Learning Labs\nAnnual General Body meeting scheduled for Sunday 10 AM"}
+            className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-mono leading-relaxed"
+          />
+          <div className="flex justify-between items-center text-[11px] text-gray-400 mt-1">
+            <span>Separate announcements by pressing Enter (one message per line).</span>
+            <span className="font-semibold text-gray-500 dark:text-gray-400">
+              {scrollingText.split('\n').filter((l) => l.trim()).length} / 6 messages
+            </span>
+          </div>
         </div>
       </div>
 

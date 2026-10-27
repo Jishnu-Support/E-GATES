@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS associations (
   city VARCHAR(255),
   address TEXT,
   logo VARCHAR(500),
+  scrolling_announcement TEXT,
+  is_scrolling_active BOOLEAN DEFAULT true,
   is_active BOOLEAN DEFAULT true,
   main_admin_id INTEGER,
   created_at TIMESTAMPTZ DEFAULT NOW(),

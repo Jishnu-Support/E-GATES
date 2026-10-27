@@ -129,6 +129,12 @@ function ensureSchemaMigrations(db) {
     if (!assocCols.includes('main_admin_id')) {
       db.run("ALTER TABLE associations ADD COLUMN main_admin_id INTEGER;");
     }
+    if (!assocCols.includes('scrolling_announcement')) {
+      db.run("ALTER TABLE associations ADD COLUMN scrolling_announcement TEXT;");
+    }
+    if (!assocCols.includes('is_scrolling_active')) {
+      db.run("ALTER TABLE associations ADD COLUMN is_scrolling_active INTEGER DEFAULT 1;");
+    }
   } catch (err) {
     console.error('[EmbeddedDB Migration Error]:', err.message);
   }
@@ -142,6 +148,8 @@ function initSchemaAndSeed(db) {
       city TEXT,
       address TEXT,
       logo TEXT,
+      scrolling_announcement TEXT,
+      is_scrolling_active INTEGER DEFAULT 1,
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP

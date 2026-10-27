@@ -429,6 +429,117 @@ const newsController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  /**
+   * Get scrolling announcement for current association
+   */
+  async getScrollingAnnouncement(req, res, next) {
+    try {
+      const { role, association_id: userAssocId } = req.user;
+      const assocId = req.query.association_id ? parseInt(req.query.association_id, 10) : userAssocId;
+
+      if (!assocId) {
+        return res.json({
+          success: true,
+          data: {
+            scrolling_announcement: '',
+            is_scrolling_active: false
+          }
+        });
+      }
+
+      const result = await pool.query(
+        'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations WHERE id = $1',
+        [assocId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Association not found'
+        });
+      }
+
+      const assoc = result.rows[0];
+      return res.json({
+        success: true,
+        data: {
+          scrolling_announcement: assoc.scrolling_announcement || '',
+          is_scrolling_active: assoc.is_scrolling_active === 1 || assoc.is_scrolling_active === true
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Update scrolling announcement
+   * Admin or Super Admin
+   */
+  async updateScrollingAnnouncement(req, res, next) {
+    try {
+      const { role, association_id: userAssocId } = req.user;
+      const { scrolling_announcement, is_scrolling_active, association_id } = req.body;
+
+      const targetAssocId = role === 'super_admin'
+        ? (association_id || userAssocId)
+        : userAssocId;
+
+      if (!targetAssocId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Association ID is required'
+        });
+      }
+
+      const isActiveVal = is_scrolling_active === undefined ? true : Boolean(is_scrolling_active);
+      const textVal = typeof scrolling_announcement === 'string' ? scrolling_announcement.trim() : '';
+
+      const result = await pool.query(
+        `UPDATE associations
+         SET scrolling_announcement = $1,
+             is_scrolling_active = $2,
+             updated_at = NOW()
+         WHERE id = $3
+         RETURNING id, name, scrolling_announcement, is_scrolling_active`,
+        [textVal, isActiveVal, targetAssocId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Association not found'
+        });
+      }
+
+      const updated = result.rows[0];
+      const payload = {
+        association_id: targetAssocId,
+        scrolling_announcement: updated.scrolling_announcement || '',
+        is_scrolling_active: updated.is_scrolling_active === 1 || updated.is_scrolling_active === true
+      };
+
+      // Broadcast via socket
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`association_${targetAssocId}`).emit('news:scrolling_updated', payload);
+          io.emit('news:scrolling_updated', payload);
+        }
+      } catch (err) {
+        console.error('Socket error on news:scrolling_updated:', err.message);
+      }
+
+      return res.json({
+        success: true,
+        message: 'Scrolling announcement updated successfully',
+        data: payload
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

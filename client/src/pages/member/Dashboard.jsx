@@ -33,6 +33,7 @@ import api, { getFileUrl } from '../../services/api';
 import StatsCard from '../../components/common/StatsCard';
 import Modal from '../../components/common/Modal';
 import AudioPlayer from '../../components/common/AudioPlayer';
+import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 
 export default function MemberDashboard() {
   const { user } = useAuth();
@@ -261,6 +262,11 @@ export default function MemberDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Live Scrolling Announcement (Admin-controlled, User only, centered like Screenshot 1 & 3) */}
+      <div className="w-full max-w-4xl mx-auto">
+        <ScrollingAnnouncement />
+      </div>
+
       {/* Association Name Prominently Displayed in the Middle / Center */}
       <div className="text-center py-4 sm:py-5 px-3 sm:px-6 bg-gradient-to-b from-blue-50/90 via-blue-50/40 to-white dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 rounded-2xl sm:rounded-3xl border border-blue-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-100 dark:bg-primary-950/80 text-primary-800 dark:text-primary-300 border border-primary-200/60 dark:border-primary-800/60 text-xs font-bold uppercase tracking-wider mb-2 shadow-xs">

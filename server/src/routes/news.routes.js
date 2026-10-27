@@ -60,6 +60,29 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/news/scrolling-announcement
+ * @desc    Get scrolling announcement for current association
+ * @access  Private
+ */
+router.get(
+  '/scrolling-announcement',
+  authenticate,
+  newsController.getScrollingAnnouncement
+);
+
+/**
+ * @route   PUT /api/v1/news/scrolling-announcement
+ * @desc    Update scrolling announcement
+ * @access  Private (Admin, Super Admin)
+ */
+router.put(
+  '/scrolling-announcement',
+  authenticate,
+  authorize('super_admin', 'admin'),
+  newsController.updateScrollingAnnouncement
+);
+
+/**
  * @route   GET /api/v1/news/:id
  * @desc    Get single news post
  * @access  Private
