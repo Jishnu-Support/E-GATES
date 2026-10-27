@@ -37,23 +37,24 @@ const logAudit = async (userId, action, entityType, entityId, details, ipAddress
   }
 };
 
-// Unique member code generator helper
-const getUniqueMemberCode = async () => {
+// Unique member code generator helper (format: PREFIX-001)
+const getUniqueMemberCode = async (associationIdOrName = null) => {
   let code = null;
   if (typeof generateMemberCode === 'function') {
     try {
-      code = await generateMemberCode();
+      code = await generateMemberCode(associationIdOrName, pool);
     } catch (e) {
-      // fallback
+      console.error('Error generating member code via helper:', e.message);
     }
   }
 
-  // Ensure 6-digit uniqueness in DB
+  // Ensure uniqueness in DB
   let isUnique = false;
   let attempts = 0;
   while (!isUnique && attempts < 10) {
-    if (!code || attempts > 0) {
-      code = Math.floor(100000 + Math.random() * 900000).toString();
+    if (!code) {
+      const rand = Math.floor(1 + Math.random() * 999);
+      code = `RES-${String(rand).padStart(3, '0')}`;
     }
     const check = await pool.query('SELECT id FROM users WHERE member_code = $1', [code]);
     if (check.rows.length === 0) {
@@ -63,7 +64,7 @@ const getUniqueMemberCode = async () => {
       attempts++;
     }
   }
-  return code || Math.floor(100000 + Math.random() * 900000).toString();
+  return code || `RES-${String(Math.floor(1 + Math.random() * 999)).padStart(3, '0')}`;
 };
 
 const userController = {
@@ -187,8 +188,8 @@ const userController = {
         });
       }
 
-      // Generate unique 6-digit member code
-      const memberCode = await getUniqueMemberCode();
+      // Generate unique member code (e.g. RES-001)
+      const memberCode = await getUniqueMemberCode(targetUser.association_id);
 
       // Update user status and member code
       const updateResult = await pool.query(
@@ -1063,7 +1064,7 @@ const userController = {
 
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
-      const memberCode = await getUniqueMemberCode();
+      const memberCode = await getUniqueMemberCode('EGATES');
 
       const insertQuery = `
         INSERT INTO users (
@@ -1166,7 +1167,7 @@ const userController = {
 
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
-      const memberCode = await getUniqueMemberCode();
+      const memberCode = await getUniqueMemberCode(targetAssocId);
 
       // If created by Main Admin, isMainAdmin is always false (Layout Admin)
       const isMainAdmin = req.user.role === 'super_admin'
@@ -1314,7 +1315,7 @@ const userController = {
 
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
-      const memberCode = await getUniqueMemberCode();
+      const memberCode = await getUniqueMemberCode(targetAssocId);
 
       const insertQuery = `
         INSERT INTO users (

@@ -151,7 +151,38 @@ export default function DigitalIdCardModal({
         emoji: '👥',
       };
 
-  const memberCode = fullUser.member_code || (isSuperAdmin ? '000001' : 'PENDING');
+  // Formatted ID: Association name 3 letters + hyphen + 3-digit padded number (e.g. RES-001, GRE-001)
+  const formattedMemberId = React.useMemo(() => {
+    // If user already has a valid 3-letter prefix code like RES-001 or GRE-001
+    if (fullUser.member_code && /^[A-Za-z]{3}-\d+$/i.test(String(fullUser.member_code).trim())) {
+      return String(fullUser.member_code).trim().toUpperCase();
+    }
+
+    // Association name prefix: take first 3 letters
+    const assocName =
+      fullUser.association_name ||
+      associationName ||
+      fullUser.layout_name ||
+      (isSuperAdmin ? 'EGATES' : 'Residents Welfare Association');
+
+    const cleanLetters = String(assocName).replace(/[^a-zA-Z]/g, '').toUpperCase();
+    const prefix = (cleanLetters.slice(0, 3) || 'EGA').padEnd(3, 'A');
+
+    // Extract sequence number (e.g. from existing code or user ID)
+    let seq = fullUser.id || 1;
+    if (fullUser.member_code) {
+      const digitsOnly = String(fullUser.member_code).replace(/\D/g, '');
+      if (digitsOnly.length > 0) {
+        const num = parseInt(digitsOnly, 10);
+        if (num > 0) {
+          seq = num > 999 ? (num % 1000) || 1 : num;
+        }
+      }
+    }
+    return `${prefix}-${String(seq).padStart(3, '0')}`;
+  }, [fullUser.member_code, fullUser.association_name, fullUser.layout_name, fullUser.id, associationName, isSuperAdmin]);
+
+  const memberCode = formattedMemberId;
 
   // Trigger quick browser print of the card
   const handlePrint = () => {
@@ -299,8 +330,8 @@ export default function DigitalIdCardModal({
                 <span className="text-[9px] uppercase font-bold text-gray-400">
                   ID:
                 </span>
-                <span className="font-mono text-xs font-black text-primary-700 bg-white px-2 py-0.5 rounded-md border border-primary-200 shadow-xs">
-                  #{memberCode}
+                <span className="font-mono text-xs font-black text-primary-700 bg-white px-2 py-0.5 rounded-md border border-primary-200 shadow-xs tracking-wider">
+                  {formattedMemberId}
                 </span>
               </div>
             </div>

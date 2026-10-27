@@ -330,13 +330,13 @@ export default function MemberVotingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <HiChartBar className="w-7 h-7 text-primary-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <HiChartBar className="w-7 h-7 text-primary-600 dark:text-cyan-400" />
             Community Polls & Vendor Voting
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Cast your resident ballot on maintenance contractors, security vendor quotations, and layout development decisions.
           </p>
         </div>
@@ -344,24 +344,24 @@ export default function MemberVotingPage() {
         <button
           onClick={() => fetchPolls(selectedPoll?.id)}
           title="Refresh polls"
-          className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition self-start sm:self-auto"
+          className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition self-start sm:self-auto"
         >
-          <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600' : ''}`} />
+          <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600 dark:text-cyan-400' : ''}`} />
         </button>
       </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Poll List with Tabs */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col">
           {/* Tabs */}
-          <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-3">
+          <div className="flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3 mb-3">
             <button
               onClick={() => handleSelectTab('active')}
               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
                 tabFilter === 'active'
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
               }`}
             >
               Active Polls
@@ -370,17 +370,17 @@ export default function MemberVotingPage() {
               onClick={() => handleSelectTab('closed')}
               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
                 tabFilter === 'closed'
-                  ? 'bg-gray-800 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-gray-800 dark:bg-slate-700 text-white shadow-sm'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
               }`}
             >
               Closed / Results
             </button>
           </div>
 
-          <div className="flex-1 divide-y divide-gray-100 overflow-y-auto max-h-[750px] space-y-2">
+          <div className="flex-1 divide-y divide-gray-100 dark:divide-slate-800 overflow-y-auto max-h-[750px] space-y-2">
             {filteredPolls.length === 0 ? (
-              <div className="py-12 text-center text-xs text-gray-400">
+              <div className="py-12 text-center text-xs text-gray-400 dark:text-gray-500">
                 No {tabFilter} polls at the moment.
               </div>
             ) : (
@@ -393,31 +393,31 @@ export default function MemberVotingPage() {
                     onClick={() => fetchPollDetail(p.id)}
                     className={`p-3.5 rounded-xl cursor-pointer transition border ${
                       isSelected
-                        ? 'bg-primary-50/70 border-primary-300 ring-1 ring-primary-300'
-                        : 'bg-white hover:bg-gray-50 border-gray-100'
+                        ? 'bg-primary-50/70 dark:bg-primary-950/40 border-primary-300 dark:border-primary-600 ring-1 ring-primary-300 dark:ring-primary-600'
+                        : 'bg-white dark:bg-slate-800/80 hover:bg-gray-50 dark:hover:bg-slate-800 border-gray-100 dark:border-slate-700/80'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           p.poll_type === 'election'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60'
                             : isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800/60'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-600'
                         }`}
                       >
                         {p.poll_type === 'election' ? '🗳️ Election' : p.status}
                       </span>
                       {p.is_anonymous && (
-                        <span className="text-[10px] text-purple-700 font-semibold">Anonymous</span>
+                        <span className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold">Anonymous</span>
                       )}
                     </div>
 
-                    <h3 className="text-sm font-bold text-gray-900 line-clamp-1">{p.title}</h3>
-                    <p className="text-xs text-gray-500 line-clamp-2 mt-1">{p.description}</p>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{p.title}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">{p.description}</p>
 
-                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-100">
+                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-100 dark:border-slate-700/60">
                       <span>Ends: {p.end_date ? format(new Date(p.end_date), 'dd MMM yyyy') : '—'}</span>
                     </div>
                   </div>
@@ -430,27 +430,27 @@ export default function MemberVotingPage() {
         {/* Right Column: Poll Detail, Vendor Options, Voting & Bar Chart */}
         <div className="lg:col-span-2 space-y-6">
           {loadingDetail ? (
-            <div className="py-24 bg-white rounded-2xl border border-gray-100 text-center">
+            <div className="py-24 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 text-center">
               <LoadingSpinner message="Loading voting ballot..." />
             </div>
           ) : !selectedPoll ? (
-            <div className="py-24 bg-white rounded-2xl border border-dashed border-gray-300 text-center text-gray-400 text-sm">
+            <div className="py-24 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-300 dark:border-slate-700 text-center text-gray-400 dark:text-gray-500 text-sm">
               Select an active or closed poll to view options and cast your vote.
             </div>
           ) : (
             <div className="space-y-6">
               {/* Poll Top Info Banner */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span
                         className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
                           selectedPoll.poll_type === 'election'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
                             : selectedPoll.poll_type === 'resolution_passing'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800'
+                            : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800'
                         }`}
                       >
                         {selectedPoll.poll_type === 'election'
@@ -463,22 +463,22 @@ export default function MemberVotingPage() {
                       <span
                         className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
                           selectedPoll.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-600'
                         }`}
                       >
                         {selectedPoll.status === 'active' ? 'Voting Live' : 'Voting Concluded'}
                       </span>
                       {selectedPoll.is_anonymous && (
-                        <span className="text-xs font-semibold bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200">
+                        <span className="text-xs font-semibold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                           🔒 Secret Ballot
                         </span>
                       )}
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900">{selectedPoll.title}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedPoll.title}</h2>
                   </div>
 
-                  <span className="text-xs text-gray-400 self-start sm:self-auto">
+                  <span className="text-xs text-gray-400 dark:text-gray-400 self-start sm:self-auto">
                     {selectedPoll.status === 'active' ? 'Closes: ' : 'Closed: '}
                     {selectedPoll.end_date ? format(new Date(selectedPoll.end_date), 'dd MMM yyyy, hh:mm a') : '—'}
                   </span>
@@ -486,7 +486,7 @@ export default function MemberVotingPage() {
 
                 {/* Eligibility Notice */}
                 {selectedPoll.is_user_eligible === false && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 rounded-xl text-xs flex items-center gap-2">
                     <span>⚠️</span>
                     <span>
                       {selectedPoll.eligibility_reason || 'Voting is restricted to designated residents for this proposal.'}
@@ -495,51 +495,51 @@ export default function MemberVotingPage() {
                 )}
 
                 {/* Voter Turnout Progress */}
-                <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1.5">
+                <div className="bg-gray-50 dark:bg-slate-800/80 p-3 rounded-xl border border-gray-100 dark:border-slate-700/80 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-gray-700">Participation Turnout:</span>
-                    <span className="font-bold text-primary-700">
+                    <span className="font-bold text-gray-700 dark:text-gray-200">Participation Turnout:</span>
+                    <span className="font-bold text-primary-700 dark:text-cyan-400">
                       {selectedPoll.total_votes || 0} / {selectedPoll.eligible_voters_count || 'All'} residents ({selectedPoll.turnout_percentage || 0}%)
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                      className="bg-primary-600 dark:bg-cyan-500 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${Math.min(100, selectedPoll.turnout_percentage || 0)}%` }}
                     />
                   </div>
                 </div>
 
                 {selectedPoll.description && (
-                  <p className="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-slate-800/80 p-3 rounded-xl border border-gray-100 dark:border-slate-700/80 whitespace-pre-wrap leading-relaxed">
                     {selectedPoll.description}
                   </p>
                 )}
 
                 {/* Polling Officers Banner (For Election) */}
                 {selectedPoll.poll_type === 'election' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-amber-50/70 rounded-xl border border-amber-200 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/80 text-xs">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
                         🏛️ Internal Polling Officer (Resident Member)
                       </span>
-                      <p className="font-bold text-gray-900 text-sm mt-0.5">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm mt-0.5">
                         {selectedPoll.internal_officer_name || 'Not assigned'}
                       </p>
                       {selectedPoll.internal_officer_contact && (
-                        <p className="text-gray-600 text-[11px] mt-0.5">{selectedPoll.internal_officer_contact}</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-[11px] mt-0.5">{selectedPoll.internal_officer_contact}</p>
                       )}
                     </div>
 
-                    <div className="sm:border-l sm:border-amber-200 sm:pl-3.5">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                    <div className="sm:border-l sm:border-amber-200 dark:sm:border-amber-800/80 sm:pl-3.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 block">
                         🌐 External Polling Officer (Observer / Returning Officer)
                       </span>
-                      <p className="font-bold text-gray-900 text-sm mt-0.5">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm mt-0.5">
                         {selectedPoll.external_officer_name || 'Not assigned'}
                       </p>
                       {selectedPoll.external_officer_contact && (
-                        <p className="text-gray-600 text-[11px] mt-0.5">{selectedPoll.external_officer_contact}</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-[11px] mt-0.5">{selectedPoll.external_officer_contact}</p>
                       )}
                     </div>
                   </div>
@@ -618,13 +618,13 @@ export default function MemberVotingPage() {
                   ELECTION BALLOT VIEW (IF ELECTION POLL)
                  ========================================================================= */}
               {selectedPoll.poll_type === 'election' ? (
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <span>🗳️</span> Official Confidential Election Ballot
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {selectedPoll.status === 'active'
                           ? hasUserVoted
                             ? 'Your official ballot has been fully submitted and recorded by the Polling Officers.'
@@ -636,12 +636,12 @@ export default function MemberVotingPage() {
                     </div>
 
                     {hasUserVoted ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                        <HiCheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                        <HiCheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                         Full Ballot Submitted
                       </span>
                     ) : myVotedVendorIds.length > 0 ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
                         <span>🗳️</span>
                         {myVotedVendorIds.length} of {roleNamesList.length} Roles Voted
                       </span>
@@ -651,7 +651,7 @@ export default function MemberVotingPage() {
                   {/* Ballot Role by Role */}
                   <div className="space-y-6">
                     {Object.keys(electionRoleGroups).length === 0 ? (
-                      <div className="py-8 text-center text-xs text-gray-400">
+                      <div className="py-8 text-center text-xs text-gray-400 dark:text-gray-500">
                         No contesting candidates configured for this election.
                       </div>
                     ) : (
@@ -662,7 +662,7 @@ export default function MemberVotingPage() {
                         return (
                           <div
                             key={rIdx}
-                            className="bg-white rounded-2xl border-2 border-amber-200/90 shadow-sm overflow-hidden space-y-0"
+                            className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-amber-200/90 dark:border-amber-700/60 shadow-sm overflow-hidden space-y-0"
                           >
                             {/* Prominent Role Election Heading */}
                             <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
@@ -699,7 +699,7 @@ export default function MemberVotingPage() {
                             </div>
 
                             {/* Contesting Candidates for this Role */}
-                            <div className="p-4 bg-amber-50/20">
+                            <div className="p-4 bg-amber-50/20 dark:bg-slate-950/40">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                 {candidates.map((cand, cIdx) => {
                                   const isMyChoice = myVotedVendorIds.includes(Number(cand.id));
@@ -716,23 +716,23 @@ export default function MemberVotingPage() {
                                       }}
                                       className={`p-4 rounded-xl border-2 transition relative flex flex-col justify-between ${
                                         isMyChoice
-                                          ? 'bg-green-50/80 border-green-500 ring-2 ring-green-300 shadow-sm'
+                                          ? 'bg-green-50/80 dark:bg-green-950/50 border-green-500 ring-2 ring-green-300 dark:ring-green-800 shadow-sm'
                                           : isSelectedInDraft
-                                          ? 'bg-amber-50 border-amber-600 ring-2 ring-amber-400 shadow-sm'
+                                          ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-600 ring-2 ring-amber-400 dark:ring-amber-800 shadow-sm'
                                           : isWinner
-                                          ? 'bg-amber-50/70 border-amber-400 ring-1 ring-amber-300'
+                                          ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-400 ring-1 ring-amber-300 dark:ring-amber-800'
                                           : selectedPoll.status === 'active' && !isVotedForThisRole
-                                          ? 'bg-white hover:border-amber-400 cursor-pointer border-gray-200 hover:shadow-xs'
-                                          : 'bg-white border-gray-200'
+                                          ? 'bg-white dark:bg-slate-800/90 hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer border-gray-200 dark:border-slate-700 hover:shadow-xs'
+                                          : 'bg-white dark:bg-slate-800/90 border-gray-200 dark:border-slate-700'
                                       }`}
                                     >
                                       <div>
                                         <div className="flex items-start justify-between gap-2 mb-1.5">
                                           <div className="flex items-center gap-2">
-                                            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold flex items-center justify-center">
+                                            <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 text-[11px] font-bold flex items-center justify-center">
                                               {cIdx + 1}
                                             </span>
-                                            <h5 className="text-sm font-extrabold text-gray-900">
+                                            <h5 className="text-sm font-extrabold text-gray-900 dark:text-white">
                                               {cand.name}
                                             </h5>
                                           </div>
@@ -744,7 +744,7 @@ export default function MemberVotingPage() {
                                                 Your Vote
                                               </span>
                                             ) : selectedPoll.status === 'active' && !isVotedForThisRole && selectedPoll.is_user_eligible !== false ? (
-                                              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-amber-900">
+                                              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-amber-900 dark:text-amber-300">
                                                 <input
                                                   type="radio"
                                                   name={`role_selection_${roleName}`}
@@ -752,7 +752,7 @@ export default function MemberVotingPage() {
                                                   onChange={() => handleSelectElectionCandidate(roleName, cand.id)}
                                                   className="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
                                                 />
-                                                <span className={isSelectedInDraft ? 'text-amber-800' : 'text-gray-400'}>
+                                                <span className={isSelectedInDraft ? 'text-amber-800 dark:text-amber-200' : 'text-gray-400 dark:text-gray-400'}>
                                                   {isSelectedInDraft ? 'Selected' : 'Vote'}
                                                 </span>
                                               </label>
@@ -761,20 +761,20 @@ export default function MemberVotingPage() {
                                         </div>
 
                                         {cand.contact && (
-                                          <p className="text-xs text-gray-500 font-medium pl-7">
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium pl-7">
                                             📍 {cand.contact}
                                           </p>
                                         )}
 
                                         {cand.notes && (
-                                          <p className="text-xs text-gray-700 italic mt-2.5 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                          <p className="text-xs text-gray-700 dark:text-gray-300 italic mt-2.5 bg-gray-50 dark:bg-slate-900/80 p-2 rounded-lg border border-gray-100 dark:border-slate-700/80">
                                             "{cand.notes}"
                                           </p>
                                         )}
                                       </div>
 
                                       {isWinner && (
-                                        <div className="mt-3 pt-2 border-t border-amber-200 flex items-center justify-between">
+                                        <div className="mt-3 pt-2 border-t border-amber-200 dark:border-amber-800/80 flex items-center justify-between">
                                           <span className="text-xs bg-amber-500 text-white px-2.5 py-0.5 rounded-full font-extrabold flex items-center gap-1">
                                             <HiTrophy className="w-3.5 h-3.5" /> Official Elected Winner
                                           </span>
@@ -788,8 +788,8 @@ export default function MemberVotingPage() {
 
                             {/* Cast Vote button for this specific role */}
                             {selectedPoll.status === 'active' && !isVotedForThisRole && selectedPoll.is_user_eligible !== false && (
-                              <div className="p-3 bg-white border-t border-amber-100 flex flex-col sm:flex-row items-center justify-between gap-2">
-                                <span className="text-xs text-gray-500">
+                              <div className="p-3 bg-white dark:bg-slate-850 border-t border-amber-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {hasSelectedForThisRole ? 'Candidate selected above' : `Choose 1 candidate to vote for ${roleName}`}
                                 </span>
                                 <button
@@ -811,8 +811,8 @@ export default function MemberVotingPage() {
 
                   {/* Submit All Selected Ballot Button */}
                   {selectedPoll.status === 'active' && !hasUserVoted && selectedPoll.is_user_eligible !== false && (
-                    <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-amber-50/40 p-4 rounded-xl border border-amber-200">
-                      <div className="text-xs text-amber-900 font-medium">
+                    <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-amber-50/40 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                      <div className="text-xs text-amber-900 dark:text-amber-200 font-medium">
                         {Object.values(selectedElectionCandidates).filter(Boolean).length > 0 ? (
                           <span>
                             You have selected <strong>{Object.values(selectedElectionCandidates).filter(Boolean).length}</strong> role candidate(s). You can submit them together here or role-by-role above.
@@ -846,13 +846,13 @@ export default function MemberVotingPage() {
                     STANDARD VENDOR / RESOLUTION PROPOSALS VIEW
                    ========================================================================= */
                 <>
-                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-base font-bold text-gray-900">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
                           {selectedPoll.poll_type === 'resolution_passing' ? 'Resolution Choices' : 'Proposals & Quotations'}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {selectedPoll.status === 'active'
                             ? hasUserVoted
                               ? 'You have already voted on this poll.'
@@ -864,7 +864,7 @@ export default function MemberVotingPage() {
 
                     <div className="space-y-4">
                       {!selectedPoll.vendors || selectedPoll.vendors.length === 0 ? (
-                        <div className="py-8 text-center text-xs text-gray-400">
+                        <div className="py-8 text-center text-xs text-gray-400 dark:text-gray-500">
                           No options configured for this poll.
                         </div>
                       ) : (
@@ -877,19 +877,19 @@ export default function MemberVotingPage() {
                               key={vendor.id || idx}
                               className={`p-5 rounded-2xl border transition ${
                                 isVotedForThis
-                                  ? 'bg-blue-50/70 border-primary-500 ring-2 ring-primary-300'
+                                  ? 'bg-blue-50/70 dark:bg-blue-950/40 border-primary-500 ring-2 ring-primary-300 dark:ring-primary-800'
                                   : isWinner
-                                  ? 'bg-amber-50/50 border-amber-300 ring-1 ring-amber-300'
-                                  : 'bg-white hover:bg-gray-50/80 border-gray-200'
+                                  ? 'bg-amber-50/50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 ring-1 ring-amber-300'
+                                  : 'bg-white dark:bg-slate-800 hover:bg-gray-50/80 dark:hover:bg-slate-750 border-gray-200 dark:border-slate-700'
                               }`}
                             >
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-800 text-xs font-bold flex items-center justify-center">
+                                    <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200 text-xs font-bold flex items-center justify-center">
                                       {idx + 1}
                                     </span>
-                                    <h4 className="text-base font-bold text-gray-900">{vendor.name}</h4>
+                                    <h4 className="text-base font-bold text-gray-900 dark:text-white">{vendor.name}</h4>
                                     {isVotedForThis && (
                                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-primary-600 text-white">
                                         <HiCheckCircle className="w-3.5 h-3.5" />
@@ -905,7 +905,7 @@ export default function MemberVotingPage() {
                                   </div>
 
                                   {vendor.company && (
-                                    <p className="text-xs text-gray-500 font-medium pl-8">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium pl-8">
                                       {vendor.company} • Contact: {vendor.contact || 'N/A'}
                                     </p>
                                   )}
@@ -915,10 +915,10 @@ export default function MemberVotingPage() {
                                 <div className="flex items-center gap-4 sm:self-center pl-8 sm:pl-0">
                                   {vendor.quotation && (
                                     <div className="text-right">
-                                      <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                                      <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 block">
                                         Quotation
                                       </span>
-                                      <span className="text-base font-black text-primary-700">
+                                      <span className="text-base font-black text-primary-700 dark:text-cyan-400">
                                         ₹{Number(vendor.quotation).toLocaleString('en-IN')}
                                       </span>
                                     </div>
@@ -927,8 +927,8 @@ export default function MemberVotingPage() {
                                   {selectedPoll.status === 'active' && (
                                     <>
                                       {isVotedForThis && (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-200 shadow-xs">
-                                          <HiCheckCircle className="w-4 h-4 text-green-600" />
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 shadow-xs">
+                                          <HiCheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                           Your Vote
                                         </span>
                                       )}
@@ -948,7 +948,7 @@ export default function MemberVotingPage() {
                               </div>
 
                               {vendor.notes && (
-                                <p className="text-xs text-gray-600 mt-3 bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                                <p className="text-xs text-gray-600 dark:text-gray-300 mt-3 bg-gray-50/80 dark:bg-slate-900/80 p-3 rounded-xl border border-gray-100 dark:border-slate-700/80">
                                   {vendor.notes}
                                 </p>
                               )}
@@ -959,7 +959,7 @@ export default function MemberVotingPage() {
                                     href={resolveFileUrl(vendor.document)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold"
+                                    className="inline-flex items-center gap-1.5 text-xs text-primary-600 dark:text-cyan-400 hover:text-primary-800 dark:hover:text-cyan-300 font-semibold"
                                   >
                                     <HiDocumentText className="w-4 h-4" />
                                     <span>View Detailed Quotation Document &rarr;</span>
@@ -974,26 +974,26 @@ export default function MemberVotingPage() {
                   </div>
 
                   {/* Live Results Bar Chart (For Vendor & Resolution Polls) */}
-                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-base font-bold text-gray-900">Voting Results & Analytics</h3>
-                        <p className="text-xs text-gray-500">Live tally of all resident ballots</p>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">Voting Results & Analytics</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Live tally of all resident ballots</p>
                       </div>
-                      <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+                      <span className="text-xs font-semibold text-primary-600 dark:text-cyan-400 bg-primary-50 dark:bg-primary-950/60 px-3 py-1 rounded-full border border-primary-200 dark:border-primary-800">
                         {chartData.reduce((acc, c) => acc + c.votes, 0)} Total Votes
                       </span>
                     </div>
 
                     <div className="h-64 w-full">
                       {chartData.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-xs text-gray-400">
+                        <div className="h-full flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">
                           No options available to display.
                         </div>
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
                             <XAxis dataKey="shortName" stroke="#94a3b8" fontSize={11} tickLine={false} />
                             <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                             <Tooltip
@@ -1001,7 +1001,7 @@ export default function MemberVotingPage() {
                                 if (active && payload && payload.length) {
                                   const d = payload[0].payload;
                                   return (
-                                    <div className="bg-gray-900 text-white p-2.5 rounded-lg text-xs shadow-lg">
+                                    <div className="bg-gray-900 dark:bg-slate-800 text-white p-2.5 rounded-lg text-xs shadow-lg border border-slate-700">
                                       <p className="font-semibold">{d.name}</p>
                                       <p className="mt-1 text-primary-300 font-bold">
                                         {d.votes} Votes ({d.percentage}%)

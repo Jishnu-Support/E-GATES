@@ -12,6 +12,9 @@ import {
   HiPlay,
   HiSpeakerWave,
   HiBookmark,
+  HiEye,
+  HiArrowTopRightOnSquare,
+  HiArrowDownTray,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -34,6 +37,36 @@ export default function AdminNewsManage() {
 
   const [selectedPost, setSelectedPost] = useState(null);
   const [postToDelete, setPostToDelete] = useState(null);
+
+  // File Preview Modal
+  const [previewModal, setPreviewModal] = useState({
+    isOpen: false,
+    type: null,
+    url: '',
+    title: '',
+  });
+
+  const handleOpenPreview = (fileUrl, title, forceType = null) => {
+    if (!fileUrl) return;
+    const fullUrl = resolveFileUrl(fileUrl);
+    const cleanUrl = fileUrl.split('?')[0].toLowerCase();
+    const isImage =
+      forceType === 'image' ||
+      cleanUrl.endsWith('.jpg') ||
+      cleanUrl.endsWith('.jpeg') ||
+      cleanUrl.endsWith('.png') ||
+      cleanUrl.endsWith('.gif') ||
+      cleanUrl.endsWith('.webp') ||
+      cleanUrl.endsWith('.svg');
+    const isPdf = forceType === 'pdf' || cleanUrl.endsWith('.pdf');
+
+    setPreviewModal({
+      isOpen: true,
+      type: isImage ? 'image' : isPdf ? 'pdf' : 'doc',
+      url: fullUrl,
+      title: title || 'Attachment Preview',
+    });
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -371,12 +404,22 @@ export default function AdminNewsManage() {
               <div>
                 {/* Optional Top Image */}
                 {post.image && (
-                  <div className="h-44 w-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-44 w-full bg-gray-100 overflow-hidden relative group cursor-pointer"
+                    onClick={() => handleOpenPreview(post.image, post.title, 'image')}
+                    title="Click to view image"
+                  >
                     <img
                       src={resolveFileUrl(post.image)}
                       alt={post.title}
-                      className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
+                      <span className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-xs text-xs font-bold flex items-center gap-1.5 shadow-lg border border-white/20">
+                        <HiEye className="w-4 h-4" />
+                        View Image
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -414,17 +457,32 @@ export default function AdminNewsManage() {
                     </div>
                   )}
 
-                  {/* Document Attachment Link */}
+                  {/* Document Attachment Actions: View & Download */}
                   {post.attachment && (
-                    <a
-                      href={resolveFileUrl(post.attachment)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-800 font-semibold bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200 transition"
-                    >
-                      <HiPaperClip className="w-4 h-4 text-gray-500" />
-                      <span>Download Attachment Document</span>
-                    </a>
+                    <div className="pt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPreview(post.attachment, `${post.title} - Attachment`)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg text-xs font-bold border border-primary-200 transition shadow-2xs"
+                        title="View attachment document / PDF"
+                      >
+                        <HiEye className="w-4 h-4 text-primary-600" />
+                        <span>View Document</span>
+                      </button>
+
+                      <a
+                        href={resolveFileUrl(post.attachment)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold border border-gray-200 transition shadow-2xs"
+                        title="Download file to device"
+                      >
+                        <HiPaperClip className="w-3.5 h-3.5 text-gray-500" />
+                        <span>Download</span>
+                        <HiArrowDownTray className="w-3.5 h-3.5 text-gray-400" />
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
@@ -747,6 +805,90 @@ export default function AdminNewsManage() {
         confirmText="Yes, Delete Post"
         isDanger={true}
       />
+
+      {/* Modal for PDF and Image Viewing */}
+      <Modal
+        isOpen={previewModal.isOpen}
+        onClose={() => setPreviewModal({ isOpen: false, type: null, url: '', title: '' })}
+        title={previewModal.title || 'Official Document & Attachment Viewer'}
+        size="xl"
+        footer={
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+            <a
+              href={previewModal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:underline font-semibold"
+            >
+              <HiArrowTopRightOnSquare className="w-4 h-4" />
+              <span>Open in New Tab</span>
+            </a>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={previewModal.url}
+                download
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+              >
+                <HiArrowDownTray className="w-3.5 h-3.5" />
+                <span>Download Attachment</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewModal({ isOpen: false, type: null, url: '', title: '' })}
+                className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className="flex flex-col items-center justify-center p-2 min-h-[350px]">
+          {previewModal.type === 'image' ? (
+            <div className="w-full flex justify-center bg-gray-900/5 p-2 rounded-xl">
+              <img
+                src={previewModal.url}
+                alt={previewModal.title}
+                className="max-h-[72vh] w-auto max-w-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+          ) : previewModal.type === 'pdf' ? (
+            <div className="w-full h-[72vh] rounded-xl overflow-hidden border border-gray-200 bg-slate-900">
+              <iframe
+                src={`${previewModal.url}#toolbar=1&navpanes=0`}
+                title={previewModal.title}
+                className="w-full h-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="text-center py-12 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-primary-50 text-primary-600 mx-auto flex items-center justify-center text-2xl shadow-sm">
+                📄
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900">
+                  {previewModal.title}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                  This document format cannot be embedded directly in the viewer frame. You can open it in a new tab or download it directly to view.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <a
+                  href={previewModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-sm"
+                >
+                  <HiArrowTopRightOnSquare className="w-4 h-4" />
+                  <span>Open in Browser</span>
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

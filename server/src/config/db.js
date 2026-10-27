@@ -31,7 +31,8 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_main_admin BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS eb_bill_proof VARCHAR(500);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS property_tax_receipt VARCHAR(500);
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS member_code VARCHAR(6);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS member_code VARCHAR(50);
+      ALTER TABLE users ALTER COLUMN member_code TYPE VARCHAR(50);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR(5) DEFAULT 'en';
       ALTER TABLE users ADD COLUMN IF NOT EXISTS disabled_emergencies JSONB DEFAULT '[]'::jsonb;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS main_admin_id INTEGER;
