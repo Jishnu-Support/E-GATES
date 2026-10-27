@@ -538,9 +538,26 @@ const sosController = {
 
       const result = await pool.query(queryText, params);
 
+      const formattedRows = result.rows.map((row) => {
+        const addrList = [
+          row.user_door_no ? `Door: #${row.user_door_no}` : '',
+          row.user_street ? `Street: ${row.user_street}` : '',
+          row.user_layout_name ? `Layout: ${row.user_layout_name}` : '',
+          row.user_taluk ? `Taluk: ${row.user_taluk}` : '',
+          row.user_district ? `District: ${row.user_district}` : '',
+          row.user_state ? `State: ${row.user_state}` : '',
+        ].filter(Boolean);
+        const residentAddress = addrList.join(', ') || 'Registered Association Residence';
+
+        return {
+          ...row,
+          resident_address: residentAddress,
+        };
+      });
+
       res.json({
         success: true,
-        data: result.rows,
+        data: formattedRows,
         pagination: {
           total,
           page: pageNum,

@@ -249,21 +249,31 @@ export default function SOSReports() {
                       📍 {alert.association_name || 'Association'}
                     </td>
                     <td className="py-3.5 px-4">
-                      {alert.latitude && alert.longitude ? (
-                        <a
-                          href={`https://www.google.com/maps?q=${alert.latitude},${alert.longitude}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 hover:bg-red-100 rounded-lg text-xs font-semibold transition"
-                          title="View exact GPS location on Google Maps"
-                        >
-                          <HiMapPin className="w-3.5 h-3.5 text-red-500" />
-                          <span>View Map</span>
-                          <HiArrowTopRightOnSquare className="w-3 h-3 text-red-400" />
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 italic text-[11px]">No GPS captured</span>
-                      )}
+                      {(() => {
+                        const hasGps = Boolean(alert.latitude && alert.longitude);
+                        const addr = alert.resident_address || [
+                          alert.user_door_no ? `Door #${alert.user_door_no}` : '',
+                          alert.user_street,
+                          alert.association_name,
+                        ].filter(Boolean).join(', ');
+                        const url = hasGps
+                          ? `https://www.google.com/maps?q=${alert.latitude},${alert.longitude}`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(addr || 'Tamil Nadu')}`;
+
+                        return (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 hover:bg-red-100 rounded-lg text-xs font-semibold transition"
+                            title={hasGps ? `GPS: ${alert.latitude}, ${alert.longitude}` : `Address: ${addr || 'Registered Address'}`}
+                          >
+                            <HiMapPin className="w-3.5 h-3.5 text-red-500" />
+                            <span>View Map</span>
+                            <HiArrowTopRightOnSquare className="w-3 h-3 text-red-400" />
+                          </a>
+                        );
+                      })()}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span

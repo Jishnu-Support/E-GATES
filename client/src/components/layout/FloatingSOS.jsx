@@ -289,7 +289,7 @@ export default function FloatingSOS() {
       `Original Map Location: ${mapsLink}`,
     ].join(' | ');
 
-    await triggerSOS(emergencyType, alertNote);
+    await triggerSOS(emergencyType, alertNote, coords);
   };
 
   // Determine specific emergency category based on contact type

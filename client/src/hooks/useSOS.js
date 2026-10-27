@@ -26,27 +26,42 @@ export const useSOS = () => {
           });
         },
         (error) => {
-          console.warn('Geolocation lookup notice:', error.message);
-          resolve({ latitude: null, longitude: null });
+          // If high accuracy fails or times out, try standard network location
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              resolve({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              });
+            },
+            () => {
+              resolve({ latitude: null, longitude: null });
+            },
+            { enableHighAccuracy: false, timeout: 3500, maximumAge: 300000 }
+          );
         },
         {
           enableHighAccuracy: true,
           timeout: 2500,
-          maximumAge: 60000,
+          maximumAge: 300000,
         }
       );
     });
   };
 
-  const dispatchSOS = useCallback(async (emergencyType, customNotes = '') => {
+  const dispatchSOS = useCallback(async (emergencyType, customNotes = '', explicitCoords = null) => {
     setIsSending(true);
     try {
-      const coords = await getCoordinates();
+      let coords = explicitCoords;
+      if (!coords || !coords.latitude || !coords.longitude) {
+        coords = await getCoordinates();
+      }
+
       const payload = {
         emergency_type: emergencyType || 'Medical Emergency',
         notes: customNotes || '',
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: coords?.latitude || null,
+        longitude: coords?.longitude || null,
       };
 
       const response = await api.post('/sos/trigger', payload);
@@ -77,8 +92,8 @@ export const useSOS = () => {
     }
   }, []);
 
-  const triggerSOS = useCallback((emergencyType, customNotes = '') => {
-    return dispatchSOS(emergencyType, customNotes);
+  const triggerSOS = useCallback((emergencyType, customNotes = '', explicitCoords = null) => {
+    return dispatchSOS(emergencyType, customNotes, explicitCoords);
   }, [dispatchSOS]);
 
   const cancelSOS = useCallback(() => {

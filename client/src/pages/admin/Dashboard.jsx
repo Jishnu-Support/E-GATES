@@ -1042,19 +1042,31 @@ export default function AdminDashboard() {
                         {s.created_at ? format(new Date(s.created_at), 'dd MMM yyyy, hh:mm a') : 'N/A'}
                       </td>
                       <td className="px-3 py-2.5">
-                        {s.latitude && s.longitude ? (
-                          <a
-                            href={`https://maps.google.com/?q=${s.latitude},${s.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-[10px] transition"
-                          >
-                            <HiMapPin className="w-3 h-3 text-blue-500" />
-                            Google Maps
-                          </a>
-                        ) : (
-                          <span className="text-gray-400 text-[10px]">No GPS</span>
-                        )}
+                        {(() => {
+                          const hasGps = Boolean(s.latitude && s.longitude);
+                          const addressQuery = [
+                            s.user_door_no ? `Door #${s.user_door_no}` : '',
+                            s.user_street,
+                            s.user_layout_name,
+                            s.user_district,
+                          ].filter(Boolean).join(', ');
+                          const mapUrl = hasGps
+                            ? `https://maps.google.com/?q=${s.latitude},${s.longitude}`
+                            : `https://maps.google.com/?q=${encodeURIComponent(addressQuery || 'Tamil Nadu')}`;
+
+                          return (
+                            <a
+                              href={mapUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 font-semibold text-[10px] transition"
+                              title={hasGps ? `GPS: ${s.latitude}, ${s.longitude}` : `Address: ${addressQuery || 'Registered Address'}`}
+                            >
+                              <HiMapPin className="w-3 h-3 text-red-500" />
+                              Map
+                            </a>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 py-2.5">
                         <span

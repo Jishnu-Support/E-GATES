@@ -255,16 +255,30 @@ export default function AdminSOSAlerts() {
       header: 'Location',
       align: 'center',
       render: (_, row) => {
-        if (!row.latitude || !row.longitude) {
-          return <span className="text-xs text-gray-400">No GPS</span>;
-        }
+        const hasGps = Boolean(row.latitude && row.longitude);
+        const addressParts = [
+          row.user_door_no ? `Door #${row.user_door_no}` : '',
+          row.user_street,
+          row.user_layout_name || row.association_name,
+          row.user_taluk ? `${row.user_taluk} Taluk` : '',
+          row.user_district,
+          row.user_state || 'Tamil Nadu',
+        ].filter(Boolean);
+
+        const addressQuery = addressParts.join(', ');
+
+        const mapsUrl = hasGps
+          ? `https://maps.google.com/?q=${row.latitude},${row.longitude}`
+          : `https://maps.google.com/?q=${encodeURIComponent(addressQuery || row.association_name || 'Tamil Nadu')}`;
+
         return (
           <a
-            href={`https://maps.google.com/?q=${row.latitude},${row.longitude}`}
+            href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 font-semibold"
+            className="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-cyan-400 hover:underline font-semibold"
+            title={hasGps ? `GPS: ${row.latitude}, ${row.longitude}` : `Location: ${addressQuery || 'Registered Address'}`}
           >
             <HiMapPin className="w-4 h-4 text-red-500" />
             <span>Map</span>
@@ -484,7 +498,19 @@ export default function AdminSOSAlerts() {
                 <LocationMap
                   latitude={selectedAlert.latitude}
                   longitude={selectedAlert.longitude}
-                  address={selectedAlert.resident_address || (selectedAlert.door_no ? `Door #${selectedAlert.door_no}` : '')}
+                  address={
+                    selectedAlert.resident_address ||
+                    [
+                      selectedAlert.user_door_no && `Door: #${selectedAlert.user_door_no}`,
+                      selectedAlert.user_street,
+                      selectedAlert.user_layout_name || selectedAlert.association_name,
+                      selectedAlert.user_taluk && `${selectedAlert.user_taluk} Taluk`,
+                      selectedAlert.user_district,
+                      selectedAlert.user_state || 'Tamil Nadu',
+                    ].filter(Boolean).join(', ') ||
+                    selectedAlert.association_name ||
+                    'Tamil Nadu'
+                  }
                   title="Alert Location Map"
                   height="h-44"
                 />
