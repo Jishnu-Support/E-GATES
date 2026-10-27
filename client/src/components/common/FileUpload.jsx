@@ -6,6 +6,7 @@ import {
   HiXMark,
   HiEye,
   HiArrowTopRightOnSquare,
+  HiExclamationCircle,
 } from 'react-icons/hi2';
 import { getFileUrl } from '../../services/api';
 
@@ -305,7 +306,7 @@ export default function FileUpload({
           isDragOver
             ? 'border-primary-500 bg-primary-50/50'
             : error
-            ? 'border-red-300 bg-red-50/30'
+            ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/30'
             : 'border-gray-300 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-400'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
@@ -420,7 +421,12 @@ export default function FileUpload({
         </div>
       )}
 
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-semibold flex items-center gap-1.5">
+          <HiExclamationCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+          <span>{error}</span>
+        </p>
+      )}
 
       {/* Document / Image / PDF Recheck Preview Modal */}
       {previewItem && (

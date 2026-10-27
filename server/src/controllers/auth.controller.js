@@ -115,6 +115,21 @@ const authController = {
         ? normalizeFilePath(req.files.property_tax_receipt[0], 'proofs')
         : null;
 
+      // Enforce mandatory verification proofs
+      if (!ebBillProof) {
+        return res.status(400).json({
+          success: false,
+          message: 'Electricity (EB) Bill proof document is mandatory for registration'
+        });
+      }
+
+      if (!propertyTaxReceipt) {
+        return res.status(400).json({
+          success: false,
+          message: 'Property Tax Receipt proof document is mandatory for registration'
+        });
+      }
+
       const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
         ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
         : null;
@@ -300,6 +315,21 @@ const authController = {
       const propertyTaxReceipt = req.files && req.files.property_tax_receipt && req.files.property_tax_receipt[0]
         ? normalizeFilePath(req.files.property_tax_receipt[0], 'proofs')
         : null;
+
+      // Enforce mandatory verification proofs
+      if (!ebBillProof) {
+        return res.status(400).json({
+          success: false,
+          message: 'Electricity (EB) Bill proof document is mandatory for registration'
+        });
+      }
+
+      if (!propertyTaxReceipt) {
+        return res.status(400).json({
+          success: false,
+          message: 'Property Tax Receipt proof document is mandatory for registration'
+        });
+      }
 
       const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
         ? normalizeFilePath(req.files.profile_photo[0], 'profiles')

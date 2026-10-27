@@ -47,6 +47,7 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
@@ -294,6 +295,7 @@ export default function Register() {
     setActiveForm(mode);
     setSearchParams({ type: mode });
     setErrorMessage('');
+    setFieldErrors({});
     setSuccessData(null);
   };
 
@@ -346,31 +348,210 @@ export default function Register() {
     return { score: 100, label: 'Strong', color: 'bg-green-500' };
   };
 
+  // Validation and Error Indication Helpers
+  const clearFieldError = (fieldName) => {
+    setFieldErrors((prev) => {
+      if (!prev[fieldName]) return prev;
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
+  const getFieldError = (fieldName) => fieldErrors[fieldName] || null;
+
+  const getInputClass = (fieldName, focusBorder = 'focus:ring-emerald-500') => {
+    const hasError = !!fieldErrors[fieldName];
+    if (hasError) {
+      return 'w-full py-2.5 px-3 bg-red-50/50 dark:bg-red-950/20 border-2 border-red-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/40 text-gray-900 dark:text-white transition shadow-xs';
+    }
+    return `w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 ${focusBorder} focus:outline-none text-gray-900 dark:text-white transition`;
+  };
+
+  const renderFieldError = (fieldName) => {
+    const err = fieldErrors[fieldName];
+    if (!err) return null;
+    return (
+      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-semibold flex items-center gap-1.5 animate-fade-in">
+        <HiExclamationCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+        <span>{err}</span>
+      </p>
+    );
+  };
+
+  const scrollToFirstError = (errors) => {
+    const firstKey = Object.keys(errors)[0];
+    if (firstKey) {
+      setTimeout(() => {
+        const el =
+          document.querySelector(`[data-field="${firstKey}"]`) ||
+          document.querySelector('.border-red-500');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const focusable = el.querySelector('input, select, textarea') || el;
+          if (focusable && typeof focusable.focus === 'function') focusable.focus();
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 60);
+    }
+  };
+
+  // 1. Validate Member Form
+  const validateMemberForm = () => {
+    const errs = {};
+    if (!memberForm.association_id) {
+      errs.association_id = 'Please select your layout association';
+    }
+    if (!memberForm.name || !memberForm.name.trim()) {
+      errs.name = 'Full name is mandatory';
+    }
+    if (!memberForm.phone || !memberForm.phone.trim()) {
+      errs.phone = 'Mobile phone number is mandatory';
+    } else if (!/^[0-9]{10}$/.test(memberForm.phone.trim())) {
+      errs.phone = 'Please enter a valid 10-digit mobile phone number';
+    }
+    if (!memberForm.email || !memberForm.email.trim()) {
+      errs.email = 'Email address is mandatory';
+    } else if (!/\S+@\S+\.\S+/.test(memberForm.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+    if (!memberForm.door_no || !memberForm.door_no.trim()) {
+      errs.door_no = 'Door / Plot number is mandatory';
+    }
+    if (!memberForm.street || !memberForm.street.trim()) {
+      errs.street = 'Street name is mandatory';
+    }
+    if (!memberEbProof) {
+      errs.eb_bill_proof = 'Electricity (EB) Bill proof is mandatory';
+    }
+    if (!memberTaxProof) {
+      errs.property_tax_receipt = 'Property Tax Receipt proof is mandatory';
+    }
+    if (!memberForm.password) {
+      errs.password = 'Password is mandatory';
+    } else if (memberForm.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters long';
+    }
+    if (!memberForm.confirm_password) {
+      errs.confirm_password = 'Confirm password is mandatory';
+    } else if (memberForm.password !== memberForm.confirm_password) {
+      errs.confirm_password = 'Passwords do not match. Please re-enter';
+    }
+    if (!agreedToTerms) {
+      errs.agreedToTerms = 'You must read and accept the Terms and Conditions to proceed';
+    }
+    return errs;
+  };
+
+  // 2. Validate Admin Form
+  const validateAdminForm = () => {
+    const errs = {};
+    if (!adminForm.association_id) {
+      errs.association_id = 'Please select the layout association to administer';
+    }
+    if (!adminForm.name || !adminForm.name.trim()) {
+      errs.name = 'Administrator full name is mandatory';
+    }
+    if (!adminForm.phone || !adminForm.phone.trim()) {
+      errs.phone = 'Mobile phone number is mandatory';
+    } else if (!/^[0-9]{10}$/.test(adminForm.phone.trim())) {
+      errs.phone = 'Please enter a valid 10-digit mobile phone number';
+    }
+    if (!adminForm.email || !adminForm.email.trim()) {
+      errs.email = 'Email address is mandatory';
+    } else if (!/\S+@\S+\.\S+/.test(adminForm.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+    if (!adminForm.door_no || !adminForm.door_no.trim()) {
+      errs.door_no = 'Door / Office number is mandatory';
+    }
+    if (!adminForm.street || !adminForm.street.trim()) {
+      errs.street = 'Street / Road name is mandatory';
+    }
+    if (!adminEbProof) {
+      errs.eb_bill_proof = 'Electricity (EB) Bill / Residence proof is mandatory';
+    }
+    if (!adminTaxProof) {
+      errs.property_tax_receipt = 'Property Tax Receipt / Appointment Letter is mandatory';
+    }
+    if (!adminForm.password) {
+      errs.password = 'Password is mandatory';
+    } else if (adminForm.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters long';
+    }
+    if (!adminForm.confirm_password) {
+      errs.confirm_password = 'Confirm password is mandatory';
+    } else if (adminForm.password !== adminForm.confirm_password) {
+      errs.confirm_password = 'Passwords do not match. Please re-enter';
+    }
+    if (!agreedToTerms) {
+      errs.agreedToTerms = 'You must read and accept the Terms and Conditions to proceed';
+    }
+    return errs;
+  };
+
+  // 3. Validate Association + Admin Form
+  const validateAssocAdminForm = () => {
+    const errs = {};
+    if (!assocAdminForm.association_name || !assocAdminForm.association_name.trim()) {
+      errs.association_name = 'Association / Layout name is mandatory';
+    }
+    if (!assocAdminForm.association_city || !assocAdminForm.association_city.trim()) {
+      errs.association_city = 'City / District is mandatory';
+    }
+    if (!assocAdminForm.name || !assocAdminForm.name.trim()) {
+      errs.name = 'Main Association Admin full name is mandatory';
+    }
+    if (!assocAdminForm.phone || !assocAdminForm.phone.trim()) {
+      errs.phone = 'Mobile phone number is mandatory';
+    } else if (!/^[0-9]{10}$/.test(assocAdminForm.phone.trim())) {
+      errs.phone = 'Please enter a valid 10-digit mobile phone number';
+    }
+    if (!assocAdminForm.email || !assocAdminForm.email.trim()) {
+      errs.email = 'Email address is mandatory';
+    } else if (!/\S+@\S+\.\S+/.test(assocAdminForm.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+    if (!assocAdminForm.door_no || !assocAdminForm.door_no.trim()) {
+      errs.door_no = 'Door / Office number is mandatory';
+    }
+    if (!assocAdminForm.street || !assocAdminForm.street.trim()) {
+      errs.street = 'Street / Road name is mandatory';
+    }
+    if (!assocEbProof) {
+      errs.eb_bill_proof = 'Electricity (EB) Bill / ID proof is mandatory';
+    }
+    if (!assocTaxProof) {
+      errs.property_tax_receipt = 'Property Tax Receipt / Appointment Letter is mandatory';
+    }
+    if (!assocAdminForm.password) {
+      errs.password = 'Password is mandatory';
+    } else if (assocAdminForm.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters long';
+    }
+    if (!assocAdminForm.confirm_password) {
+      errs.confirm_password = 'Confirm password is mandatory';
+    } else if (assocAdminForm.password !== assocAdminForm.confirm_password) {
+      errs.confirm_password = 'Passwords do not match. Please re-enter';
+    }
+    if (!agreedToTerms) {
+      errs.agreedToTerms = 'You must read and accept the Terms and Conditions to proceed';
+    }
+    return errs;
+  };
+
   // 1. Submit Member Registration
   const handleSubmitMember = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessData(null);
 
-    if (!agreedToTerms) {
-      setErrorMessage('Please read and accept the Terms and Conditions to proceed with registration.');
-      return;
-    }
-
-    if (memberForm.password !== memberForm.confirm_password) {
-      setErrorMessage('Passwords do not match. Please re-enter.');
-      return;
-    }
-    if (memberForm.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
-      return;
-    }
-    if (!memberForm.phone || memberForm.phone.length < 10) {
-      setErrorMessage('Please provide a valid 10-digit mobile phone number.');
-      return;
-    }
-    if (!memberForm.association_id) {
-      setErrorMessage('Please select your layout association.');
+    const errs = validateMemberForm();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setErrorMessage('Please fill in all mandatory fields indicated with a red border below.');
+      scrollToFirstError(errs);
       return;
     }
 
@@ -420,25 +601,11 @@ export default function Register() {
     setErrorMessage('');
     setSuccessData(null);
 
-    if (!agreedToTerms) {
-      setErrorMessage('Please read and accept the Terms and Conditions to proceed with registration.');
-      return;
-    }
-
-    if (adminForm.password !== adminForm.confirm_password) {
-      setErrorMessage('Passwords do not match. Please re-enter.');
-      return;
-    }
-    if (adminForm.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
-      return;
-    }
-    if (!adminForm.phone || adminForm.phone.length < 10) {
-      setErrorMessage('Please provide a valid 10-digit mobile phone number.');
-      return;
-    }
-    if (!adminForm.association_id) {
-      setErrorMessage('Please select the layout association to administer.');
+    const errs = validateAdminForm();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setErrorMessage('Please fill in all mandatory fields indicated with a red border below.');
+      scrollToFirstError(errs);
       return;
     }
 
@@ -488,33 +655,11 @@ export default function Register() {
     setErrorMessage('');
     setSuccessData(null);
 
-    if (!agreedToTerms) {
-      setErrorMessage('Please read and accept the Terms and Conditions to proceed with registration.');
-      return;
-    }
-
-    if (!assocAdminForm.association_name.trim()) {
-      setErrorMessage('Association name is required.');
-      return;
-    }
-    if (!assocAdminForm.association_city.trim()) {
-      setErrorMessage('City / District is required.');
-      return;
-    }
-    if (!assocAdminForm.name.trim()) {
-      setErrorMessage('Administrator name is required.');
-      return;
-    }
-    if (!assocAdminForm.phone || assocAdminForm.phone.length < 10) {
-      setErrorMessage('Please provide a valid 10-digit mobile phone number.');
-      return;
-    }
-    if (assocAdminForm.password !== assocAdminForm.confirm_password) {
-      setErrorMessage('Passwords do not match. Please re-enter.');
-      return;
-    }
-    if (assocAdminForm.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
+    const errs = validateAssocAdminForm();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setErrorMessage('Please fill in all mandatory fields indicated with a red border below.');
+      scrollToFirstError(errs);
       return;
     }
 
@@ -758,7 +903,7 @@ export default function Register() {
               {/* FORM 1: ADMIN + ASSOCIATION REGISTRATION FORM */}
               {/* ============================================================== */}
               {activeForm === 'assoc-admin' && (
-                <form onSubmit={handleSubmitAssocAdmin} className="space-y-8">
+                <form onSubmit={handleSubmitAssocAdmin} noValidate className="space-y-8">
                   <div className="bg-purple-50/40 p-4 rounded-2xl border border-purple-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-purple-900 flex items-center gap-2">
@@ -778,47 +923,51 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="association_name">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Association / Layout Name *
                         </label>
                         <input
                           type="text"
                           required
                           value={assocAdminForm.association_name}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               association_name: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('association_name');
+                          }}
                           placeholder="e.g. Greenfield Residents Welfare Association"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('association_name', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('association_name')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="association_city">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           City / District *
                         </label>
                         <input
                           type="text"
                           required
                           value={assocAdminForm.association_city}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               association_city: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('association_city');
+                          }}
                           placeholder="e.g. Chennai"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('association_city', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('association_city')}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                         Registered Layout Address / Office Location
                       </label>
                       <input
@@ -831,14 +980,14 @@ export default function Register() {
                           })
                         }
                         placeholder="e.g. Community Hall, Plot 1, Greenfield Layout, Medavakkam"
-                        className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                       />
                     </div>
 
                     <div>
                       <FileUpload
                         label="Association Official Logo (Optional)"
-                        helperText="Upload file(5 MB)"
+                        helperText="Upload file (5 MB)"
                         accept="image/png,image/jpeg,image/jpg"
                         value={assocLogo}
                         onChange={(file) => setAssocLogo(file)}
@@ -960,27 +1109,29 @@ export default function Register() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="name">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Main Association Admin Full Name *
                         </label>
                         <input
                           type="text"
                           required
                           value={assocAdminForm.name}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               name: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('name');
+                          }}
                           placeholder="e.g. S. Muralidharan"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('name', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('name')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="phone">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Main Admin Mobile Phone *
                         </label>
                         <input
@@ -988,34 +1139,38 @@ export default function Register() {
                           required
                           pattern="[0-9]{10}"
                           value={assocAdminForm.phone}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               phone: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('phone');
+                          }}
                           placeholder="10-digit mobile"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('phone', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('phone')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="email">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Main Admin Email Address *
                         </label>
                         <input
                           type="email"
                           required
                           value={assocAdminForm.email}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               email: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('email');
+                          }}
                           placeholder="admin@association.com"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('email', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('email')}
                       </div>
                     </div>
                   </div>
@@ -1028,44 +1183,50 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Door / Office No
+                      <div data-field="door_no">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Door / Office No *
                         </label>
                         <input
                           type="text"
+                          required
                           value={assocAdminForm.door_no}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               door_no: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('door_no');
+                          }}
                           placeholder="e.g. Plot 1 / Office"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('door_no', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('door_no')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Street / Road
+                      <div data-field="street">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Street / Road *
                         </label>
                         <input
                           type="text"
+                          required
                           value={assocAdminForm.street}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               street: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('street');
+                          }}
                           placeholder="e.g. Main Avenue"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('street', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('street')}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Taluk
                         </label>
                         <input
@@ -1078,7 +1239,7 @@ export default function Register() {
                             })
                           }
                           placeholder="e.g. Sholinganallur"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
                     </div>
@@ -1086,25 +1247,42 @@ export default function Register() {
 
                   {/* Section 4: Admin Verification Documents */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-purple-800 flex items-center gap-2 border-b pb-2">
-                      <HiMapPin className="w-4 h-4 text-purple-600" />
-                      4. Verification Proof Documents (Optional)
-                    </h3>
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-purple-800 flex items-center gap-2 border-b pb-2">
+                        <HiMapPin className="w-4 h-4 text-purple-600" />
+                        4. Verification Proof Documents * (Mandatory)
+                      </h3>
+                      <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                        Both Electricity (EB) Bill / ID Proof and Property Tax Receipt / Appointment Letter are mandatory for verification.
+                      </p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FileUpload
-                        label="Electricity (EB) Bill / ID Proof"
-                        helperText="Upload file(5 MB)"
-                        value={assocEbProof}
-                        onChange={(file) => setAssocEbProof(file)}
-                      />
+                      <div data-field="eb_bill_proof">
+                        <FileUpload
+                          label="Electricity (EB) Bill / ID Proof *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={assocEbProof}
+                          error={getFieldError('eb_bill_proof')}
+                          onChange={(file) => {
+                            setAssocEbProof(file);
+                            if (file) clearFieldError('eb_bill_proof');
+                          }}
+                        />
+                      </div>
 
-                      <FileUpload
-                        label="Property Tax Receipt / Appointment Letter"
-                        helperText="Upload file(5 MB)"
-                        value={assocTaxProof}
-                        onChange={(file) => setAssocTaxProof(file)}
-                      />
+                      <div data-field="property_tax_receipt">
+                        <FileUpload
+                          label="Property Tax Receipt / Appointment Letter *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={assocTaxProof}
+                          error={getFieldError('property_tax_receipt')}
+                          onChange={(file) => {
+                            setAssocTaxProof(file);
+                            if (file) clearFieldError('property_tax_receipt');
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1116,23 +1294,25 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={assocAdminForm.password}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               password: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('password');
+                          }}
                           placeholder="Min 6 characters"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('password', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('password')}
                         {assocAdminForm.password && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between text-[11px] mb-1">
@@ -1151,37 +1331,49 @@ export default function Register() {
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="confirm_password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Confirm Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={assocAdminForm.confirm_password}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAssocAdminForm({
                               ...assocAdminForm,
                               confirm_password: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('confirm_password');
+                          }}
                           placeholder="Re-type password"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                          className={getInputClass('confirm_password', 'focus:ring-purple-500')}
                         />
+                        {renderFieldError('confirm_password')}
                       </div>
                     </div>
                   </div>
 
                   {/* Terms and Conditions Agreement */}
-                  <div className="bg-purple-50/50 border border-purple-200 rounded-2xl p-4">
+                  <div
+                    data-field="agreedToTerms"
+                    className={`rounded-2xl p-4 transition ${
+                      fieldErrors.agreedToTerms
+                        ? 'bg-red-50/70 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                        : 'bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40'
+                    }`}
+                  >
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        onChange={(e) => {
+                          setAgreedToTerms(e.target.checked);
+                          if (e.target.checked) clearFieldError('agreedToTerms');
+                        }}
                         className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
                       />
-                      <span className="text-xs text-gray-700 leading-relaxed">
+                      <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
                         I agree to the{' '}
                         <button
                           type="button"
@@ -1190,9 +1382,10 @@ export default function Register() {
                         >
                           EGATES Terms and Conditions
                         </button>{' '}
-                        and acknowledge the Community Privacy and Verification Guidelines.
+                        and acknowledge the Community Privacy and Verification Guidelines. *
                       </span>
                     </label>
+                    {renderFieldError('agreedToTerms')}
                   </div>
 
                   {/* Submit Button */}
@@ -1217,7 +1410,7 @@ export default function Register() {
               {/* FORM 2: ADMIN REGISTRATION FORM (Existing Layout) */}
               {/* ============================================================== */}
               {activeForm === 'admin' && (
-                <form onSubmit={handleSubmitAdmin} className="space-y-8">
+                <form onSubmit={handleSubmitAdmin} noValidate className="space-y-8">
                   <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-blue-900 flex items-center gap-2">
@@ -1236,21 +1429,22 @@ export default function Register() {
                       1. Select Layout Association
                     </h3>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <div data-field="association_id">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                         Layout Association *
                       </label>
                       <select
                         name="association_id"
                         required
                         value={adminForm.association_id}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setAdminForm({
                             ...adminForm,
                             association_id: e.target.value,
-                          })
-                        }
-                        className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          });
+                          clearFieldError('association_id');
+                        }}
+                        className={getInputClass('association_id', 'focus:ring-blue-500')}
                       >
                         <option value="">-- Choose Existing Association --</option>
                         {associations.map((assoc) => (
@@ -1259,6 +1453,7 @@ export default function Register() {
                           </option>
                         ))}
                       </select>
+                      {renderFieldError('association_id')}
                     </div>
                   </div>
 
@@ -1376,24 +1571,26 @@ export default function Register() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="name">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Full Name *
                         </label>
                         <input
                           type="text"
                           required
                           value={adminForm.name}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, name: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, name: e.target.value });
+                            clearFieldError('name');
+                          }}
                           placeholder="e.g. S. Muralidharan"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('name', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('name')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="phone">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Mobile Phone *
                         </label>
                         <input
@@ -1401,28 +1598,32 @@ export default function Register() {
                           required
                           pattern="[0-9]{10}"
                           value={adminForm.phone}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, phone: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, phone: e.target.value });
+                            clearFieldError('phone');
+                          }}
                           placeholder="10-digit mobile"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('phone', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('phone')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="email">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Email Address *
                         </label>
                         <input
                           type="email"
                           required
                           value={adminForm.email}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, email: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, email: e.target.value });
+                            clearFieldError('email');
+                          }}
                           placeholder="admin@layout.com"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('email', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('email')}
                       </div>
                     </div>
                   </div>
@@ -1435,38 +1636,44 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Door / Plot No
+                      <div data-field="door_no">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Door / Plot No *
                         </label>
                         <input
                           type="text"
+                          required
                           value={adminForm.door_no}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, door_no: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, door_no: e.target.value });
+                            clearFieldError('door_no');
+                          }}
                           placeholder="e.g. Plot 15 / 2A"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('door_no', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('door_no')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Street / Cross
+                      <div data-field="street">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Street / Cross *
                         </label>
                         <input
                           type="text"
+                          required
                           value={adminForm.street}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, street: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, street: e.target.value });
+                            clearFieldError('street');
+                          }}
                           placeholder="e.g. 1st Main Road"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('street', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('street')}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Taluk / District
                         </label>
                         <input
@@ -1476,7 +1683,7 @@ export default function Register() {
                             setAdminForm({ ...adminForm, district: e.target.value })
                           }
                           placeholder="e.g. Chengalpattu"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
                     </div>
@@ -1484,25 +1691,42 @@ export default function Register() {
 
                   {/* 4. Verification Proofs */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                      <HiMapPin className="w-4 h-4 text-blue-600" />
-                      4. Verification Proofs
-                    </h3>
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
+                        <HiMapPin className="w-4 h-4 text-blue-600" />
+                        4. Verification Proof Documents * (Mandatory)
+                      </h3>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Both Electricity Bill (EB) / Residence Proof and Property Tax Receipt / Appointment Letter are mandatory for verification.
+                      </p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FileUpload
-                        label="Electricity Bill (EB) / Residence Proof"
-                        helperText="Upload file(5 MB)"
-                        value={adminEbProof}
-                        onChange={(file) => setAdminEbProof(file)}
-                      />
+                      <div data-field="eb_bill_proof">
+                        <FileUpload
+                          label="Electricity Bill (EB) / Residence Proof *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={adminEbProof}
+                          error={getFieldError('eb_bill_proof')}
+                          onChange={(file) => {
+                            setAdminEbProof(file);
+                            if (file) clearFieldError('eb_bill_proof');
+                          }}
+                        />
+                      </div>
 
-                      <FileUpload
-                        label="Property Tax Receipt / Appointment Letter"
-                        helperText="Upload file(5 MB)"
-                        value={adminTaxProof}
-                        onChange={(file) => setAdminTaxProof(file)}
-                      />
+                      <div data-field="property_tax_receipt">
+                        <FileUpload
+                          label="Property Tax Receipt / Appointment Letter *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={adminTaxProof}
+                          error={getFieldError('property_tax_receipt')}
+                          onChange={(file) => {
+                            setAdminTaxProof(file);
+                            if (file) clearFieldError('property_tax_receipt');
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1514,20 +1738,22 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={adminForm.password}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, password: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setAdminForm({ ...adminForm, password: e.target.value });
+                            clearFieldError('password');
+                          }}
                           placeholder="Min 6 characters"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('password', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('password')}
                         {adminForm.password && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between text-[11px] mb-1">
@@ -1546,37 +1772,49 @@ export default function Register() {
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="confirm_password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Confirm Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={adminForm.confirm_password}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setAdminForm({
                               ...adminForm,
                               confirm_password: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('confirm_password');
+                          }}
                           placeholder="Re-type password"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className={getInputClass('confirm_password', 'focus:ring-blue-500')}
                         />
+                        {renderFieldError('confirm_password')}
                       </div>
                     </div>
                   </div>
 
                   {/* Terms and Conditions Agreement */}
-                  <div className="bg-blue-50/50 border border-blue-200 rounded-2xl p-4">
+                  <div
+                    data-field="agreedToTerms"
+                    className={`rounded-2xl p-4 transition ${
+                      fieldErrors.agreedToTerms
+                        ? 'bg-red-50/70 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                        : 'bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40'
+                    }`}
+                  >
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        onChange={(e) => {
+                          setAgreedToTerms(e.target.checked);
+                          if (e.target.checked) clearFieldError('agreedToTerms');
+                        }}
                         className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                       />
-                      <span className="text-xs text-gray-700 leading-relaxed">
+                      <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
                         I agree to the{' '}
                         <button
                           type="button"
@@ -1585,9 +1823,10 @@ export default function Register() {
                         >
                           EGATES Terms and Conditions
                         </button>{' '}
-                        and acknowledge the Community Privacy and Verification Guidelines.
+                        and acknowledge the Community Privacy and Verification Guidelines. *
                       </span>
                     </label>
+                    {renderFieldError('agreedToTerms')}
                   </div>
 
                   {/* Submit Button */}
@@ -1612,7 +1851,7 @@ export default function Register() {
               {/* FORM 3: MEMBER REGISTRATION FORM (Resident Member) */}
               {/* ============================================================== */}
               {activeForm === 'member' && (
-                <form onSubmit={handleSubmitMember} className="space-y-8">
+                <form onSubmit={handleSubmitMember} noValidate className="space-y-8">
                   <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-emerald-900 flex items-center gap-2">
@@ -1631,21 +1870,22 @@ export default function Register() {
                       1. Select Layout Association
                     </h3>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <div data-field="association_id">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                         Layout Association *
                       </label>
                       <select
                         name="association_id"
                         required
                         value={memberForm.association_id}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setMemberForm({
                             ...memberForm,
                             association_id: e.target.value,
-                          })
-                        }
-                        className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          });
+                          clearFieldError('association_id');
+                        }}
+                        className={getInputClass('association_id', 'focus:ring-emerald-500')}
                       >
                         <option value="">-- Choose Your Association --</option>
                         {associations.map((assoc) => (
@@ -1654,6 +1894,7 @@ export default function Register() {
                           </option>
                         ))}
                       </select>
+                      {renderFieldError('association_id')}
                     </div>
                   </div>
 
@@ -1771,24 +2012,26 @@ export default function Register() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="name">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Full Name *
                         </label>
                         <input
                           type="text"
                           required
                           value={memberForm.name}
-                          onChange={(e) =>
-                            setMemberForm({ ...memberForm, name: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setMemberForm({ ...memberForm, name: e.target.value });
+                            clearFieldError('name');
+                          }}
                           placeholder="e.g. S. Muralidharan"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('name', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('name')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="phone">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Mobile Phone *
                         </label>
                         <input
@@ -1796,27 +2039,32 @@ export default function Register() {
                           required
                           pattern="[0-9]{10}"
                           value={memberForm.phone}
-                          onChange={(e) =>
-                            setMemberForm({ ...memberForm, phone: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setMemberForm({ ...memberForm, phone: e.target.value });
+                            clearFieldError('phone');
+                          }}
                           placeholder="10-digit mobile"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('phone', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('phone')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Email Address
+                      <div data-field="email">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Email Address *
                         </label>
                         <input
                           type="email"
+                          required
                           value={memberForm.email}
-                          onChange={(e) =>
-                            setMemberForm({ ...memberForm, email: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setMemberForm({ ...memberForm, email: e.target.value });
+                            clearFieldError('email');
+                          }}
                           placeholder="name@example.com"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('email', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('email')}
                       </div>
                     </div>
                   </div>
@@ -1829,40 +2077,44 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="door_no">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Door / Plot No *
                         </label>
                         <input
                           type="text"
                           required
                           value={memberForm.door_no}
-                          onChange={(e) =>
-                            setMemberForm({ ...memberForm, door_no: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setMemberForm({ ...memberForm, door_no: e.target.value });
+                            clearFieldError('door_no');
+                          }}
                           placeholder="e.g. 14A or Plot 21"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('door_no', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('door_no')}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="street">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Street Name *
                         </label>
                         <input
                           type="text"
                           required
                           value={memberForm.street}
-                          onChange={(e) =>
-                            setMemberForm({ ...memberForm, street: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setMemberForm({ ...memberForm, street: e.target.value });
+                            clearFieldError('street');
+                          }}
                           placeholder="e.g. 2nd Cross Street"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('street', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('street')}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Layout / Colony Name
                         </label>
                         <input
@@ -1875,14 +2127,14 @@ export default function Register() {
                             })
                           }
                           placeholder="e.g. Green Valley"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Taluk
                         </label>
                         <input
@@ -1892,12 +2144,12 @@ export default function Register() {
                             setMemberForm({ ...memberForm, taluk: e.target.value })
                           }
                           placeholder="e.g. Tambaram"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           District
                         </label>
                         <input
@@ -1910,12 +2162,12 @@ export default function Register() {
                             })
                           }
                           placeholder="e.g. Chengalpattu"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           State
                         </label>
                         <input
@@ -1924,7 +2176,7 @@ export default function Register() {
                           onChange={(e) =>
                             setMemberForm({ ...memberForm, state: e.target.value })
                           }
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-900 dark:text-white"
                         />
                       </div>
                     </div>
@@ -1932,25 +2184,42 @@ export default function Register() {
 
                   {/* 4. Verification Proofs */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2 border-b pb-2">
-                      <HiMapPin className="w-4 h-4 text-emerald-600" />
-                      4. Address Proof Documents
-                    </h3>
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2 border-b pb-2">
+                        <HiMapPin className="w-4 h-4 text-emerald-600" />
+                        4. Address Verification Proof Documents * (Mandatory)
+                      </h3>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                        Both Electricity Bill (EB) Proof and Property Tax Receipt Proof are mandatory for address verification.
+                      </p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FileUpload
-                        label="Electricity Bill (EB) Proof"
-                        helperText="Upload file(5 MB)"
-                        value={memberEbProof}
-                        onChange={(file) => setMemberEbProof(file)}
-                      />
+                      <div data-field="eb_bill_proof">
+                        <FileUpload
+                          label="Electricity Bill (EB) Proof *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={memberEbProof}
+                          error={getFieldError('eb_bill_proof')}
+                          onChange={(file) => {
+                            setMemberEbProof(file);
+                            if (file) clearFieldError('eb_bill_proof');
+                          }}
+                        />
+                      </div>
 
-                      <FileUpload
-                        label="Property Tax Receipt Proof"
-                        helperText="Upload file(5 MB)"
-                        value={memberTaxProof}
-                        onChange={(file) => setMemberTaxProof(file)}
-                      />
+                      <div data-field="property_tax_receipt">
+                        <FileUpload
+                          label="Property Tax Receipt Proof *"
+                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
+                          value={memberTaxProof}
+                          error={getFieldError('property_tax_receipt')}
+                          onChange={(file) => {
+                            setMemberTaxProof(file);
+                            if (file) clearFieldError('property_tax_receipt');
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1962,23 +2231,25 @@ export default function Register() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={memberForm.password}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setMemberForm({
                               ...memberForm,
                               password: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('password');
+                          }}
                           placeholder="Min 6 characters"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('password', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('password')}
                         {memberForm.password && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between text-[11px] mb-1">
@@ -1997,37 +2268,49 @@ export default function Register() {
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      <div data-field="confirm_password">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                           Confirm Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={memberForm.confirm_password}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setMemberForm({
                               ...memberForm,
                               confirm_password: e.target.value,
-                            })
-                          }
+                            });
+                            clearFieldError('confirm_password');
+                          }}
                           placeholder="Re-type password"
-                          className="w-full py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          className={getInputClass('confirm_password', 'focus:ring-emerald-500')}
                         />
+                        {renderFieldError('confirm_password')}
                       </div>
                     </div>
                   </div>
 
                   {/* Terms and Conditions Agreement */}
-                  <div className="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4">
+                  <div
+                    data-field="agreedToTerms"
+                    className={`rounded-2xl p-4 transition ${
+                      fieldErrors.agreedToTerms
+                        ? 'bg-red-50/70 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
+                        : 'bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40'
+                    }`}
+                  >
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        onChange={(e) => {
+                          setAgreedToTerms(e.target.checked);
+                          if (e.target.checked) clearFieldError('agreedToTerms');
+                        }}
                         className="mt-1 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
                       />
-                      <span className="text-xs text-gray-700 leading-relaxed">
+                      <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
                         I agree to the{' '}
                         <button
                           type="button"
@@ -2036,9 +2319,10 @@ export default function Register() {
                         >
                           EGATES Terms and Conditions
                         </button>{' '}
-                        and acknowledge the Community Privacy and Verification Guidelines.
+                        and acknowledge the Community Privacy and Verification Guidelines. *
                       </span>
                     </label>
+                    {renderFieldError('agreedToTerms')}
                   </div>
 
                   {/* Submit Button */}
