@@ -21,6 +21,9 @@ import {
   HiEye,
   HiMagnifyingGlass,
   HiFolderOpen,
+  HiBookmark,
+  HiPaperClip,
+  HiArrowTopRightOnSquare,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -45,6 +48,16 @@ export default function MemberDashboard() {
   });
 
   const [recentNews, setRecentNews] = useState([]);
+  const [newsList, setNewsList] = useState([]);
+  const [newsCategory, setNewsCategory] = useState('all');
+  const [newsSearch, setNewsSearch] = useState('');
+  const [newsPreviewModal, setNewsPreviewModal] = useState({
+    isOpen: false,
+    type: null,
+    url: '',
+    title: '',
+  });
+
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
@@ -55,6 +68,28 @@ export default function MemberDashboard() {
   const [incomingSOS, setIncomingSOS] = useState(null);
 
   const resolveFileUrl = (filePath) => getFileUrl(filePath);
+
+  const handleOpenNewsPreview = (fileUrl, title, forceType = null) => {
+    if (!fileUrl) return;
+    const fullUrl = resolveFileUrl(fileUrl);
+    const cleanUrl = fileUrl.split('?')[0].toLowerCase();
+    const isImage =
+      forceType === 'image' ||
+      cleanUrl.endsWith('.jpg') ||
+      cleanUrl.endsWith('.jpeg') ||
+      cleanUrl.endsWith('.png') ||
+      cleanUrl.endsWith('.gif') ||
+      cleanUrl.endsWith('.webp') ||
+      cleanUrl.endsWith('.svg');
+    const isPdf = forceType === 'pdf' || cleanUrl.endsWith('.pdf');
+
+    setNewsPreviewModal({
+      isOpen: true,
+      type: isImage ? 'image' : isPdf ? 'pdf' : 'doc',
+      url: fullUrl,
+      title: title || 'Official Announcement Attachment',
+    });
+  };
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 B';
@@ -112,6 +147,27 @@ export default function MemberDashboard() {
     });
   }, [documents, docSearch, docFilter]);
 
+  const filteredNews = useMemo(() => {
+    return newsList
+      .filter((n) => {
+        const matchCat =
+          newsCategory === 'all' ||
+          (n.category || 'General').toLowerCase() === newsCategory.toLowerCase();
+        const q = newsSearch.toLowerCase();
+        const matchSearch =
+          !newsSearch ||
+          n.title?.toLowerCase().includes(q) ||
+          n.content?.toLowerCase().includes(q);
+        return matchCat && matchSearch;
+      })
+      .sort((a, b) => {
+        if (a.is_pinned === b.is_pinned) {
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        }
+        return a.is_pinned ? -1 : 1;
+      });
+  }, [newsList, newsCategory, newsSearch]);
+
   const fetchMemberDashboard = useCallback(async () => {
     try {
       setLoading(true);
@@ -137,15 +193,15 @@ export default function MemberDashboard() {
       const docList = Array.isArray(docs) ? docs : [];
 
       setDocuments(docList);
+      const newsItems = Array.isArray(news) ? news : [];
+      setNewsList(newsItems);
+      setRecentNews(newsItems.slice(0, 3));
       setStats({
-        activeNotices: news.length,
+        activeNotices: newsItems.length,
         activePolls: activePollsCount,
         myComplaintsOpen: openComplaintsCount,
         totalDocuments: docList.length,
       });
-
-      // Top 3 news
-      setRecentNews(news.slice(0, 3));
 
       // Top 2 upcoming events
       const now = new Date();
@@ -234,7 +290,7 @@ export default function MemberDashboard() {
         >
           <StatsCard
             title="Recent Notices"
-            value={loading ? '...' : (stats.activeNotices || recentNews.length)}
+            value={loading ? '...' : (stats.activeNotices || newsList.length)}
             icon={HiMegaphone}
             variant="blue"
             subtitle="Click to view news"
@@ -283,51 +339,164 @@ export default function MemberDashboard() {
 
       {/* News & Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Recent News (Top 3) - 2 Cols */}
-        <div className="md:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <HiNewspaper className="w-5 h-5 text-primary-600" />
-              <h2 className="text-base font-bold text-gray-900">Latest Association Announcements</h2>
+        {/* Daily News & Notice Board (Admin Method) - 2 Cols */}
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-700">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <HiNewspaper className="w-5 h-5" />
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                  Daily News & Notice Board
+                </h2>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Official announcements, notices, and updates published to residents
+              </p>
             </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/member/news')}
+                className="text-xs font-semibold text-primary-600 dark:text-cyan-400 hover:underline flex items-center gap-1"
+              >
+                Full Feed &rarr;
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Category Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
+              {['all', 'Urgent', 'Meeting', 'General'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setNewsCategory(cat)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition ${
+                    newsCategory === cat
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {cat === 'all' ? 'All' : cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full sm:w-56">
+              <HiMagnifyingGlass className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search notices..."
+                value={newsSearch}
+                onChange={(e) => setNewsSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+
+          {/* News Feed Stream */}
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 divide-y divide-gray-100 dark:divide-slate-700">
+            {filteredNews.length === 0 ? (
+              <div className="py-12 text-center text-xs text-gray-400 dark:text-gray-500">
+                No news or notices published matching your filter.
+              </div>
+            ) : (
+              filteredNews.map((news) => {
+                const isUrgent = (news.category || '').toLowerCase() === 'urgent';
+                const isMeeting = (news.category || '').toLowerCase() === 'meeting';
+
+                return (
+                  <div key={news.id} className="pt-3.5 first:pt-0 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {news.is_pinned && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                            <HiBookmark className="w-3 h-3 text-amber-600 dark:text-amber-400" /> Pinned
+                          </span>
+                        )}
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                            isUrgent
+                              ? 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800/50'
+                              : isMeeting
+                              ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50'
+                              : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {news.category || 'General'}
+                        </span>
+                      </div>
+
+                      <span className="text-[11px] text-gray-400 dark:text-gray-400 font-medium shrink-0">
+                        {news.created_at
+                          ? format(new Date(news.created_at), 'dd MMM yyyy, hh:mm a')
+                          : ''}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-cyan-400 transition">
+                      {news.title}
+                    </h3>
+
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {news.content}
+                    </p>
+
+                    {/* Image / Attachment / Voice Message Indicator */}
+                    {(news.image || news.attachment || news.voice_message) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                        {news.image && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenNewsPreview(news.image, news.title, 'image')}
+                            className="inline-flex items-center gap-1 text-primary-600 dark:text-cyan-400 hover:underline font-semibold cursor-pointer"
+                          >
+                            <HiPaperClip className="w-3.5 h-3.5" /> View Photo
+                          </button>
+                        )}
+                        {news.attachment && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenNewsPreview(news.attachment, news.title)}
+                            className="inline-flex items-center gap-1 text-primary-600 dark:text-cyan-400 hover:underline font-semibold cursor-pointer"
+                          >
+                            <HiPaperClip className="w-3.5 h-3.5" /> View Document
+                          </button>
+                        )}
+                        {news.voice_message && (
+                          <span className="inline-flex items-center gap-1 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded font-semibold">
+                            <HiSpeakerWave className="w-3.5 h-3.5" /> Voice Announcement
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {news.voice_message && (
+                      <div className="pt-1">
+                        <AudioPlayer
+                          src={resolveFileUrl(news.voice_message)}
+                          title="Voice Announcement"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center text-xs">
+            <span className="text-gray-400 dark:text-gray-400 font-medium">
+              Showing {filteredNews.length} of {newsList.length} announcements
+            </span>
             <button
               onClick={() => navigate('/member/news')}
-              className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+              className="text-primary-600 dark:text-cyan-400 hover:underline font-bold inline-flex items-center gap-1"
             >
               Full Feed &rarr;
             </button>
-          </div>
-
-          <div className="flex-1 divide-y divide-gray-100">
-            {recentNews.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-400">
-                No recent announcements posted.
-              </div>
-            ) : (
-              recentNews.map((news) => (
-                <div key={news.id} className="py-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                      {news.category || 'General'}
-                    </span>
-                    <span className="text-[11px] text-gray-400">
-                      {news.created_at ? format(new Date(news.created_at), 'dd MMM yyyy') : ''}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900">{news.title}</h3>
-                  <p className="text-xs text-gray-600 line-clamp-2">{news.content}</p>
-
-                  {news.voice_message && (
-                    <div className="pt-1">
-                      <AudioPlayer
-                        src={getFileUrl(news.voice_message)}
-                        title="Voice Note"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
           </div>
         </div>
 
@@ -605,6 +774,98 @@ export default function MemberDashboard() {
               Close
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Announcement Media Preview Modal */}
+      <Modal
+        isOpen={newsPreviewModal.isOpen}
+        onClose={() => setNewsPreviewModal({ isOpen: false, type: null, url: '', title: '' })}
+        title={
+          newsPreviewModal.type === 'image'
+            ? 'Announcement Photo'
+            : newsPreviewModal.type === 'pdf'
+            ? 'Announcement Document (PDF)'
+            : 'Announcement Attachment'
+        }
+        size="4xl"
+        footer={
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+            <a
+              href={newsPreviewModal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-primary-600 dark:text-cyan-400 hover:underline font-semibold"
+            >
+              <HiArrowTopRightOnSquare className="w-4 h-4" />
+              <span>Open in New Tab</span>
+            </a>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={newsPreviewModal.url}
+                download
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+              >
+                <HiArrowDownTray className="w-3.5 h-3.5" />
+                <span>Download Attachment</span>
+              </a>
+              <button
+                type="button"
+                onClick={() =>
+                  setNewsPreviewModal({ isOpen: false, type: null, url: '', title: '' })
+                }
+                className="px-4 py-1.5 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-semibold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className="flex flex-col items-center justify-center p-2 min-h-[350px]">
+          {newsPreviewModal.type === 'image' ? (
+            <div className="w-full flex justify-center bg-gray-900/5 dark:bg-black/30 p-2 rounded-xl">
+              <img
+                src={newsPreviewModal.url}
+                alt={newsPreviewModal.title}
+                className="max-h-[72vh] w-auto max-w-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+          ) : newsPreviewModal.type === 'pdf' ? (
+            <div className="w-full h-[72vh] rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 bg-slate-900">
+              <iframe
+                src={`${newsPreviewModal.url}#toolbar=1&navpanes=0`}
+                title={newsPreviewModal.title}
+                className="w-full h-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="text-center py-12 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-primary-50 dark:bg-slate-800 text-primary-600 dark:text-cyan-400 mx-auto flex items-center justify-center text-2xl shadow-sm">
+                📄
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                  {newsPreviewModal.title}
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
+                  This document format cannot be embedded directly in the viewer frame. You can open it in a new tab or download it directly to view.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <a
+                  href={newsPreviewModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-sm"
+                >
+                  <HiArrowTopRightOnSquare className="w-4 h-4" />
+                  <span>Open in Browser</span>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
