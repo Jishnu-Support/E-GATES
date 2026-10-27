@@ -439,34 +439,31 @@ const newsController = {
       const { role, association_id: userAssocId } = req.user;
       const assocId = req.query.association_id ? parseInt(req.query.association_id, 10) : userAssocId;
 
-      if (!assocId) {
-        return res.json({
-          success: true,
-          data: {
-            scrolling_announcement: '',
-            is_scrolling_active: false
-          }
-        });
+      let assoc = null;
+      if (assocId) {
+        const result = await pool.query(
+          'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations WHERE id = $1',
+          [assocId]
+        );
+        assoc = result.rows[0];
       }
 
-      const result = await pool.query(
-        'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations WHERE id = $1',
-        [assocId]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'Association not found'
-        });
+      if (!assoc) {
+        const fallback = await pool.query(
+          'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations ORDER BY id ASC LIMIT 1'
+        );
+        assoc = fallback.rows[0];
       }
 
-      const assoc = result.rows[0];
+      const defaultText = 'Jishnu Infotech\nJishnu Learning Labs';
+      const text = assoc?.scrolling_announcement?.trim() ? assoc.scrolling_announcement : defaultText;
+      const isActive = assoc ? (assoc.is_scrolling_active === 1 || assoc.is_scrolling_active === true) : true;
+
       return res.json({
         success: true,
         data: {
-          scrolling_announcement: assoc.scrolling_announcement || '',
-          is_scrolling_active: assoc.is_scrolling_active === 1 || assoc.is_scrolling_active === true
+          scrolling_announcement: text,
+          is_scrolling_active: isActive
         }
       });
     } catch (error) {

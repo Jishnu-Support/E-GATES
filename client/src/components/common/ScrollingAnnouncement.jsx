@@ -3,6 +3,8 @@ import api from '../../services/api';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 
+const DEFAULT_ANNOUNCEMENT = 'Jishnu Infotech\nJishnu Learning Labs';
+
 export default function ScrollingAnnouncement({
   previewText = null,
   previewActive = null,
@@ -12,7 +14,7 @@ export default function ScrollingAnnouncement({
   const { user } = useAuth();
   const { socket } = useSocket();
 
-  const [rawText, setRawText] = useState(previewText || '');
+  const [rawText, setRawText] = useState(previewText !== null ? previewText : DEFAULT_ANNOUNCEMENT);
   const [isActive, setIsActive] = useState(previewActive !== null ? previewActive : true);
 
   // Sync if preview props change (used in Admin Panel preview)
@@ -32,11 +34,12 @@ export default function ScrollingAnnouncement({
       try {
         const res = await api.get('/news/scrolling-announcement');
         if (isMounted && res.data?.data) {
-          setRawText(res.data.data.scrolling_announcement || '');
+          const incomingText = res.data.data.scrolling_announcement;
+          setRawText(incomingText && incomingText.trim() ? incomingText : DEFAULT_ANNOUNCEMENT);
           setIsActive(Boolean(res.data.data.is_scrolling_active));
         }
       } catch (err) {
-        // Silently catch
+        // Silently catch and use default
       }
     };
 
@@ -54,7 +57,8 @@ export default function ScrollingAnnouncement({
     const handleUpdate = (data) => {
       if (data) {
         if (data.scrolling_announcement !== undefined) {
-          setRawText(data.scrolling_announcement || '');
+          const newText = data.scrolling_announcement;
+          setRawText(newText && newText.trim() ? newText : DEFAULT_ANNOUNCEMENT);
         }
         if (data.is_scrolling_active !== undefined) {
           setIsActive(Boolean(data.is_scrolling_active));
@@ -70,25 +74,20 @@ export default function ScrollingAnnouncement({
 
   // Split lines and sanitize messages (up to 6 lines)
   const messages = useMemo(() => {
-    if (!rawText) return [];
-    return rawText
+    const textToSplit = rawText || DEFAULT_ANNOUNCEMENT;
+    return textToSplit
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .slice(0, 6);
   }, [rawText]);
 
-  // USER ONLY: Do NOT render for admins or super admins unless previewMode is active
-  if (!previewMode && user?.role !== 'member') {
-    return null;
-  }
-
-  // If inactive or no messages, do not display
+  // If inactive or no messages, do not display in live website
   if (!isActive || messages.length === 0) {
     if (previewMode) {
       return (
         <div className="py-2 px-3 text-center text-xs text-gray-400 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
-          Scrolling announcement is currently inactive or empty. Enter text below and submit to activate.
+          Scrolling announcement is currently inactive. Enter text below and click Submit to activate.
         </div>
       );
     }
@@ -100,7 +99,7 @@ export default function ScrollingAnnouncement({
 
   return (
     <div
-      className={`ticker-container relative w-full overflow-hidden bg-[#1f3d27] dark:bg-[#152e1c] text-white select-none transition-colors duration-200 border-b border-[#16301d] ${className}`}
+      className={`ticker-container relative w-full overflow-hidden bg-[#1f3d27] text-white select-none transition-colors duration-200 border-b border-[#16301d] ${className}`}
       title="Live community announcement (Hover to pause)"
     >
       <div className="flex items-center h-7 sm:h-8 px-2 sm:px-4 overflow-hidden">
