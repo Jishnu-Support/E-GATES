@@ -66,6 +66,16 @@ const STANDARD_FESTIVALS = [
   { title: 'New Year Eve Countdown', month: 11, day: 31, type: 'Celebration', description: 'Year-end community dinner & midnight countdown' },
 ];
 
+const CALENDAR_DAYS = [
+  { full: 'Sunday', short: 'Sun' },
+  { full: 'Monday', short: 'Mon' },
+  { full: 'Tuesday', short: 'Tue' },
+  { full: 'Wednesday', short: 'Wed' },
+  { full: 'Thursday', short: 'Thu' },
+  { full: 'Friday', short: 'Fri' },
+  { full: 'Saturday', short: 'Sat' },
+];
+
 export default function AdminEvents() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -403,24 +413,24 @@ export default function AdminEvents() {
       {/* Header */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <HiCalendar className="w-7 h-7 text-primary-600" />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <HiCalendar className="w-6 h-6 sm:w-7 sm:h-7 text-primary-600 dark:text-cyan-400" />
             Community Events & Full Year Calendar
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             12-Month Annual Calendar with All Pre-Loaded Festivals, Layout Celebrations, and Admin Save/Edit Capability.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* View Mode Toggle: Month (Main Preference) | Full Year (12M) | Table */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl">
+          <div className="flex items-center bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200/80 dark:border-slate-700">
             <button
               onClick={() => setViewMode('month')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 viewMode === 'month'
-                  ? 'bg-white text-primary-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white dark:bg-slate-900 text-primary-700 dark:text-cyan-300 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <HiSquares2X2 className="w-4 h-4" />
@@ -430,19 +440,19 @@ export default function AdminEvents() {
               onClick={() => setViewMode('year')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 viewMode === 'year'
-                  ? 'bg-white text-primary-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white dark:bg-slate-900 text-primary-700 dark:text-cyan-300 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <HiCalendar className="w-4 h-4" />
-              <span>Full Year (12M)</span>
+              <span>Full Year</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
                 viewMode === 'list'
-                  ? 'bg-white text-primary-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white dark:bg-slate-900 text-primary-700 dark:text-cyan-300 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <HiListBullet className="w-4 h-4" />
@@ -673,47 +683,50 @@ export default function AdminEvents() {
           VIEW 2: SINGLE MONTH DETAILED INTERACTIVE CALENDAR
          ========================================================================= */}
       {viewMode === 'month' && (
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-2 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800 px-1 sm:px-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 {format(currentMonth, 'MMMM yyyy')}
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition"
+                title="Previous Month"
               >
                 <HiChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setCurrentMonth(new Date())}
-                className="px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 transition"
               >
                 Today
               </button>
               <button
                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition"
+                title="Next Month"
               >
                 <HiChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Month Day Headers */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-t-xl overflow-hidden text-center text-xs font-bold text-gray-700">
-            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => (
-              <div key={d} className="bg-gray-50 py-2">
-                {d}
+          {/* Month Day Headers (Responsive: Short 3-letter on mobile, Full name on tablet/desktop) */}
+          <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-slate-700 rounded-t-xl overflow-hidden text-center font-bold text-gray-700 dark:text-gray-200">
+            {CALENDAR_DAYS.map((d) => (
+              <div key={d.full} className="bg-gray-50 dark:bg-slate-800 py-2">
+                <span className="hidden md:inline text-xs">{d.full}</span>
+                <span className="inline md:hidden text-[11px] sm:text-xs tracking-tight">{d.short}</span>
               </div>
             ))}
           </div>
 
           {/* Month Days Cell Grid */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-b-xl overflow-hidden">
+          <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-b-xl overflow-hidden">
             {(() => {
               const mStart = startOfWeek(startOfMonth(currentMonth));
               const mEnd = endOfWeek(endOfMonth(currentMonth));
@@ -736,23 +749,32 @@ export default function AdminEvents() {
                         handleOpenCreate(dayToRender);
                       }
                     }}
-                    className={`min-h-[95px] p-1.5 bg-white ${
-                      isAdmin || dayEvents.length > 0 ? 'cursor-pointer hover:bg-primary-50/20' : 'cursor-default'
+                    className={`min-h-[72px] sm:min-h-[95px] p-1 sm:p-1.5 bg-white dark:bg-slate-900 ${
+                      isAdmin || dayEvents.length > 0 ? 'cursor-pointer hover:bg-primary-50/20 dark:hover:bg-slate-800' : 'cursor-default'
                     } transition flex flex-col justify-between ${
-                      !isCurMonth ? 'bg-gray-50/60 text-gray-400' : ''
+                      !isCurMonth ? 'bg-gray-50/60 dark:bg-slate-950/50 text-gray-400 dark:text-gray-600' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span
-                        className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${
-                          isToday ? 'bg-primary-600 text-white' : 'text-gray-800'
+                        className={`text-[11px] sm:text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
+                          isToday
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : isCurMonth
+                            ? 'text-gray-800 dark:text-gray-100'
+                            : 'text-gray-400 dark:text-gray-600'
                         }`}
                       >
                         {format(dayToRender, 'd')}
                       </span>
+                      {dayEvents.length > 1 && (
+                        <span className="text-[9px] font-bold px-1 rounded-full bg-amber-500 text-white sm:hidden leading-tight">
+                          {dayEvents.length}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="space-y-1 mt-1 overflow-y-auto max-h-[60px]">
+                    <div className="space-y-1 mt-1 overflow-y-auto max-h-[46px] sm:max-h-[60px]">
                       {dayEvents.map((evt) => (
                         <div
                           key={evt.id}
@@ -760,10 +782,12 @@ export default function AdminEvents() {
                             e.stopPropagation();
                             handleOpenEvent(evt);
                           }}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-bold truncate bg-amber-100 text-amber-900 border border-amber-200 hover:bg-amber-200 transition cursor-pointer"
+                          className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-[9px] sm:text-[10px] font-bold truncate bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-700/60 hover:bg-amber-200 dark:hover:bg-amber-800/80 transition cursor-pointer"
                           title={evt.title}
                         >
-                          🎉 {evt.title}
+                          <span className="hidden sm:inline">🎉 </span>
+                          <span className="sm:hidden text-[9px]">🎉</span>
+                          <span className="truncate">{evt.title}</span>
                         </div>
                       ))}
                     </div>
