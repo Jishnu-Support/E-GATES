@@ -32,6 +32,44 @@ export default function DigitalIdCardModal({
     };
   }, [user, extraUserData]);
 
+  const isSuperAdmin = activeUser.role === 'super_admin';
+  const isMainAdmin = activeUser.is_main_admin || activeUser.display_role === 'Main Association Admin';
+  const isLayoutAdmin = activeUser.role === 'admin' && !isMainAdmin;
+
+  // Formatted ID: Association name 3 letters + hyphen + 3-digit padded number (e.g. RES-001, GRE-001, KCC-001)
+  // MUST be called before any early return to strictly obey React Rules of Hooks!
+  const formattedMemberId = useMemo(() => {
+    const rawCode = String(activeUser.member_code || '').trim().replace(/^#/, '');
+
+    // If user already has a valid 3-letter prefix code like RES-001 or KCC-001 or GRE-001
+    if (rawCode && /^[A-Za-z]{3}-\d+$/i.test(rawCode)) {
+      return rawCode.toUpperCase();
+    }
+
+    // Association name prefix: take first 3 letters
+    const assocName =
+      activeUser.association_name ||
+      associationName ||
+      activeUser.layout_name ||
+      (isSuperAdmin ? 'EGATES' : 'Residents Welfare Association');
+
+    const cleanLetters = String(assocName || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
+    const prefix = (cleanLetters.slice(0, 3) || 'EGA').padEnd(3, 'A');
+
+    // Extract sequence number (e.g. from existing code digits or user ID)
+    let seq = activeUser.id || 1;
+    if (rawCode) {
+      const digitsOnly = rawCode.replace(/\D/g, '');
+      if (digitsOnly.length > 0) {
+        const num = parseInt(digitsOnly, 10);
+        if (num > 0) {
+          seq = num > 999 ? (num % 1000) || 1 : num;
+        }
+      }
+    }
+    return `${prefix}-${String(seq).padStart(3, '0')}`;
+  }, [activeUser.member_code, activeUser.association_name, activeUser.layout_name, activeUser.id, associationName, isSuperAdmin]);
+
   // Helper to resolve static file paths to backend URL
   const resolveFileUrl = (filePath) => {
     if (!filePath || typeof filePath !== 'string') return '';
@@ -108,17 +146,14 @@ export default function DigitalIdCardModal({
     };
   }, [isOpen, onClose]);
 
+  // Early return ONLY after ALL React Hooks have unconditionally run!
   if (!isOpen || !user) return null;
 
   const currentAssocName =
     activeUser.association_name ||
     associationName ||
     activeUser.layout_name ||
-    (activeUser.role === 'super_admin' ? 'EGATES Association' : 'Residents Welfare Association');
-
-  const isSuperAdmin = activeUser.role === 'super_admin';
-  const isMainAdmin = activeUser.is_main_admin || activeUser.display_role === 'Main Association Admin';
-  const isLayoutAdmin = activeUser.role === 'admin' && !isMainAdmin;
+    (isSuperAdmin ? 'EGATES Association' : 'Residents Welfare Association');
 
   const roleTitle = isSuperAdmin
     ? 'Super Administrator'
@@ -163,41 +198,6 @@ export default function DigitalIdCardModal({
         glow: 'shadow-teal-500/20',
         emoji: '👥',
       };
-
-  // Formatted ID: Association name 3 letters + hyphen + 3-digit padded number (e.g. RES-001, GRE-001, KCC-001)
-  const formattedMemberId = useMemo(() => {
-    const rawCode = String(activeUser.member_code || '').trim().replace(/^#/, '');
-
-    // If user already has a valid 3-letter prefix code like RES-001 or KCC-001 or GRE-001
-    if (rawCode && /^[A-Za-z]{3}-\d+$/i.test(rawCode)) {
-      return rawCode.toUpperCase();
-    }
-
-    // Association name prefix: take first 3 letters
-    const assocName =
-      activeUser.association_name ||
-      associationName ||
-      activeUser.layout_name ||
-      (isSuperAdmin ? 'EGATES' : 'Residents Welfare Association');
-
-    const cleanLetters = String(assocName || '').replace(/[^a-zA-Z]/g, '').toUpperCase();
-    const prefix = (cleanLetters.slice(0, 3) || 'EGA').padEnd(3, 'A');
-
-    // Extract sequence number (e.g. from existing code digits or user ID)
-    let seq = activeUser.id || 1;
-    if (rawCode) {
-      const digitsOnly = rawCode.replace(/\D/g, '');
-      if (digitsOnly.length > 0) {
-        const num = parseInt(digitsOnly, 10);
-        if (num > 0) {
-          seq = num > 999 ? (num % 1000) || 1 : num;
-        }
-      }
-    }
-    return `${prefix}-${String(seq).padStart(3, '0')}`;
-  }, [activeUser.member_code, activeUser.association_name, activeUser.layout_name, activeUser.id, associationName, isSuperAdmin]);
-
-  const memberCode = formattedMemberId;
 
   // Trigger quick browser print of the card
   const handlePrint = () => {
