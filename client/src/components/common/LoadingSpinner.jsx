@@ -21,7 +21,7 @@ export default function LoadingSpinner({
         aria-label="loading"
       />
       {message && (
-        <p className="mt-3 text-sm font-medium text-gray-600 animate-pulse">
+        <p className="mt-3 text-sm font-medium text-gray-600 dark:text-gray-300 animate-pulse">
           {message}
         </p>
       )}
@@ -30,7 +30,7 @@ export default function LoadingSpinner({
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/85 dark:bg-slate-950/85 backdrop-blur-sm">
         {spinner}
       </div>
     );

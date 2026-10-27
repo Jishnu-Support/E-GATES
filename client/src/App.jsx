@@ -1,10 +1,12 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { lazyWithRetry as lazy } from './utils/lazyWithRetry';
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
 
 // Auth Pages (Eagerly or Lazily loaded)
@@ -89,8 +91,9 @@ function NotFound() {
 
 export default function App() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen message="Loading page..." />}>
-      <Routes>
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingSpinner fullScreen message="Loading page..." />}>
+        <Routes>
         {/* Public Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -182,5 +185,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }

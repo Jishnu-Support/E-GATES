@@ -4,6 +4,7 @@ const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+const compression = require('compression');
 
 const config = require('./config/env');
 const pool = require('./config/db');
@@ -21,6 +22,9 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
+
+// Enable Gzip/Brotli response compression for high performance & fast page loads
+app.use(compression());
 
 // Security HTTP headers
 app.use(
@@ -95,7 +99,17 @@ const possibleClientPaths = [
 const resolvedClientPath = possibleClientPaths.find((p) => fs.existsSync(path.join(p, 'index.html'))) || possibleClientPaths[0];
 
 if (fs.existsSync(resolvedClientPath)) {
-  app.use(express.static(resolvedClientPath));
+  // Serve hashed assets (/assets) with 1-year immutable cache header
+  app.use(
+    '/assets',
+    express.static(path.join(resolvedClientPath, 'assets'), {
+      maxAge: '1y',
+      immutable: true,
+    })
+  );
+  // Serve general static root files
+  app.use(express.static(resolvedClientPath, { maxAge: '1h' }));
+
   app.get('*', (req, res, next) => {
     if (
       req.path.startsWith('/api') ||
@@ -109,6 +123,8 @@ if (fs.existsSync(resolvedClientPath)) {
     }
     const indexHtml = path.join(resolvedClientPath, 'index.html');
     if (fs.existsSync(indexHtml)) {
+      // index.html must never be cached so browser always loads updated hash asset tags
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       return res.sendFile(indexHtml);
     }
     next();

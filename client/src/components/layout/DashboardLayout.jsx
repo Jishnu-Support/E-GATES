@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Footer from './Footer';
 import FloatingSOS from './FloatingSOS';
 import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorBoundary from '../common/ErrorBoundary';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardLayout({ children }) {
@@ -26,9 +27,17 @@ export default function DashboardLayout({ children }) {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 sm:pb-20">
-          <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
-            {children || <Outlet />}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="min-h-[40vh] flex items-center justify-center">
+                  <LoadingSpinner message="Loading page..." />
+                </div>
+              }
+            >
+              {children || <Outlet />}
+            </Suspense>
+          </ErrorBoundary>
         </main>
 
         {/* Floating SOS Trigger Button (for members) */}
