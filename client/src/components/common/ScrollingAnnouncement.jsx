@@ -108,6 +108,11 @@ export default function ScrollingAnnouncement({
       .slice(0, 6);
   }, [rawText]);
 
+  // NEVER show ticker in Super Admin panel or non-resident live views
+  if (!previewMode && (!user || user.role === 'super_admin' || user.role !== 'member')) {
+    return null;
+  }
+
   // If inactive or no messages, do not display in live website
   if (!isActive || messages.length === 0) {
     if (previewMode) {

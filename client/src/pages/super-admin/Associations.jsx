@@ -11,9 +11,6 @@ import {
   HiArrowPath,
   HiPhoto,
   HiShieldCheck,
-  HiMegaphone,
-  HiEye,
-  HiCheckCircle,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import api, { getFileUrl } from '../../services/api';
@@ -21,7 +18,6 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import FileUpload from '../../components/common/FileUpload';
-import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 
 export default function Associations() {
   const [associations, setAssociations] = useState([]);
@@ -90,42 +86,6 @@ export default function Associations() {
     member_code: '',
     password: '',
   });
-
-  // Super Admin per-association scrolling announcement modal
-  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
-  const [announcementAssoc, setAnnouncementAssoc] = useState(null);
-  const [announcementText, setAnnouncementText] = useState('');
-  const [isAnnouncementActive, setIsAnnouncementActive] = useState(true);
-  const [isSavingAnnouncement, setIsSavingAnnouncement] = useState(false);
-
-  const handleOpenAnnouncementModal = (assoc) => {
-    setAnnouncementAssoc(assoc);
-    setAnnouncementText(assoc.scrolling_announcement || '');
-    setIsAnnouncementActive(
-      assoc.is_scrolling_active !== undefined ? Boolean(assoc.is_scrolling_active) : true
-    );
-    setIsAnnouncementModalOpen(true);
-  };
-
-  const handleSaveAnnouncement = async (e) => {
-    if (e) e.preventDefault();
-    if (!announcementAssoc) return;
-    try {
-      setIsSavingAnnouncement(true);
-      await api.put('/news/scrolling-announcement', {
-        association_id: announcementAssoc.id,
-        scrolling_announcement: announcementText,
-        is_scrolling_active: isAnnouncementActive,
-      });
-      toast.success(`Scrolling announcement updated for ${announcementAssoc.name}!`);
-      setIsAnnouncementModalOpen(false);
-      fetchAssociations();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update announcement');
-    } finally {
-      setIsSavingAnnouncement(false);
-    }
-  };
 
   const handleOpenEditAssocAdmin = async (assoc) => {
     setTargetAdminAssoc(assoc);
@@ -733,38 +693,6 @@ export default function Associations() {
                   </div>
                 </div>
 
-                {/* Scrolling Announcement Status Row */}
-                <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl px-2.5 py-1.5 mb-3 flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-emerald-800 flex items-center gap-1">
-                    <span>📢</span> Ticker:
-                  </span>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span
-                      className={`font-semibold truncate max-w-[130px] ${
-                        assoc.is_scrolling_active && assoc.scrolling_announcement?.trim()
-                          ? 'text-emerald-950 font-mono text-[10px]'
-                          : 'text-gray-400 italic'
-                      }`}
-                      title={assoc.scrolling_announcement || 'No announcement set'}
-                    >
-                      {assoc.is_scrolling_active && assoc.scrolling_announcement?.trim()
-                        ? assoc.scrolling_announcement.split('\n')[0]
-                        : 'Inactive'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenAnnouncementModal(assoc);
-                      }}
-                      className="p-1 rounded hover:bg-emerald-200/70 text-emerald-700 transition cursor-pointer"
-                      title={`Configure Ticker for ${assoc.name}`}
-                    >
-                      <HiPencil className="w-3.5 h-3.5 text-emerald-700" />
-                    </button>
-                  </div>
-                </div>
-
                 {/* Counts Banner */}
                 <div className="grid grid-cols-2 gap-2 bg-gray-50 p-2.5 rounded-xl text-center mb-4 text-xs font-semibold">
                   <div>
@@ -799,14 +727,6 @@ export default function Associations() {
                       <HiShieldCheck className="w-4 h-4 text-purple-600" />
                     </button>
                   )}
-
-                  <button
-                    onClick={() => handleOpenAnnouncementModal(assoc)}
-                    className="p-1.5 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
-                    title={`Configure Scrolling Announcement for ${assoc.name}`}
-                  >
-                    <HiMegaphone className="w-4 h-4 text-emerald-600" />
-                  </button>
 
                   <button
                     onClick={() => handleOpenEdit(assoc)}
@@ -1556,99 +1476,6 @@ export default function Associations() {
           </div>
         </form>
       </Modal>
-
-      {/* SCROLLING ANNOUNCEMENT CONFIGURATION MODAL FOR SUPER ADMIN */}
-      {isAnnouncementModalOpen && announcementAssoc && (
-        <Modal
-          isOpen={isAnnouncementModalOpen}
-          onClose={() => setIsAnnouncementModalOpen(false)}
-          title={`📢 Scrolling Announcement — ${announcementAssoc.name}`}
-          size="lg"
-        >
-          <div className="space-y-4 p-2">
-            <div>
-              <p className="text-xs text-gray-500">
-                Configure news, alerts, or notices to scroll specifically for residents belonging to{' '}
-                <strong className="text-emerald-700">{announcementAssoc.name}</strong>. Other associations will not see this announcement.
-              </p>
-            </div>
-
-            {/* Live Preview Strip */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                <HiEye className="w-3.5 h-3.5 text-emerald-600" />
-                Live Preview (How residents of this association see it)
-              </span>
-              <ScrollingAnnouncement
-                previewMode={true}
-                previewText={announcementText}
-                previewActive={isAnnouncementActive}
-              />
-            </div>
-
-            {/* Textarea Input */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Announcement Messages (Press Enter for next message, up to 6)
-              </label>
-              <textarea
-                rows={4}
-                value={announcementText}
-                onChange={(e) => setAnnouncementText(e.target.value)}
-                placeholder={"Water tank cleaning scheduled this Saturday 9 AM\nAnnual General Meeting on Sunday 10 AM\nOffice closed for public holiday"}
-                className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-mono leading-relaxed"
-              />
-              <div className="flex justify-between items-center text-[11px] text-gray-400 mt-1">
-                <span>Separate multiple messages with a new line.</span>
-                <span className="font-semibold text-gray-500">
-                  {announcementText.split('\n').filter((l) => l.trim()).length} / 6 messages
-                </span>
-              </div>
-            </div>
-
-            {/* Active Toggle & Buttons */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={isAnnouncementActive}
-                  onChange={(e) => setIsAnnouncementActive(e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
-                />
-                <span>Enable ticker on this association's resident portal</span>
-              </label>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAnnouncementModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveAnnouncement}
-                  disabled={isSavingAnnouncement}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer"
-                >
-                  {isSavingAnnouncement ? (
-                    <>
-                      <HiArrowPath className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <HiCheckCircle className="w-4 h-4" />
-                      <span>Submit Announcement</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* DELETE ASSOCIATION CONFIRM DIALOG */}
       <ConfirmDialog

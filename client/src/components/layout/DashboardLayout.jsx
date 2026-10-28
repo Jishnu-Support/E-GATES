@@ -26,8 +26,8 @@ export default function DashboardLayout({ children }) {
           associationName={user?.association_name}
         />
 
-        {/* User-Only Live Scrolling Announcement Strip (matching reference header) */}
-        <ScrollingAnnouncement />
+        {/* User-Only Live Scrolling Announcement Strip (Visible ONLY to resident members for their layout) */}
+        {user?.role === 'member' && <ScrollingAnnouncement />}
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 sm:pb-20">
