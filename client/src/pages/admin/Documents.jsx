@@ -11,10 +11,11 @@ import {
   HiEye,
   HiListBullet,
   HiSquares2X2,
+  HiArrowTopRightOnSquare,
 } from 'react-icons/hi2';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
@@ -25,6 +26,9 @@ export default function AdminDocuments() {
   // View Mode: 'grid' | 'list'
   const [viewMode, setViewMode] = useState('grid');
   const [typeFilter, setTypeFilter] = useState('all');
+
+  // Document View Modal State
+  const [viewingDoc, setViewingDoc] = useState(null); // { doc, url, isPdf, isImage }
 
   // Upload Modal
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -57,6 +61,21 @@ export default function AdminDocuments() {
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  // View / Preview Document Handler
+  const handleViewDocument = (doc) => {
+    if (!doc) return;
+    const url = getFileUrl(doc.file_path);
+    const clean = (doc.file_type || doc.file_path || '').toLowerCase();
+    const isPdf = clean.includes('pdf');
+    const isImage = clean.includes('image') || clean.includes('jpg') || clean.includes('jpeg') || clean.includes('png') || clean.includes('webp') || clean.includes('svg');
+    setViewingDoc({
+      doc,
+      url,
+      isPdf,
+      isImage,
+    });
+  };
 
   // Download Handler
   const handleDownload = async (doc) => {
@@ -250,7 +269,11 @@ export default function AdminDocuments() {
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+                  <div
+                    onClick={() => handleViewDocument(doc)}
+                    className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 cursor-pointer hover:border-primary-400 dark:hover:border-primary-500 transition group"
+                    title="Click to view document"
+                  >
                     {getDocTypeIcon(doc.file_type || doc.file_path)}
                   </div>
                   <button
@@ -258,14 +281,20 @@ export default function AdminDocuments() {
                       setDocToDelete(doc);
                       setIsDeleteConfirmOpen(true);
                     }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition"
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition cursor-pointer"
                     title="Delete Document"
                   >
                     <HiTrash className="w-4 h-4" />
                   </button>
                 </div>
 
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{doc.title}</h3>
+                <h3
+                  onClick={() => handleViewDocument(doc)}
+                  className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1 cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 transition"
+                  title={doc.title}
+                >
+                  {doc.title}
+                </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
                   {doc.description || 'Official association record'}
                 </p>
@@ -276,13 +305,25 @@ export default function AdminDocuments() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-2">
+              {/* Action Buttons: View Document & Download */}
+              <div className="mt-4 pt-2 grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleDownload(doc)}
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 text-xs font-semibold rounded-xl border border-primary-100 dark:border-primary-800 transition"
+                  type="button"
+                  onClick={() => handleViewDocument(doc)}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+                  title="View document"
                 >
-                  <HiArrowDownTray className="w-4 h-4" />
-                  <span>Download File</span>
+                  <HiEye className="w-4 h-4" />
+                  <span>View</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownload(doc)}
+                  className="inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl border border-gray-200 dark:border-slate-700 transition cursor-pointer"
+                  title="Download file to device"
+                >
+                  <HiArrowDownTray className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span>Download</span>
                 </button>
               </div>
             </div>
@@ -325,18 +366,31 @@ export default function AdminDocuments() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
+                        type="button"
+                        onClick={() => handleViewDocument(doc)}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-2xs transition cursor-pointer"
+                        title="View document"
+                      >
+                        <HiEye className="w-3.5 h-3.5" />
+                        <span>View</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDownload(doc)}
-                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900 font-semibold rounded-lg border border-primary-200 dark:border-primary-800 transition"
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg border border-gray-200 dark:border-slate-700 transition cursor-pointer"
+                        title="Download file"
                       >
                         <HiArrowDownTray className="w-3.5 h-3.5" />
                         <span>Download</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
                           setDocToDelete(doc);
                           setIsDeleteConfirmOpen(true);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition cursor-pointer"
+                        title="Delete Document"
                       >
                         <HiTrash className="w-4 h-4" />
                       </button>
@@ -427,6 +481,121 @@ export default function AdminDocuments() {
         confirmText="Yes, Delete Document"
         isDanger={true}
       />
+
+      {/* Modal: View Document */}
+      <Modal
+        isOpen={Boolean(viewingDoc)}
+        onClose={() => setViewingDoc(null)}
+        title={viewingDoc?.doc?.title || 'Document Viewer'}
+        size="2xl"
+      >
+        {viewingDoc && (
+          <div className="flex flex-col space-y-4">
+            {/* Header info bar inside modal */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-200 dark:border-slate-700 text-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 flex-shrink-0">
+                  {getDocTypeIcon(viewingDoc.doc.file_type || viewingDoc.doc.file_path)}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 dark:text-white truncate">
+                    {viewingDoc.doc.title}
+                  </p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                    {viewingDoc.doc.description || 'Official association document'}
+                    {viewingDoc.doc.file_size ? ` • ${formatFileSize(viewingDoc.doc.file_size)}` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.open(viewingDoc.url, '_blank')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-lg border border-gray-200 dark:border-slate-600 transition cursor-pointer"
+                  title="Open document in a separate browser tab"
+                >
+                  <HiArrowTopRightOnSquare className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                  <span>Open in New Tab</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownload(viewingDoc.doc)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
+                  title="Download file to device"
+                >
+                  <HiArrowDownTray className="w-3.5 h-3.5" />
+                  <span>Download</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Document Viewer Body */}
+            <div className="w-full flex items-center justify-center min-h-[380px] max-h-[75vh] overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-slate-950">
+              {viewingDoc.isPdf ? (
+                <iframe
+                  src={`${viewingDoc.url}#toolbar=1&navpanes=0`}
+                  title={viewingDoc.doc.title}
+                  className="w-full h-[68vh] border-0 rounded-xl bg-white"
+                />
+              ) : viewingDoc.isImage ? (
+                <div className="p-3 w-full h-full flex items-center justify-center overflow-auto">
+                  <img
+                    src={viewingDoc.url}
+                    alt={viewingDoc.doc.title}
+                    className="max-h-[66vh] max-w-full object-contain rounded-lg shadow-lg"
+                  />
+                </div>
+              ) : (
+                /* Non-previewable doc (Excel, CSV, Word, etc.) */
+                <div className="flex flex-col items-center justify-center p-8 text-center text-gray-300 max-w-md">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-800 text-primary-400 flex items-center justify-center mb-3">
+                    {getDocTypeIcon(viewingDoc.doc.file_type || viewingDoc.doc.file_path)}
+                  </div>
+                  <h4 className="text-white font-bold text-sm mb-1">
+                    {viewingDoc.doc.title}
+                  </h4>
+                  <p className="text-xs text-gray-400 mb-4">
+                    This file format is designed to be opened with spreadsheet or desktop software. You can directly view it in a new tab or download it to your device.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => window.open(viewingDoc.url, '_blank')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
+                    >
+                      <HiArrowTopRightOnSquare className="w-4 h-4" />
+                      <span>Open in Browser Tab</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(viewingDoc.doc)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-200 rounded-xl text-xs font-semibold transition border border-slate-700 cursor-pointer"
+                    >
+                      <HiArrowDownTray className="w-4 h-4" />
+                      <span>Download File</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer close */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800 text-xs">
+              <span className="text-gray-500 dark:text-gray-400">
+                Official document maintained in association repository.
+              </span>
+              <button
+                type="button"
+                onClick={() => setViewingDoc(null)}
+                className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition cursor-pointer"
+              >
+                Close Viewer
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
