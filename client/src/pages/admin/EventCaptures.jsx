@@ -201,6 +201,21 @@ export default function EventCaptures() {
 
     setUploadFiles((prev) => [...prev, ...newEntries]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // Asynchronously generate persistent Base64 Data URL for guaranteed inside image preview
+    newEntries.forEach((entry) => {
+      if (!entry.isVideo && entry.file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setUploadFiles((prev) =>
+              prev.map((item) => (item.file === entry.file ? { ...item, preview: event.target.result } : item))
+            );
+          }
+        };
+        reader.readAsDataURL(entry.file);
+      }
+    });
   };
 
   const handleRemoveUploadFile = (index) => {
@@ -1001,29 +1016,20 @@ export default function EventCaptures() {
                         /* Photo File: Generous Clear Thumbnail with Fullsize Preview */
                         <div
                           onClick={() => setPreviewItem(item)}
-                          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-200 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 flex-shrink-0 cursor-pointer group shadow-xs flex items-center justify-center"
+                          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 flex-shrink-0 cursor-pointer group shadow-xs flex items-center justify-center"
                           title="Click to preview photo clearly in full size"
                         >
                           {item.preview ? (
                             <img
                               src={item.preview}
                               alt={item.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                if (e.currentTarget.nextSibling) {
-                                  e.currentTarget.nextSibling.style.display = 'flex';
-                                }
-                              }}
+                              className="w-full h-full object-contain p-0.5 group-hover:scale-105 transition duration-200"
                             />
-                          ) : null}
-                          <div
-                            className={`${
-                              item.preview ? 'hidden' : 'flex'
-                            } w-full h-full items-center justify-center bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400`}
-                          >
-                            <HiPhoto className="w-7 h-7" />
-                          </div>
+                          ) : (
+                            <div className="w-full h-full items-center justify-center flex bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400">
+                              <HiPhoto className="w-7 h-7" />
+                            </div>
+                          )}
                           {/* Hover Overlay with Eye */}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white z-20">
                             <HiEye className="w-5 h-5" />
@@ -1061,26 +1067,16 @@ export default function EventCaptures() {
                             <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                               Photo • {formatFileSize(item.size)}
                             </p>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            <div className="mt-1.5 flex items-center">
                               <button
                                 type="button"
                                 onClick={() => setPreviewItem(item)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold transition cursor-pointer shadow-2xs"
+                                title="Preview this photo inside modal"
                               >
                                 <HiEye className="w-3.5 h-3.5" />
-                                <span>Preview Here</span>
+                                <span>Preview</span>
                               </button>
-                              {item.preview && (
-                                <button
-                                  type="button"
-                                  onClick={() => window.open(item.preview, '_blank')}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg text-[11px] font-semibold transition cursor-pointer"
-                                  title="Directly open media in a new browser tab"
-                                >
-                                  <HiArrowTopRightOnSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                  <span>Open in New Tab</span>
-                                </button>
-                              )}
                             </div>
                           </>
                         )}
@@ -1180,17 +1176,6 @@ export default function EventCaptures() {
                   Photo • {formatFileSize(previewItem.size)}
                 </span>
               </div>
-              {previewItem.preview && (
-                <button
-                  type="button"
-                  onClick={() => window.open(previewItem.preview, '_blank')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/80 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-semibold transition shrink-0 cursor-pointer"
-                  title="Directly open image in a new browser tab"
-                >
-                  <HiArrowTopRightOnSquare className="w-4 h-4" />
-                  <span>Open in New Tab</span>
-                </button>
-              )}
             </div>
 
             <div className="bg-slate-950 rounded-2xl overflow-hidden p-2 sm:p-4 flex flex-col items-center justify-center min-h-[320px] max-h-[74vh] relative">
@@ -1199,38 +1184,21 @@ export default function EventCaptures() {
                   src={previewItem.preview}
                   alt={previewItem.name}
                   className="max-h-[66vh] max-w-full object-contain rounded-xl shadow-2xl"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    if (e.currentTarget.nextSibling) {
-                      e.currentTarget.nextSibling.style.display = 'flex';
-                    }
-                  }}
                 />
-              ) : null}
-              <div
-                className="hidden flex-col items-center justify-center text-gray-400 p-8 text-center"
-              >
-                <HiPhoto className="w-16 h-16 text-indigo-400 mb-2 opacity-80" />
-                <p className="text-sm font-semibold">Image preview could not be rendered directly</p>
-                <p className="text-xs text-gray-500 mt-1">{previewItem.name}</p>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                  <HiPhoto className="w-16 h-16 text-indigo-400 mb-2 opacity-80" />
+                  <p className="text-sm font-semibold">Image preview could not be rendered directly</p>
+                  <p className="text-xs text-gray-500 mt-1">{previewItem.name}</p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Uploaded as high-resolution original upon saving.
+                Resolution & colors preserved. Click Close to return to the upload form.
               </p>
               <div className="flex items-center gap-2">
-                {previewItem.preview && (
-                  <button
-                    type="button"
-                    onClick={() => window.open(previewItem.preview, '_blank')}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-gray-200 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <HiArrowTopRightOnSquare className="w-4 h-4 text-indigo-400" />
-                    <span>Open in New Tab</span>
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => setPreviewItem(null)}
