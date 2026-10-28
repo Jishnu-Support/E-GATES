@@ -57,6 +57,7 @@ export default function EventCaptures() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadFiles, setUploadFiles] = useState([]); // [{ file, preview, isVideo, name, size }]
+  const [previewItem, setPreviewItem] = useState(null); // Active file preview in full size
   const [uploadAssocId, setUploadAssocId] = useState('');
   const [uploadForm, setUploadForm] = useState({
     title: '',
@@ -177,8 +178,13 @@ export default function EventCaptures() {
     }
 
     const newEntries = validFiles.map((file) => {
-      const isVideo = file.type.startsWith('video/');
-      const preview = isVideo ? null : URL.createObjectURL(file);
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi)$/i.test(file.name);
+      let preview = null;
+      try {
+        preview = URL.createObjectURL(file);
+      } catch (err) {
+        console.warn('Could not create object URL for file:', file.name, err);
+      }
       return {
         file,
         preview,
@@ -861,21 +867,21 @@ export default function EventCaptures() {
         title="Upload Event Captures (Photos & Videos)"
         size="lg"
       >
-        <form onSubmit={handleSaveUpload} className="space-y-4 max-h-[82vh] overflow-y-auto px-1 pr-1.5">
-          <p className="text-xs text-gray-500">
+        <form onSubmit={handleSaveUpload} className="space-y-4 px-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Upload videos (.mp4, .webm, .mov) and high-resolution photographs (.jpg, .png, .webp) from layout celebrations to share with residents.
           </p>
 
           {/* Super Admin Association Selector */}
           {isSuperAdmin && (
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Target Association (Optional)
               </label>
               <select
                 value={uploadAssocId}
                 onChange={(e) => setUploadAssocId(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Default (First Active Association)</option>
                 {associations.map((a) => (
@@ -889,7 +895,7 @@ export default function EventCaptures() {
 
           {/* Title - MANDATORY */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Title *
             </label>
             <input
@@ -898,13 +904,13 @@ export default function EventCaptures() {
               value={uploadForm.title}
               onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
               placeholder="e.g. Pongal Celebration / Cultural Night"
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Event Date - MANDATORY */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Event Date *
             </label>
             <input
@@ -912,17 +918,17 @@ export default function EventCaptures() {
               required
               value={uploadForm.event_date}
               onChange={(e) => setUploadForm({ ...uploadForm, event_date: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Drag & Drop File Upload Area - OPTIONAL */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-gray-700">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200">
                 Upload Event Videos & Photos (Optional)
               </label>
-              <span className="text-[11px] text-gray-400">Max 20 files, up to 200MB each</span>
+              <span className="text-[11px] text-gray-400 dark:text-gray-400">Max 20 files, up to 200MB each</span>
             </div>
             <input
               type="file"
@@ -935,28 +941,28 @@ export default function EventCaptures() {
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="cursor-pointer border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/30 hover:bg-indigo-50/50 rounded-2xl p-5 transition flex flex-col items-center justify-center text-center group"
+              className="cursor-pointer border-2 border-dashed border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 dark:hover:border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 rounded-2xl p-5 transition flex flex-col items-center justify-center text-center group"
             >
-              <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1.5 group-hover:scale-110 transition">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1.5 group-hover:scale-110 transition">
                 <HiArrowUpTray className="w-5 h-5" />
               </div>
-              <p className="text-xs sm:text-sm font-bold text-gray-800">
+              <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200">
                 Click to browse or drop videos and photos here
               </p>
-              <p className="text-[10px] text-gray-400 mt-0.5">
+              <p className="text-[10px] text-gray-400 dark:text-gray-400 mt-0.5">
                 MP4, WEBM, MOV videos or JPG, PNG, WEBP photos
               </p>
             </div>
 
             {/* Selected Files Preview List */}
             {uploadFiles.length > 0 && (
-              <div className="mt-3 space-y-2 max-h-48 overflow-y-auto pr-1">
-                <div className="flex items-center justify-between text-xs font-bold text-gray-700 pb-1 border-b border-gray-100">
+              <div className="mt-3 space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                <div className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-200 pb-1 border-b border-gray-100 dark:border-slate-800">
                   <span>Selected Media ({uploadFiles.length})</span>
                   <button
                     type="button"
                     onClick={() => setUploadFiles([])}
-                    className="text-[11px] text-rose-600 hover:underline"
+                    className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline font-semibold"
                   >
                     Clear All
                   </button>
@@ -964,34 +970,77 @@ export default function EventCaptures() {
                 {uploadFiles.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-2 bg-gray-50 rounded-xl border border-gray-200/80 flex items-center justify-between gap-3 text-xs"
+                    className="p-2.5 sm:p-3 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700/80 flex items-center justify-between gap-3 text-xs hover:border-indigo-300 dark:hover:border-indigo-600 transition"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {item.preview ? (
-                        <img
-                          src={item.preview}
-                          alt="Thumb"
-                          className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
-                          <HiFilm className="w-5 h-5" />
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Generous Clear Thumbnail */}
+                      <div
+                        onClick={() => setPreviewItem(item)}
+                        className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-200 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 flex-shrink-0 cursor-pointer group shadow-xs flex items-center justify-center"
+                        title="Click to preview clearly in full size"
+                      >
+                        {item.preview && !item.isVideo ? (
+                          <img
+                            src={item.preview}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextSibling) {
+                                e.currentTarget.nextSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`${
+                            item.preview && !item.isVideo ? 'hidden' : 'flex'
+                          } w-full h-full items-center justify-center bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400`}
+                        >
+                          {item.isVideo ? (
+                            <HiVideoCamera className="w-7 h-7" />
+                          ) : (
+                            <HiPhoto className="w-7 h-7" />
+                          )}
                         </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-800 truncate">{item.name}</p>
-                        <p className="text-[10px] text-gray-400">
+                        {/* Hover Overlay with Eye */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <HiEye className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      {/* File Details & Clear Preview Button */}
+                      <div className="min-w-0 flex-1">
+                        <p
+                          onClick={() => setPreviewItem(item)}
+                          className="font-bold text-gray-900 dark:text-gray-100 truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 text-sm"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                           {item.isVideo ? 'Video' : 'Photo'} • {formatFileSize(item.size)}
                         </p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewItem(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] font-semibold transition"
+                          >
+                            <HiEye className="w-3.5 h-3.5" />
+                            <span>Preview Clearly</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleRemoveUploadFile(idx)}
-                      className="p-1 text-gray-400 hover:text-rose-600 rounded-lg"
+                      title="Remove file"
+                      className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                     >
-                      <HiXMark className="w-4 h-4" />
+                      <HiXMark className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
@@ -1001,7 +1050,7 @@ export default function EventCaptures() {
 
           {/* Description / Notes - OPTIONAL */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Description / Notes (Optional)
             </label>
             <textarea
@@ -1009,23 +1058,23 @@ export default function EventCaptures() {
               value={uploadForm.description}
               onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
               placeholder="Highlights, sports winners, special moments, or details..."
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Upload Progress Bar for large multi-GB videos/photos */}
           {isUploading && (
-            <div className="space-y-1.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl">
-              <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+            <div className="space-y-1.5 p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-xl">
+              <div className="flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200">
                 <span className="flex items-center gap-1.5">
-                  <HiArrowPath className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                  <HiArrowPath className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
                   <span>Uploading Media...</span>
                 </span>
                 <span>{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-indigo-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-indigo-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-200"
+                  className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full transition-all duration-200"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
@@ -1033,12 +1082,12 @@ export default function EventCaptures() {
           )}
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={isUploading}
               onClick={() => setIsUploadOpen(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition disabled:opacity-50"
+              className="px-4 py-2 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1060,6 +1109,70 @@ export default function EventCaptures() {
         </form>
       </Modal>
 
+      {/* 4b. MODAL: Clear Full-Size Media Preview (Before Upload) */}
+      <Modal
+        isOpen={Boolean(previewItem)}
+        onClose={() => setPreviewItem(null)}
+        title={previewItem ? `Clear Preview: ${previewItem.name}` : 'Media Preview'}
+        size="xl"
+      >
+        {previewItem && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pb-2 border-b border-gray-100 dark:border-slate-800">
+              <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-md">
+                {previewItem.name}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
+                {previewItem.isVideo ? 'Video' : 'Photo'} • {formatFileSize(previewItem.size)}
+              </span>
+            </div>
+
+            <div className="bg-slate-950 rounded-2xl overflow-hidden p-2 flex items-center justify-center min-h-[300px] max-h-[70vh]">
+              {previewItem.isVideo ? (
+                <video
+                  src={previewItem.preview}
+                  controls
+                  autoPlay
+                  className="max-h-[66vh] w-full rounded-xl"
+                />
+              ) : previewItem.preview ? (
+                <img
+                  src={previewItem.preview}
+                  alt={previewItem.name}
+                  className="max-h-[66vh] max-w-full object-contain rounded-xl shadow-2xl"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextSibling) {
+                      e.currentTarget.nextSibling.style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div
+                className="hidden flex-col items-center justify-center text-gray-400 p-8 text-center"
+              >
+                <HiPhoto className="w-16 h-16 text-indigo-400 mb-2 opacity-80" />
+                <p className="text-sm font-semibold">Image preview could not be rendered directly</p>
+                <p className="text-xs text-gray-500 mt-1">{previewItem.name}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Uploaded as high-resolution original upon saving.
+              </p>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* 5. MODAL: Edit Capture Details */}
       <Modal
         isOpen={isEditOpen}
@@ -1069,7 +1182,7 @@ export default function EventCaptures() {
       >
         <form onSubmit={handleSaveEdit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Title *
             </label>
             <input
@@ -1077,12 +1190,12 @@ export default function EventCaptures() {
               required
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Event Date *
             </label>
             <input
@@ -1090,27 +1203,27 @@ export default function EventCaptures() {
               required
               value={editForm.event_date}
               onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Description / Notes (Optional)
             </label>
             <textarea
               rows={3}
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setIsEditOpen(false)}
-              className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition"
+              className="px-4 py-2 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition"
             >
               Cancel
             </button>
