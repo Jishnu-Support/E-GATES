@@ -432,13 +432,13 @@ export default function AdminSOSAlerts() {
         {selectedAlert && (
           <div className="space-y-5">
             {/* Top alert bar */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
               <div>
-                <span className="text-xs text-gray-500 block">Emergency Type</span>
-                <span className="text-lg font-bold text-gray-900">{selectedAlert.emergency_type || 'Other'}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 block">Emergency Type</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">{selectedAlert.emergency_type || 'Other'}</span>
               </div>
               <div className="text-right">
-                <span className="text-xs text-gray-500 block mb-0.5">Status</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">Status</span>
                 {getStatusBadge(selectedAlert.status)}
               </div>
             </div>
@@ -510,11 +510,11 @@ export default function AdminSOSAlerts() {
             </div>
 
             {/* Actions Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Close
               </button>
@@ -581,16 +581,16 @@ export default function AdminSOSAlerts() {
               placeholder="e.g. Police dispatched, verified resident safe, ambulance attended medical need..."
               value={resolveNotes}
               onChange={(e) => setResolveNotes(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={actionLoading}
               onClick={() => setIsResolveModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
             >
               Cancel
             </button>

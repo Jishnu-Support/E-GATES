@@ -659,10 +659,10 @@ export default function MemberDashboard() {
       >
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-xs sm:text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Access official bylaws, layout maps, audited accounts, circulars and notices uploaded by the association.
             </p>
-            <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-primary-50 text-primary-700 border border-primary-200 self-start sm:self-auto whitespace-nowrap">
+            <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 self-start sm:self-auto whitespace-nowrap">
               {filteredDocuments.length} Available
             </span>
           </div>
@@ -676,7 +676,7 @@ export default function MemberDashboard() {
                 value={docSearch}
                 onChange={(e) => setDocSearch(e.target.value)}
                 placeholder="Search documents by title or description..."
-                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
+                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
               />
             </div>
             <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
@@ -688,7 +688,7 @@ export default function MemberDashboard() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition ${
                     docFilter === type
                       ? 'bg-primary-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {type === 'all' ? 'All Files' : type}
@@ -700,30 +700,30 @@ export default function MemberDashboard() {
           {/* Documents Stream / Table */}
           {filteredDocuments.length === 0 ? (
             <div className="py-12 text-center">
-              <HiFolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-gray-700">No documents found</p>
+              <HiFolderOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">No documents found</p>
               <p className="text-xs text-gray-400 mt-1">
                 {docSearch ? 'Try a different search query' : 'No public documents uploaded by the association yet.'}
               </p>
             </div>
           ) : (
-            <div className="max-h-[60vh] overflow-y-auto space-y-2.5 pr-1 divide-y divide-gray-100">
+            <div className="max-h-[60vh] overflow-y-auto space-y-2.5 pr-1 divide-y divide-gray-100 dark:divide-slate-800">
               {filteredDocuments.map((doc) => {
                 const ext = doc.file_path ? doc.file_path.split('.').pop()?.toUpperCase() : 'DOC';
                 const fileUrl = resolveFileUrl(doc.file_path);
                 return (
                   <div
                     key={doc.id}
-                    className="pt-2.5 first:pt-0 flex items-start justify-between gap-3 p-3 rounded-xl hover:bg-gray-50 border border-gray-100 transition"
+                    className="pt-2.5 first:pt-0 flex items-start justify-between gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/60 border border-gray-100 dark:border-slate-800 transition"
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 font-bold flex items-center justify-center text-xs shrink-0 border border-primary-200">
+                      <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center text-xs shrink-0 border border-primary-200 dark:border-primary-800">
                         {ext}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-gray-900 truncate">{doc.title}</h4>
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">{doc.title}</h4>
                         {doc.description && (
-                          <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{doc.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">{doc.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
                           {doc.file_size && <span>{formatFileSize(doc.file_size)}</span>}

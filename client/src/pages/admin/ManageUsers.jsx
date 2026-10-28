@@ -864,7 +864,7 @@ export default function AdminManageUsers() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
               Administrator Full Name *
             </label>
             <input
@@ -873,13 +873,13 @@ export default function AdminManageUsers() {
               placeholder="e.g. R. Subramanian"
               value={adminForm.name}
               onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Email Address *
               </label>
               <input
@@ -888,12 +888,12 @@ export default function AdminManageUsers() {
                 placeholder="subbu@example.com"
                 value={adminForm.email}
                 onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Mobile Phone *
               </label>
               <input
@@ -902,13 +902,13 @@ export default function AdminManageUsers() {
                 placeholder="9876543210"
                 value={adminForm.phone}
                 onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
               Account Login Password *
             </label>
             <input
@@ -918,13 +918,13 @@ export default function AdminManageUsers() {
               placeholder="Minimum 6 characters"
               value={adminForm.password}
               onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Door / Plot No (Optional)
               </label>
               <input
@@ -932,12 +932,12 @@ export default function AdminManageUsers() {
                 placeholder="e.g. 12-B"
                 value={adminForm.door_no}
                 onChange={(e) => setAdminForm({ ...adminForm, door_no: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Street / Cross (Optional)
               </label>
               <input
@@ -945,42 +945,42 @@ export default function AdminManageUsers() {
                 placeholder="e.g. 2nd Cross"
                 value={adminForm.street}
                 onChange={(e) => setAdminForm({ ...adminForm, street: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
                 EB Bill Proof (Optional)
               </label>
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setAdminEbProof(e.target.files?.[0] || null)}
-                className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-950/60 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
                 Property Tax Proof (Optional)
               </label>
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setAdminTaxProof(e.target.files?.[0] || null)}
-                className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-950/60 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setIsAdminModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -1010,7 +1010,7 @@ export default function AdminManageUsers() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
               Resident Full Name *
             </label>
             <input
@@ -1019,13 +1019,13 @@ export default function AdminManageUsers() {
               placeholder="e.g. S. Meenakshi"
               value={memberForm.name}
               onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Email Address *
               </label>
               <input
@@ -1034,12 +1034,12 @@ export default function AdminManageUsers() {
                 placeholder="meena@example.com"
                 value={memberForm.email}
                 onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Mobile Phone *
               </label>
               <input
@@ -1048,13 +1048,13 @@ export default function AdminManageUsers() {
                 placeholder="9876543210"
                 value={memberForm.phone}
                 onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
               Account Login Password *
             </label>
             <input
@@ -1064,13 +1064,13 @@ export default function AdminManageUsers() {
               placeholder="Minimum 6 characters"
               value={memberForm.password}
               onChange={(e) => setMemberForm({ ...memberForm, password: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Door / Plot / Flat No *
               </label>
               <input
@@ -1079,12 +1079,12 @@ export default function AdminManageUsers() {
                 placeholder="e.g. 402 or Plot 18"
                 value={memberForm.door_no}
                 onChange={(e) => setMemberForm({ ...memberForm, door_no: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                 Street / Cross (Optional)
               </label>
               <input
@@ -1092,42 +1092,42 @@ export default function AdminManageUsers() {
                 placeholder="e.g. Main Road"
                 value={memberForm.street}
                 onChange={(e) => setMemberForm({ ...memberForm, street: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
                 EB Bill Proof (Optional)
               </label>
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setMemberEbProof(e.target.files?.[0] || null)}
-                className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 dark:file:bg-primary-950/60 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
                 Property Tax Proof (Optional)
               </label>
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setMemberTaxProof(e.target.files?.[0] || null)}
-                className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 dark:file:bg-primary-950/60 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setIsMemberModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -1161,7 +1161,7 @@ export default function AdminManageUsers() {
       >
         <div className="space-y-4">
           {/* Search bar inside modal */}
-          <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200/70">
+          <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200/70 dark:border-slate-700">
             <div className="relative flex-1">
               <HiMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -1169,14 +1169,14 @@ export default function AdminManageUsers() {
                 value={metricModalSearch}
                 onChange={(e) => setMetricModalSearch(e.target.value)}
                 placeholder="Filter by name, phone, door no, or member code..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             {metricModalSearch && (
               <button
                 type="button"
                 onClick={() => setMetricModalSearch('')}
-                className="text-xs text-gray-400 hover:text-gray-600 font-bold px-2 py-1"
+                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold px-2 py-1"
               >
                 Clear
               </button>
@@ -1184,7 +1184,7 @@ export default function AdminManageUsers() {
           </div>
 
           {/* Table List */}
-          <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+          <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
             {(() => {
               let baseList = [];
               if (metricModalType === 'admins') {
@@ -1212,7 +1212,7 @@ export default function AdminManageUsers() {
 
               if (filtered.length === 0) {
                 return (
-                  <div className="p-8 text-center text-xs text-gray-500">
+                  <div className="p-8 text-center text-xs text-gray-500 dark:text-gray-400">
                     {metricModalType === 'pending'
                       ? 'No pending registration requests! All users are approved.'
                       : 'No users found matching your search.'}
@@ -1222,7 +1222,7 @@ export default function AdminManageUsers() {
 
               return (
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                  <thead className="bg-gray-100/80 dark:bg-slate-800 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200 dark:border-slate-700">
                     <tr>
                       <th className="py-2.5 px-3">User & Code</th>
                       <th className="py-2.5 px-3">Role / Designation</th>
@@ -1232,14 +1232,14 @@ export default function AdminManageUsers() {
                       <th className="py-2.5 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                     {filtered.map((u) => (
-                      <tr key={u.id} className="hover:bg-purple-50/20 transition">
+                      <tr key={u.id} className="hover:bg-purple-50/20 dark:hover:bg-slate-800/60 transition">
                         <td className="py-2.5 px-3">
-                          <span className="font-bold text-gray-900 block truncate max-w-[150px]">
+                          <span className="font-bold text-gray-900 dark:text-white block truncate max-w-[150px]">
                             {u.name}
                           </span>
-                          <span className="text-[10px] font-mono font-bold text-gray-500">
+                          <span className="text-[10px] font-mono font-bold text-gray-500 dark:text-gray-400">
                             #{u.member_code || `USR-${u.id}`}
                           </span>
                         </td>
@@ -1247,10 +1247,10 @@ export default function AdminManageUsers() {
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               u.is_main_admin || u.display_role === 'Main Association Admin'
-                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                                 : u.role === 'admin'
-                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                                : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
                             }`}
                           >
                             {u.is_main_admin || u.display_role === 'Main Association Admin'
@@ -1261,16 +1261,16 @@ export default function AdminManageUsers() {
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="font-mono text-gray-800 block text-xs">{u.phone || '—'}</span>
-                          <span className="text-[10px] text-gray-400 block truncate max-w-[130px]">
+                          <span className="font-mono text-gray-800 dark:text-gray-200 block text-xs">{u.phone || '—'}</span>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-400 block truncate max-w-[130px]">
                             {u.email || '—'}
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="text-gray-700 block text-xs">
+                          <span className="text-gray-700 dark:text-gray-300 block text-xs">
                             {u.door_no ? `Door #${u.door_no}` : '—'}
                           </span>
-                          <span className="text-[10px] text-gray-400 block truncate max-w-[110px]">
+                          <span className="text-[10px] text-gray-400 dark:text-gray-400 block truncate max-w-[110px]">
                             {u.street || ''}
                           </span>
                         </td>
@@ -1278,10 +1278,10 @@ export default function AdminManageUsers() {
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               u.status === 'approved'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                                 : u.status === 'pending'
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                             }`}
                           >
                             {u.status ? u.status.toUpperCase() : 'APPROVED'}
@@ -1295,7 +1295,7 @@ export default function AdminManageUsers() {
                                 setSelectedUser(u);
                                 setIsDetailModalOpen(true);
                               }}
-                              className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-bold rounded-lg text-[10px] transition"
+                              className="px-2 py-1 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-bold rounded-lg text-[10px] transition"
                               title="View Digital ID"
                             >
                               Digital ID
@@ -1307,7 +1307,7 @@ export default function AdminManageUsers() {
                                   setMetricModalType(null);
                                   handleOpenEditUserModal(u);
                                 }}
-                                className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-semibold rounded-lg text-[10px] transition"
+                                className="px-2 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold rounded-lg text-[10px] transition"
                                 title="Edit User"
                               >
                                 Edit
@@ -1324,14 +1324,14 @@ export default function AdminManageUsers() {
           </div>
 
           {/* Footer */}
-          <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-400">
+          <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+            <span className="text-xs text-gray-400 dark:text-gray-400">
               Showing filtered details. The main page table below is also synchronized.
             </span>
             <button
               type="button"
               onClick={() => setMetricModalType(null)}
-              className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition cursor-pointer"
+              className="px-4 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-bold text-xs rounded-xl transition cursor-pointer"
             >
               Close
             </button>

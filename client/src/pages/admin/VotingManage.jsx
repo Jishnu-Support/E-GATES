@@ -1296,14 +1296,24 @@ export default function AdminVotingManage() {
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'vendor_selection' })}
                 className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'vendor_selection'
-                    ? 'border-primary-600 bg-primary-50/70 text-primary-950 dark:bg-primary-950/40 dark:border-primary-400 dark:text-primary-100 ring-2 ring-primary-500/20'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
+                    ? 'border-blue-500 bg-blue-50/90 text-blue-950 dark:bg-blue-950/60 dark:border-blue-400 dark:text-blue-100 ring-2 ring-blue-500/20 shadow-xs'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/80 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
-                <HiWrenchScrewdriver className="w-5 h-5 text-primary-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
+                <HiWrenchScrewdriver className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                  pollForm.poll_type === 'vendor_selection' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                }`} />
                 <div>
-                  <h4 className="text-xs font-bold">Service Vendor Selection</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  <h4 className={`text-xs font-bold ${
+                    pollForm.poll_type === 'vendor_selection' ? 'text-blue-950 dark:text-white' : 'text-gray-800 dark:text-gray-200'
+                  }`}>
+                    Service Vendor Selection
+                  </h4>
+                  <p className={`text-[11px] mt-0.5 leading-snug ${
+                    pollForm.poll_type === 'vendor_selection'
+                      ? 'text-blue-800 dark:text-blue-200 font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
                     Compare contractor quotes (plumber, electrician, painter).
                   </p>
                 </div>
@@ -1314,14 +1324,24 @@ export default function AdminVotingManage() {
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'resolution_passing' })}
                 className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'resolution_passing'
-                    ? 'border-purple-600 bg-purple-50/70 text-purple-950 dark:bg-purple-950/40 dark:border-purple-400 dark:text-purple-100 ring-2 ring-purple-500/20'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
+                    ? 'border-purple-500 bg-purple-50/90 text-purple-950 dark:bg-purple-950/60 dark:border-purple-400 dark:text-purple-100 ring-2 ring-purple-500/20 shadow-xs'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/80 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
-                <HiScale className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                <HiScale className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                  pollForm.poll_type === 'resolution_passing' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500'
+                }`} />
                 <div>
-                  <h4 className="text-xs font-bold">Resolution Passing (Yes/No)</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  <h4 className={`text-xs font-bold ${
+                    pollForm.poll_type === 'resolution_passing' ? 'text-purple-950 dark:text-white' : 'text-gray-800 dark:text-gray-200'
+                  }`}>
+                    Resolution Passing (Yes/No)
+                  </h4>
+                  <p className={`text-[11px] mt-0.5 leading-snug ${
+                    pollForm.poll_type === 'resolution_passing'
+                      ? 'text-purple-800 dark:text-purple-200 font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
                     Layout decisions, streetlights, gates with Yes / No member ballot.
                   </p>
                 </div>
@@ -1332,14 +1352,22 @@ export default function AdminVotingManage() {
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'election' })}
                 className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'election'
-                    ? 'border-amber-600 bg-amber-50/80 text-amber-950 dark:bg-amber-950/40 dark:border-amber-400 dark:text-amber-100 ring-2 ring-amber-500/20'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
+                    ? 'border-amber-500 bg-amber-50/90 text-amber-950 dark:bg-amber-950/60 dark:border-amber-400 dark:text-amber-100 ring-2 ring-amber-500/20 shadow-xs'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/80 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
                 <span className="text-xl flex-shrink-0 mt-0.5">🗳️</span>
                 <div>
-                  <h4 className="text-xs font-bold">Association Election Polling</h4>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  <h4 className={`text-xs font-bold ${
+                    pollForm.poll_type === 'election' ? 'text-amber-950 dark:text-white' : 'text-gray-800 dark:text-gray-200'
+                  }`}>
+                    Association Election Polling
+                  </h4>
+                  <p className={`text-[11px] mt-0.5 leading-snug ${
+                    pollForm.poll_type === 'election'
+                      ? 'text-amber-800 dark:text-amber-200 font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
                     Executive committee election (all roles or single role) with polling officers & secret ballot.
                   </p>
                 </div>
@@ -1623,8 +1651,18 @@ export default function AdminVotingManage() {
                     </span>
                   </div>
                   <div className="mt-2.5">
-                    <h5 className="text-xs font-bold leading-tight">All Residents</h5>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                    <h5 className={`text-xs font-bold leading-tight ${
+                      pollForm.target_audience === 'all'
+                        ? 'text-emerald-950 dark:text-white'
+                        : 'text-gray-800 dark:text-gray-100'
+                    }`}>
+                      All Residents
+                    </h5>
+                    <p className={`text-[11px] mt-0.5 leading-snug ${
+                      pollForm.target_audience === 'all'
+                        ? 'text-emerald-800 dark:text-emerald-200 font-medium'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                       Full layout franchise ({associationMembers.length} members)
                     </p>
                   </div>
@@ -1656,8 +1694,18 @@ export default function AdminVotingManage() {
                     </span>
                   </div>
                   <div className="mt-2.5">
-                    <h5 className="text-xs font-bold leading-tight">Specific Street / Block</h5>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                    <h5 className={`text-xs font-bold leading-tight ${
+                      pollForm.target_audience === 'street'
+                        ? 'text-blue-950 dark:text-white'
+                        : 'text-gray-800 dark:text-gray-100'
+                    }`}>
+                      Specific Street / Block
+                    </h5>
+                    <p className={`text-[11px] mt-0.5 leading-snug ${
+                      pollForm.target_audience === 'street'
+                        ? 'text-blue-800 dark:text-blue-200 font-medium'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                       Restrict to a designated lane, cross, or sector
                     </p>
                   </div>
@@ -1689,8 +1737,18 @@ export default function AdminVotingManage() {
                     </span>
                   </div>
                   <div className="mt-2.5">
-                    <h5 className="text-xs font-bold leading-tight">Designated Committee</h5>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                    <h5 className={`text-xs font-bold leading-tight ${
+                      pollForm.target_audience === 'selected'
+                        ? 'text-purple-950 dark:text-white'
+                        : 'text-gray-800 dark:text-gray-100'
+                    }`}>
+                      Designated Committee
+                    </h5>
+                    <p className={`text-[11px] mt-0.5 leading-snug ${
+                      pollForm.target_audience === 'selected'
+                        ? 'text-purple-800 dark:text-purple-200 font-medium'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                       Hand-pick committee members
                     </p>
                   </div>

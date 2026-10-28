@@ -519,15 +519,15 @@ export default function EventCaptures() {
 
       {/* Super Admin Association Filter */}
       {isSuperAdmin && (
-        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <HiBuildingOffice2 className="w-5 h-5 text-indigo-600 flex-shrink-0" />
-            <span className="font-bold text-gray-800">Filter By Association:</span>
+            <HiBuildingOffice2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+            <span className="font-bold text-gray-800 dark:text-gray-200">Filter By Association:</span>
           </div>
           <select
             value={selectedAssocFilter}
             onChange={(e) => setSelectedAssocFilter(e.target.value)}
-            className="px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3.5 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-800 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">All Registered Associations</option>
             {associations.map((a) => (
@@ -540,16 +540,16 @@ export default function EventCaptures() {
       )}
 
       {/* 2. Filter & Controls Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-100 dark:border-slate-800 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
         {/* Type Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 rounded-xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 dark:bg-slate-800 rounded-xl w-fit">
           <button
             type="button"
             onClick={() => setMediaTypeFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               mediaTypeFilter === 'all'
-                ? 'bg-white text-indigo-900 shadow-xs'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-slate-700 text-indigo-900 dark:text-white shadow-xs'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             All Captures
@@ -559,8 +559,8 @@ export default function EventCaptures() {
             onClick={() => setMediaTypeFilter('photo')}
             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               mediaTypeFilter === 'photo'
-                ? 'bg-white text-emerald-700 shadow-xs'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             <HiPhoto className="w-3.5 h-3.5" />
@@ -571,8 +571,8 @@ export default function EventCaptures() {
             onClick={() => setMediaTypeFilter('video')}
             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
               mediaTypeFilter === 'video'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-400 shadow-xs'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             <HiFilm className="w-3.5 h-3.5" />
@@ -590,7 +590,7 @@ export default function EventCaptures() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search captures by title..."
-              className="w-full pl-9 pr-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -598,7 +598,7 @@ export default function EventCaptures() {
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-medium text-gray-800 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
@@ -611,18 +611,18 @@ export default function EventCaptures() {
       {/* 3. Media Grid */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-gray-400 gap-3">
-          <HiArrowPath className="w-8 h-8 animate-spin text-indigo-600" />
+          <HiArrowPath className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
           <span className="text-sm font-medium">Loading event captures...</span>
         </div>
       ) : captures.length === 0 ? (
-        <div className="py-16 px-4 text-center rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 shadow-sm">
+        <div className="py-16 px-4 text-center rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 shadow-sm">
             <HiFilm className="w-8 h-8" />
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">
             No event captures found
           </h3>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6 leading-relaxed">
             {searchQuery || mediaTypeFilter !== 'all' || (isSuperAdmin && selectedAssocFilter !== 'all')
               ? 'No captures match your current search or filter criteria. Try clearing filters.'
               : 'Start building your community album! Upload event videos and photos from festivals, sports days, and layout celebrations.'}
@@ -648,7 +648,7 @@ export default function EventCaptures() {
             return (
               <div
                 key={capture.id}
-                className="group bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-xs hover:shadow-xl hover:border-indigo-300 transition-all duration-300 flex flex-col justify-between"
+                className="group bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 flex flex-col justify-between"
               >
                 {/* Media Preview Box */}
                 <div
@@ -741,7 +741,7 @@ export default function EventCaptures() {
                     {/* Event Date Badge */}
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       {capture.event_date && (
-                        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100 flex items-center gap-1.5">
+                        <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/60 flex items-center gap-1.5">
                           <HiCalendar className="w-3.5 h-3.5 text-indigo-500" />
                           <span>{formatDate(capture.event_date)}</span>
                         </span>
@@ -751,29 +751,29 @@ export default function EventCaptures() {
                     {/* Title */}
                     <h3
                       title={capture.title}
-                      className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition"
+                      className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition"
                     >
                       {capture.title}
                     </h3>
 
                     {/* Description */}
                     {capture.description && (
-                      <p className="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-relaxed">
                         {capture.description}
                       </p>
                     )}
                   </div>
 
                   {/* Actions & Sharing Footer */}
-                  <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2 text-xs">
+                  <div className="pt-2.5 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
                     {/* Like Button */}
                     <button
                       type="button"
                       onClick={(e) => handleLike(capture, e)}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
                         likedMap[capture.id]
-                          ? 'bg-rose-50 text-rose-600'
-                          : 'text-gray-500 hover:text-rose-600 hover:bg-rose-50'
+                          ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
                       }`}
                       title="Cheer / Like"
                     >
@@ -790,7 +790,7 @@ export default function EventCaptures() {
                         type="button"
                         onClick={(e) => handleShareWhatsApp(capture, e)}
                         title="Share on WhatsApp"
-                        className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition"
                       >
                         <HiShare className="w-4 h-4" />
                       </button>
@@ -800,7 +800,7 @@ export default function EventCaptures() {
                         type="button"
                         onClick={(e) => handleCopyLink(capture, e)}
                         title="Copy Direct Link"
-                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition"
                       >
                         {copiedId === capture.id ? (
                           <HiCheck className="w-4 h-4 text-emerald-600" />
@@ -815,7 +815,7 @@ export default function EventCaptures() {
                         onClick={(e) => handleDownload(capture, e)}
                         disabled={downloadingId === capture.id}
                         title="Download Immediately"
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition disabled:opacity-50"
                       >
                         {downloadingId === capture.id ? (
                           <HiArrowPath className="w-4 h-4 animate-spin text-blue-600" />
@@ -834,7 +834,7 @@ export default function EventCaptures() {
                               handleOpenEdit(capture);
                             }}
                             title="Edit Details"
-                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition ml-1"
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition ml-1"
                           >
                             <HiPencilSquare className="w-4 h-4" />
                           </button>
@@ -845,7 +845,7 @@ export default function EventCaptures() {
                               handleOpenDelete(capture);
                             }}
                             title="Delete Capture"
-                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
                           >
                             <HiTrash className="w-4 h-4" />
                           </button>

@@ -746,10 +746,10 @@ export default function AdminNewsManage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         download
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold border border-gray-200 transition shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-semibold border border-gray-200 dark:border-slate-700 transition shadow-2xs"
                         title="Download file to device"
                       >
-                        <HiPaperClip className="w-3.5 h-3.5 text-gray-500" />
+                        <HiPaperClip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                         <span>Download</span>
                         <HiArrowDownTray className="w-3.5 h-3.5 text-gray-400" />
                       </a>
@@ -759,13 +759,13 @@ export default function AdminNewsManage() {
               </div>
 
               {/* Bottom Actions Toolbar */}
-              <div className="p-4 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between">
+              <div className="p-4 bg-gray-50/70 dark:bg-slate-800/60 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <button
                   onClick={() => handleTogglePin(post)}
                   className={`text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded transition ${
                     post.is_pinned
-                      ? 'text-amber-700 hover:bg-amber-100'
-                      : 'text-gray-500 hover:bg-gray-200'
+                      ? 'text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/40'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   <HiBookmark className="w-3.5 h-3.5" />
@@ -894,12 +894,12 @@ export default function AdminNewsManage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-750"
             >
               Cancel
             </button>
@@ -1009,12 +1009,12 @@ export default function AdminNewsManage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsEditModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-750"
             >
               Cancel
             </button>

@@ -301,13 +301,13 @@ export default function AdminComplaints() {
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
                 isActive
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isActive ? 'bg-white/20 text-white' : tab.color || 'bg-gray-100 text-gray-600'
+                  isActive ? 'bg-white/20 text-white' : tab.color || 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 {tab.count}
@@ -390,15 +390,15 @@ export default function AdminComplaints() {
         {selectedComplaint && (
           <form onSubmit={handleSaveUpdate} className="space-y-5">
             {/* Ticket Info Card */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+            <div className="bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">{selectedComplaint.title}</h3>
-                  <span className="inline-block mt-1 text-xs font-semibold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">{selectedComplaint.title}</h3>
+                  <span className="inline-block mt-1 text-xs font-semibold text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-950/60 px-2 py-0.5 rounded border border-primary-200 dark:border-primary-800">
                     Category: {selectedComplaint.category || 'General'}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 font-mono">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   {selectedComplaint.created_at
                     ? format(new Date(selectedComplaint.created_at), 'dd MMM yyyy, hh:mm a')
                     : ''}
@@ -406,17 +406,17 @@ export default function AdminComplaints() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-0.5">Description</label>
-                <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Description</label>
+                <p className="text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-900 p-3 rounded-lg border border-gray-200 dark:border-slate-700 whitespace-pre-wrap">
                   {selectedComplaint.description || 'No description provided.'}
                 </p>
               </div>
 
               {/* Resident Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-200/60 text-xs text-gray-600">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-200/60 dark:border-slate-700 text-xs text-gray-600 dark:text-gray-300">
                 <div className="flex items-center gap-1.5">
                   <HiUser className="w-4 h-4 text-gray-400" />
-                  <span className="font-semibold text-gray-800">{selectedComplaint.user_name || 'Resident'}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-100">{selectedComplaint.user_name || 'Resident'}</span>
                 </div>
                 {selectedComplaint.user_door_no && (
                   <div className="flex items-center gap-1.5">
@@ -435,10 +435,10 @@ export default function AdminComplaints() {
 
             {/* Attachment Proof Viewer Section */}
             {selectedComplaint.attachment ? (
-              <div className="border border-blue-100 bg-blue-50/40 rounded-xl p-3.5 space-y-2">
+              <div className="border border-blue-100 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/30 rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-blue-900 flex items-center gap-1.5">
-                    <HiPhoto className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <HiPhoto className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     Attachment Proof Attached
                   </span>
                   <button
@@ -476,8 +476,8 @@ export default function AdminComplaints() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between">
-                    <span className="text-xs text-gray-700 font-medium flex items-center gap-2">
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                    <span className="text-xs text-gray-700 dark:text-gray-200 font-medium flex items-center gap-2">
                       <HiPaperClip className="w-4 h-4 text-red-500" />
                       PDF Document Attached
                     </span>
@@ -493,7 +493,7 @@ export default function AdminComplaints() {
                 )}
               </div>
             ) : (
-              <div className="text-xs text-gray-400 italic bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-400 dark:text-gray-400 italic bg-gray-50 dark:bg-slate-800 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700">
                 No attachment proof submitted for this ticket.
               </div>
             )}
@@ -501,13 +501,13 @@ export default function AdminComplaints() {
             {/* Status & Priority Controls */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Ticket Status
                 </label>
                 <select
                   value={manageStatus}
                   onChange={(e) => setManageStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="open">Open (Under Review)</option>
                   <option value="in_progress">In Progress (Action Initiated)</option>
@@ -517,13 +517,13 @@ export default function AdminComplaints() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   Priority Level
                 </label>
                 <select
                   value={managePriority}
                   onChange={(e) => setManagePriority(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -534,11 +534,11 @@ export default function AdminComplaints() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setSelectedComplaint(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition"
               >
                 Cancel
               </button>

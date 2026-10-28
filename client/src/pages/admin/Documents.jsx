@@ -208,7 +208,7 @@ export default function AdminDocuments() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
         {[
           { id: 'all', label: `All Documents (${documents.length})` },
           { id: 'pdf', label: 'PDF Documents' },
@@ -221,7 +221,7 @@ export default function AdminDocuments() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               typeFilter === tab.id
                 ? 'bg-primary-600 text-white shadow-sm'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
             }`}
           >
             {tab.label}
@@ -231,14 +231,14 @@ export default function AdminDocuments() {
 
       {/* Grid or List Display */}
       {loading ? (
-        <div className="py-20 text-center bg-white rounded-2xl border border-gray-100">
+        <div className="py-20 text-center bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800">
           <HiArrowPath className="w-8 h-8 text-primary-600 animate-spin mx-auto mb-2" />
-          <p className="text-xs text-gray-500">Loading document repository...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Loading document repository...</p>
         </div>
       ) : filteredDocs.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-2xl border border-dashed border-gray-300">
-          <HiDocumentText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm font-semibold text-gray-700">No documents found</p>
+        <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
+          <HiDocumentText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">No documents found</p>
           <p className="text-xs text-gray-400 mt-1">Upload files to populate the association library.</p>
         </div>
       ) : viewMode === 'grid' ? (
@@ -246,11 +246,11 @@ export default function AdminDocuments() {
           {filteredDocs.map((doc) => (
             <div
               key={doc.id}
-              className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-primary-300 hover:shadow-md transition"
+              className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-primary-300 dark:hover:border-primary-500 hover:shadow-md transition"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
                     {getDocTypeIcon(doc.file_type || doc.file_path)}
                   </div>
                   <button
@@ -265,12 +265,12 @@ export default function AdminDocuments() {
                   </button>
                 </div>
 
-                <h3 className="text-sm font-bold text-gray-900 line-clamp-1">{doc.title}</h3>
-                <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{doc.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
                   {doc.description || 'Official association record'}
                 </p>
 
-                <div className="mt-3 pt-3 border-t border-gray-100 text-[11px] text-gray-400 flex items-center justify-between">
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800 text-[11px] text-gray-400 flex items-center justify-between">
                   <span>{doc.created_at ? format(new Date(doc.created_at), 'dd MMM yyyy') : ''}</span>
                   {doc.file_size && <span>{formatFileSize(doc.file_size)}</span>}
                 </div>
@@ -279,7 +279,7 @@ export default function AdminDocuments() {
               <div className="mt-4 pt-2">
                 <button
                   onClick={() => handleDownload(doc)}
-                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold rounded-xl border border-primary-100 transition"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 text-xs font-semibold rounded-xl border border-primary-100 dark:border-primary-800 transition"
                 >
                   <HiArrowDownTray className="w-4 h-4" />
                   <span>Download File</span>
@@ -290,9 +290,9 @@ export default function AdminDocuments() {
         </div>
       ) : (
         /* List Mode */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500 border-b border-gray-200">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+            <thead className="bg-gray-50 dark:bg-slate-800 text-xs uppercase font-semibold text-gray-500 dark:text-gray-300 border-b border-gray-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3">Document Title</th>
                 <th className="px-4 py-3">Uploaded Date</th>
@@ -301,32 +301,32 @@ export default function AdminDocuments() {
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {filteredDocs.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50/50 transition">
+                <tr key={doc.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/60 transition">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       {getDocTypeIcon(doc.file_type || doc.file_path)}
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{doc.title}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{doc.title}</p>
                         <p className="text-xs text-gray-400 truncate max-w-sm">{doc.description}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                     {doc.created_at ? format(new Date(doc.created_at), 'dd MMM yyyy') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                     {formatFileSize(doc.file_size) || '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                     {doc.uploaded_by_name || 'Admin'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-100 font-semibold rounded-lg transition"
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900 font-semibold rounded-lg border border-primary-200 dark:border-primary-800 transition"
                       >
                         <HiArrowDownTray className="w-3.5 h-3.5" />
                         <span>Download</span>
@@ -336,7 +336,7 @@ export default function AdminDocuments() {
                           setDocToDelete(doc);
                           setIsDeleteConfirmOpen(true);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
                       >
                         <HiTrash className="w-4 h-4" />
                       </button>
@@ -358,7 +358,7 @@ export default function AdminDocuments() {
       >
         <form onSubmit={handleUploadSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Document Title *
             </label>
             <input
@@ -367,12 +367,12 @@ export default function AdminDocuments() {
               placeholder="e.g. Layout Bylaws & Building Guidelines 2026"
               value={uploadForm.title}
               onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Description / Tags
             </label>
             <textarea
@@ -380,28 +380,28 @@ export default function AdminDocuments() {
               placeholder="Summary of contents, effective date, resolution number..."
               value={uploadForm.description}
               onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Choose Document File (PDF, XLSX, DOC, PNG) *
             </label>
             <input
               type="file"
               required
               onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] || null })}
-              className="w-full text-xs text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+              className="w-full text-xs text-gray-600 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 dark:file:bg-primary-950/60 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsUploadModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
             >
               Cancel
             </button>

@@ -627,7 +627,7 @@ export default function Associations() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="relative w-full sm:w-80">
           <HiMagnifyingGlass className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -635,19 +635,19 @@ export default function Associations() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search layout name, city, address..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs font-semibold text-gray-500 uppercase">Filter:</span>
-          <div className="flex bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Filter:</span>
+          <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg transition ${
                 statusFilter === 'all'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               All ({totalAssocs})
@@ -656,8 +656,8 @@ export default function Associations() {
               onClick={() => setStatusFilter('active')}
               className={`px-3 py-1.5 rounded-lg transition ${
                 statusFilter === 'active'
-                  ? 'bg-white text-emerald-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               Active ({activeAssocs})
@@ -666,8 +666,8 @@ export default function Associations() {
               onClick={() => setStatusFilter('inactive')}
               className={`px-3 py-1.5 rounded-lg transition ${
                 statusFilter === 'inactive'
-                  ? 'bg-white text-red-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-700 text-red-700 dark:text-red-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               Inactive ({totalAssocs - activeAssocs})
@@ -780,23 +780,23 @@ export default function Associations() {
                 </div>
 
                 {/* Counts Banner */}
-                <div className="grid grid-cols-2 gap-2 bg-gray-50 p-2.5 rounded-xl text-center mb-4 text-xs font-semibold">
+                <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-slate-800 p-2.5 rounded-xl text-center mb-4 text-xs font-semibold">
                   <div>
-                    <span className="text-gray-400 block text-[10px] uppercase">Residents</span>
-                    <span className="font-bold text-gray-900">{assoc.member_count || 0}</span>
+                    <span className="text-gray-400 dark:text-gray-400 block text-[10px] uppercase">Residents</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{assoc.member_count || 0}</span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block text-[10px] uppercase">Admins</span>
-                    <span className="font-bold text-gray-900">{assoc.admin_count || 0}</span>
+                    <span className="text-gray-400 dark:text-gray-400 block text-[10px] uppercase">Admins</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{assoc.admin_count || 0}</span>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                 <button
                   onClick={() => handleOpenAdminModal(assoc)}
-                  className="px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition flex items-center gap-1 shadow-sm"
+                  className="px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition flex items-center gap-1 shadow-sm"
                   title="Manage or Assign Admin"
                 >
                   <HiUserPlus className="w-4 h-4" />
@@ -1188,7 +1188,7 @@ export default function Associations() {
               {/* Pinned or Select Target Association */}
               {!adminAssoc ? (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                     Target Association *
                   </label>
                   <select
@@ -1197,7 +1197,7 @@ export default function Associations() {
                     onChange={(e) =>
                       setAdminForm({ ...adminForm, association_id: e.target.value })
                     }
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">-- Choose Association --</option>
                     {associations.map((a) => (
@@ -1208,9 +1208,9 @@ export default function Associations() {
                   </select>
                 </div>
               ) : (
-                <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center justify-between text-xs">
-                  <span className="text-gray-600 font-medium">Layout Association:</span>
-                  <span className="font-bold text-indigo-900">{adminAssoc.name}</span>
+                <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-between text-xs">
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">Layout Association:</span>
+                  <span className="font-bold text-indigo-900 dark:text-indigo-200">{adminAssoc.name}</span>
                 </div>
               )}
 
@@ -1231,14 +1231,14 @@ export default function Associations() {
 
                 return (
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                       Select User To Assign Or Remove *
                     </label>
                     <select
                       required
                       value={selectedUserId}
                       onChange={(e) => handleSelectUserForAssign(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="">-- Choose a user from list ({eligibleUsers.length} available) --</option>
                       {eligibleUsers.map((u) => {
@@ -1274,11 +1274,11 @@ export default function Associations() {
                   : (chosen.role === 'admin' ? 'Layout Admin' : 'Resident Member');
 
                 return (
-                  <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-200 space-y-3">
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-gray-200">
+                  <div className="p-4 bg-gray-50/80 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 space-y-3">
+                    <div className="flex items-center justify-between text-xs pb-2 border-b border-gray-200 dark:border-slate-700">
                       <div>
-                        <span className="text-gray-500">Selected User: </span>
-                        <span className="font-bold text-gray-900">{chosen.name}</span>
+                        <span className="text-gray-500 dark:text-gray-400">Selected User: </span>
+                        <span className="font-bold text-gray-900 dark:text-white">{chosen.name}</span>
                       </div>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -1426,12 +1426,12 @@ export default function Associations() {
                 required
                 value={adminEditForm.name}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, name: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Admin Phone Number *
               </label>
               <input
@@ -1439,85 +1439,85 @@ export default function Associations() {
                 required
                 value={adminEditForm.phone}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, phone: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Admin Email Address
               </label>
               <input
                 type="email"
                 value={adminEditForm.email}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Member Code (e.g. 000001 or KCC-001)
               </label>
               <input
                 type="text"
                 value={adminEditForm.member_code}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, member_code: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono font-bold"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Door / Office No
               </label>
               <input
                 type="text"
                 value={adminEditForm.door_no}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, door_no: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Street / Road
               </label>
               <input
                 type="text"
                 value={adminEditForm.street}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, street: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 Taluk / Area
               </label>
               <input
                 type="text"
                 value={adminEditForm.taluk}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, taluk: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
                 District / City
               </label>
               <input
                 type="text"
                 value={adminEditForm.district}
                 onChange={(e) => setAdminEditForm({ ...adminEditForm, district: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
               Reset Admin Password <span className="font-normal text-gray-400 text-[11px]">(leave blank to keep current)</span>
             </label>
             <input
@@ -1526,11 +1526,11 @@ export default function Associations() {
               value={adminEditForm.password}
               onChange={(e) => setAdminEditForm({ ...adminEditForm, password: e.target.value })}
               placeholder="Enter new password if changing..."
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
-          <div className="pt-4 border-t flex justify-end gap-2">
+          <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => {
@@ -1538,7 +1538,7 @@ export default function Associations() {
                 setTargetAdminUser(null);
                 setTargetAdminAssoc(null);
               }}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
             >
               Cancel
             </button>
@@ -1580,7 +1580,7 @@ export default function Associations() {
       >
         <div className="space-y-4">
           {/* Header Action & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200/70">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-200/70 dark:border-slate-700">
             {/* Search Input */}
             <div className="relative w-full sm:w-72">
               <HiMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1593,7 +1593,7 @@ export default function Associations() {
                     ? 'Search resident name, phone, code, door...'
                     : 'Search layout name, city, admin...'
                 }
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
@@ -1603,7 +1603,7 @@ export default function Associations() {
                 <select
                   value={statModalAssocFilter}
                   onChange={(e) => setStatModalAssocFilter(e.target.value)}
-                  className="px-2.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="px-2.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="all">All Associations</option>
                   {associations.map((a) => (
@@ -1626,9 +1626,9 @@ export default function Associations() {
                 </button>
               </div>
             ) : (
-              <div className="text-xs font-semibold text-gray-500 flex items-center gap-2">
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-2">
                 <span>Showing:</span>
-                <span className="px-2 py-0.5 rounded-lg bg-blue-100/70 text-blue-800 font-bold">
+                <span className="px-2 py-0.5 rounded-lg bg-blue-100/70 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-bold border border-blue-200/50 dark:border-blue-800">
                   {statModalType === 'active' ? 'Active Layouts Only' : 'All Layouts Registry'}
                 </span>
               </div>
@@ -1638,7 +1638,7 @@ export default function Associations() {
           {/* TABLE CONTENT */}
           {statModalType === 'residents' ? (
             /* Residents Table */
-            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+            <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
               {loadingResidents ? (
                 <div className="py-12">
                   <LoadingSpinner message="Fetching registered residents across associations..." />
@@ -1664,7 +1664,7 @@ export default function Associations() {
 
                   if (filtered.length === 0) {
                     return (
-                      <div className="p-8 text-center text-xs text-gray-500">
+                      <div className="p-8 text-center text-xs text-gray-500 dark:text-gray-400">
                         No registered resident members found matching criteria.
                       </div>
                     );
@@ -1672,7 +1672,7 @@ export default function Associations() {
 
                   return (
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                      <thead className="bg-gray-100/80 dark:bg-slate-800 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200 dark:border-slate-700">
                         <tr>
                           <th className="py-2.5 px-3">Resident & Code</th>
                           <th className="py-2.5 px-3">Association Layout</th>
@@ -1681,19 +1681,19 @@ export default function Associations() {
                           <th className="py-2.5 px-3">Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                         {filtered.map((resident) => (
-                          <tr key={resident.id} className="hover:bg-purple-50/20 transition">
+                          <tr key={resident.id} className="hover:bg-purple-50/20 dark:hover:bg-slate-800/60 transition">
                             <td className="py-2.5 px-3">
-                              <span className="font-bold text-gray-900 block truncate max-w-[150px]">
+                              <span className="font-bold text-gray-900 dark:text-white block truncate max-w-[150px]">
                                 {resident.name}
                               </span>
-                              <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                                 #{resident.member_code || `RES-${resident.id}`}
                               </span>
                             </td>
                             <td className="py-2.5 px-3">
-                              <span className="font-semibold text-gray-800 block text-xs truncate max-w-[160px]">
+                              <span className="font-semibold text-gray-800 dark:text-gray-200 block text-xs truncate max-w-[160px]">
                                 {resident.association_name || 'Community Layout'}
                               </span>
                             </td>
@@ -1734,7 +1734,7 @@ export default function Associations() {
             </div>
           ) : (
             /* Associations Table */
-            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+            <div className="border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
               {(() => {
                 const list = associations.filter((a) => {
                   if (statModalType === 'active' && !a.is_active) return false;
@@ -1752,7 +1752,7 @@ export default function Associations() {
 
                 if (list.length === 0) {
                   return (
-                    <div className="p-8 text-center text-xs text-gray-500">
+                    <div className="p-8 text-center text-xs text-gray-500 dark:text-gray-400">
                       No associations found matching criteria.
                     </div>
                   );
@@ -1760,7 +1760,7 @@ export default function Associations() {
 
                 return (
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                    <thead className="bg-gray-100/80 dark:bg-slate-800 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200 dark:border-slate-700">
                       <tr>
                         <th className="py-2.5 px-3">Layout Association</th>
                         <th className="py-2.5 px-3">Location / City</th>
@@ -1770,35 +1770,35 @@ export default function Associations() {
                         <th className="py-2.5 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                       {list.map((assoc) => (
-                        <tr key={assoc.id} className="hover:bg-blue-50/20 transition">
+                        <tr key={assoc.id} className="hover:bg-blue-50/20 dark:hover:bg-slate-800/60 transition">
                           <td className="py-2.5 px-3">
-                            <span className="font-bold text-gray-900 block text-xs truncate max-w-[170px]">
+                            <span className="font-bold text-gray-900 dark:text-white block text-xs truncate max-w-[170px]">
                               {assoc.name}
                             </span>
-                            <span className="text-[10px] text-gray-400 block truncate max-w-[170px]">
+                            <span className="text-[10px] text-gray-400 dark:text-gray-400 block truncate max-w-[170px]">
                               {assoc.address || 'Layout registered'}
                             </span>
                           </td>
                           <td className="py-2.5 px-3">
-                            <span className="font-semibold text-gray-800 block text-xs">
+                            <span className="font-semibold text-gray-800 dark:text-gray-200 block text-xs">
                               {assoc.city || assoc.district || '—'}
                             </span>
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-gray-400 dark:text-gray-400">
                               {assoc.state || 'Tamil Nadu'}
                             </span>
                           </td>
                           <td className="py-2.5 px-3">
-                            <span className="font-bold text-gray-800 block text-xs truncate max-w-[120px]">
+                            <span className="font-bold text-gray-800 dark:text-gray-200 block text-xs truncate max-w-[120px]">
                               {assoc.admin_name || 'Admin'}
                             </span>
-                            <span className="text-[10px] text-gray-500 font-mono">
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
                               {assoc.admin_phone || '—'}
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-center">
-                            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold text-xs border border-purple-200">
+                            <span className="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-xs border border-purple-200 dark:border-purple-800">
                               {assoc.member_count || 0}
                             </span>
                           </td>
@@ -1806,8 +1806,8 @@ export default function Associations() {
                             <span
                               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                 assoc.is_active
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-red-50 text-red-700 border border-red-200'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
                               }`}
                             >
                               {assoc.is_active ? 'ACTIVE' : 'INACTIVE'}
@@ -1821,7 +1821,7 @@ export default function Associations() {
                                   setStatModalType(null);
                                   handleOpenEditAssocAdmin(assoc);
                                 }}
-                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-[11px] transition shadow-2xs"
+                                className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg font-bold text-[11px] transition shadow-2xs"
                                 title="Edit Association Admin details"
                               >
                                 Edit Admin
@@ -1832,7 +1832,7 @@ export default function Associations() {
                                   setStatModalType(null);
                                   handleOpenEdit(assoc);
                                 }}
-                                className="px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-bold text-[11px] transition"
+                                className="px-2 py-1 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-lg font-bold text-[11px] transition"
                                 title="Edit Association Profile"
                               >
                                 Edit

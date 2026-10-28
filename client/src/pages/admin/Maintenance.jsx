@@ -477,12 +477,12 @@ export default function AdminMaintenance() {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
             >
               Cancel
             </button>
@@ -506,23 +506,23 @@ export default function AdminMaintenance() {
       >
         {selectedFee && (
           <form onSubmit={handleConfirmPaid} className="space-y-4">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs space-y-1">
+            <div className="bg-gray-50 dark:bg-slate-800/80 p-3 rounded-xl border border-gray-200 dark:border-slate-700 text-xs space-y-1">
               <p>
-                <span className="text-gray-500">Resident: </span>
-                <span className="font-bold text-gray-900">{selectedFee.user_name || 'Member'}</span>
+                <span className="text-gray-500 dark:text-gray-400">Resident: </span>
+                <span className="font-bold text-gray-900 dark:text-white">{selectedFee.user_name || 'Member'}</span>
               </p>
               <p>
-                <span className="text-gray-500">Period: </span>
-                <span className="font-semibold text-gray-800">{selectedFee.period}</span>
+                <span className="text-gray-500 dark:text-gray-400">Period: </span>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">{selectedFee.period}</span>
               </p>
               <p>
-                <span className="text-gray-500">Due Amount: </span>
-                <span className="font-extrabold text-primary-700">₹{selectedFee.amount}</span>
+                <span className="text-gray-500 dark:text-gray-400">Due Amount: </span>
+                <span className="font-extrabold text-primary-700 dark:text-primary-400">₹{selectedFee.amount}</span>
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Payment Date *
               </label>
               <input
@@ -530,12 +530,12 @@ export default function AdminMaintenance() {
                 required
                 value={paidForm.paid_date}
                 onChange={(e) => setPaidForm({ ...paidForm, paid_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Payment Mode / Reference ID
               </label>
               <input
@@ -545,16 +545,16 @@ export default function AdminMaintenance() {
                 onChange={(e) =>
                   setPaidForm({ ...paidForm, payment_reference: e.target.value })
                 }
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => setIsMarkPaidOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Cancel
               </button>

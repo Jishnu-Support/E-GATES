@@ -267,12 +267,12 @@ export default function AdminComplaints() {
         {selectedComplaint && (
           <form onSubmit={handleUpdateStatus} className="space-y-5">
             {/* Ticket Header Bar */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="bg-gray-50 dark:bg-slate-800/80 p-4 rounded-xl border border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">
                   Category: {selectedComplaint.category || 'General'}
                 </span>
-                <h3 className="text-base font-bold text-gray-900">{selectedComplaint.title}</h3>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">{selectedComplaint.title}</h3>
               </div>
               <div className="flex items-center gap-2">
                 {getPriorityBadge(selectedComplaint.priority)}
@@ -281,26 +281,26 @@ export default function AdminComplaints() {
             </div>
 
             {/* Resident & Filing details */}
-            <div className="grid grid-cols-2 gap-3 text-xs bg-white p-3.5 rounded-xl border border-gray-200">
+            <div className="grid grid-cols-2 gap-3 text-xs bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700">
               <div>
-                <span className="text-gray-500 block">Complainant:</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400 block">Complainant:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {selectedComplaint.user_name || selectedComplaint.member_name || 'Resident'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 block">Door / Flat:</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400 block">Door / Flat:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {selectedComplaint.door_no ? `#${selectedComplaint.door_no}` : '—'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 block">Contact Phone:</span>
-                <span className="font-medium text-gray-800">{selectedComplaint.user_phone || '—'}</span>
+                <span className="text-gray-500 dark:text-gray-400 block">Contact Phone:</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{selectedComplaint.user_phone || '—'}</span>
               </div>
               <div>
-                <span className="text-gray-500 block">Filed On:</span>
-                <span className="font-medium text-gray-800">
+                <span className="text-gray-500 dark:text-gray-400 block">Filed On:</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">
                   {selectedComplaint.created_at
                     ? format(new Date(selectedComplaint.created_at), 'dd MMM yyyy, hh:mm a')
                     : '—'}
@@ -310,10 +310,10 @@ export default function AdminComplaints() {
 
             {/* Description */}
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 block mb-1">
                 Grievance Description
               </span>
-              <p className="text-xs text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200 whitespace-pre-wrap leading-relaxed">
+              <p className="text-xs text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border border-gray-200 dark:border-slate-700 whitespace-pre-wrap leading-relaxed">
                 {selectedComplaint.description}
               </p>
             </div>
@@ -321,7 +321,7 @@ export default function AdminComplaints() {
             {/* Photo / Document Proof Attachment */}
             {selectedComplaint.attachment && (
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 block mb-1">
                   Attached Photo / Document Proof
                 </span>
                 <div className="flex items-center gap-3">
@@ -329,7 +329,7 @@ export default function AdminComplaints() {
                     href={resolveFileUrl(selectedComplaint.attachment)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg text-xs font-semibold border border-primary-200 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900 rounded-lg text-xs font-semibold border border-primary-200 dark:border-primary-800 transition"
                   >
                     <HiPaperClip className="w-4 h-4" />
                     <span>View Attached Proof File</span>
@@ -340,18 +340,18 @@ export default function AdminComplaints() {
             )}
 
             {/* Status Update Form */}
-            <div className="pt-3 border-t border-gray-100 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+            <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 block">
                 Update Ticket Status & Progress Notes
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Status *</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Status *</label>
                   <select
                     value={updateStatus}
                     onChange={(e) => setUpdateStatus(e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 font-semibold"
+                    className="w-full text-xs px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-primary-500 font-semibold"
                   >
                     <option value="open">🔴 Open (Pending Action)</option>
                     <option value="in_progress">🟡 In Progress (Technician Assigned)</option>
@@ -361,7 +361,7 @@ export default function AdminComplaints() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                     Internal Reply / Resolution Note
                   </label>
                   <input
@@ -369,18 +369,18 @@ export default function AdminComplaints() {
                     placeholder="e.g. Electrician fixed streetlamp fuse on 16th Oct."
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
+                    className="w-full text-xs px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-primary-500"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => setIsDetailModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Close
               </button>

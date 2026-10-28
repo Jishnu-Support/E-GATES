@@ -462,17 +462,17 @@ export default function AdminEvents() {
 
           {/* Super Admin Association Filter */}
           {user?.role === 'super_admin' && (
-            <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
-              <HiBuildingOffice2 className="w-4 h-4 text-primary-600 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-3 py-1.5 rounded-xl">
+              <HiBuildingOffice2 className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
               <select
                 value={selectedAssociationFilter}
                 onChange={(e) => setSelectedAssociationFilter(e.target.value)}
-                className="text-xs bg-transparent border-0 font-bold text-gray-700 focus:outline-none focus:ring-0 cursor-pointer"
+                className="text-xs bg-transparent border-0 font-bold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-0 cursor-pointer"
                 title="Filter events by association"
               >
-                <option value="all">🌐 All Associations (Platform-Wide)</option>
+                <option value="all" className="dark:bg-slate-850 dark:text-gray-100">🌐 All Associations (Platform-Wide)</option>
                 {associations.map((a) => (
-                  <option key={a.id} value={a.id}>
+                  <option key={a.id} value={a.id} className="dark:bg-slate-850 dark:text-gray-100">
                     {a.name} ({a.city || 'Tamil Nadu'})
                   </option>
                 ))}
@@ -918,12 +918,12 @@ export default function AdminEvents() {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
             >
               Cancel
             </button>
@@ -1037,7 +1037,7 @@ export default function AdminEvents() {
                 type="button"
                 disabled={submitting}
                 onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Cancel
               </button>
@@ -1063,11 +1063,11 @@ export default function AdminEvents() {
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 dark:text-gray-300">
             Click <strong>"Save All to Calendar"</strong> to pre-populate and save all major Indian, Tamil, and national festivals for <strong>Year {selectedYear}</strong> into your community database. You can freely edit dates or details at any time.
           </p>
 
-          <div className="max-h-[50vh] overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-xl">
+          <div className="max-h-[50vh] overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl">
             {STANDARD_FESTIVALS.map((fest, idx) => {
               const festDate = new Date(selectedYear, fest.month, fest.day);
               const isAlreadyAdded = events.some(
@@ -1077,20 +1077,20 @@ export default function AdminEvents() {
               );
 
               return (
-                <div key={idx} className="p-3 flex items-center justify-between hover:bg-gray-50 transition">
+                <div key={idx} className="p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
                   <div>
-                    <span className="font-bold text-xs text-gray-900 block">{fest.title}</span>
-                    <span className="text-[11px] text-gray-500">
+                    <span className="font-bold text-xs text-gray-900 dark:text-white block">{fest.title}</span>
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
                       {format(festDate, 'dd MMMM yyyy')} • {fest.type}
                     </span>
                   </div>
 
                   {isAlreadyAdded ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800">
                       <HiCheck className="w-3.5 h-3.5" /> Saved
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                       Ready to Sync
                     </span>
                   )}
@@ -1099,11 +1099,11 @@ export default function AdminEvents() {
             })}
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setIsFestivalModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
             >
               Close
             </button>
@@ -1129,24 +1129,24 @@ export default function AdminEvents() {
       >
         {eventToView && (
           <div className="space-y-4">
-            <div className="p-4 bg-primary-50/70 border border-primary-100 rounded-2xl space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-700 bg-primary-100/60 px-2.5 py-0.5 rounded-full inline-block">
+            <div className="p-4 bg-primary-50/70 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-900/60 rounded-2xl space-y-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-700 dark:text-primary-300 bg-primary-100/60 dark:bg-primary-900/60 px-2.5 py-0.5 rounded-full inline-block">
                 Community Celebration
               </span>
               {eventToView.association_name && (
-                <div className="flex items-center gap-1.5 text-xs text-primary-700 font-semibold pt-0.5">
-                  <HiBuildingOffice2 className="w-3.5 h-3.5 text-primary-600 flex-shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs text-primary-700 dark:text-primary-300 font-semibold pt-0.5">
+                  <HiBuildingOffice2 className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 flex-shrink-0" />
                   <span>{eventToView.association_name}</span>
                 </div>
               )}
-              <h3 className="text-base font-extrabold text-gray-900">{eventToView.title}</h3>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-600 pt-1">
-                <span className="flex items-center gap-1.5 font-semibold text-primary-800">
-                  <HiClock className="w-4 h-4 text-primary-600 flex-shrink-0" />
+              <h3 className="text-base font-extrabold text-gray-900 dark:text-white">{eventToView.title}</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-600 dark:text-gray-300 pt-1">
+                <span className="flex items-center gap-1.5 font-semibold text-primary-800 dark:text-primary-300">
+                  <HiClock className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
                   {eventToView.event_date ? format(new Date(eventToView.event_date), 'EEEE, dd MMMM yyyy, hh:mm a') : 'TBD'}
                 </span>
                 {eventToView.location && (
-                  <span className="flex items-center gap-1.5 font-medium text-gray-700">
+                  <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
                     <HiMapPin className="w-4 h-4 text-red-500 flex-shrink-0" />
                     {eventToView.location}
                   </span>
@@ -1159,7 +1159,7 @@ export default function AdminEvents() {
                 <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
                   Event Details & Program Notes
                 </label>
-                <p className="text-xs text-gray-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100 whitespace-pre-wrap leading-relaxed">
+                <p className="text-xs text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 p-3.5 rounded-xl border border-gray-100 dark:border-slate-700 whitespace-pre-wrap leading-relaxed">
                   {eventToView.description}
                 </p>
               </div>
@@ -1169,7 +1169,7 @@ export default function AdminEvents() {
               <button
                 type="button"
                 onClick={() => setIsViewModalOpen(false)}
-                className="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                className="px-5 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition"
               >
                 Close Details
               </button>

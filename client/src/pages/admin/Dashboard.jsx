@@ -865,9 +865,9 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          <div className="overflow-x-auto max-h-[60vh] border border-gray-100 rounded-xl">
-            <table className="w-full text-left text-xs text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider sticky top-0 border-b border-gray-200">
+          <div className="overflow-x-auto max-h-[60vh] border border-gray-100 dark:border-slate-800 rounded-xl">
+            <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-bold uppercase text-[10px] tracking-wider sticky top-0 border-b border-gray-200 dark:border-slate-700">
                 <tr>
                   <th className="px-3 py-2.5">Member Name</th>
                   <th className="px-3 py-2.5">Door No / Street</th>
@@ -876,17 +876,17 @@ export default function AdminDashboard() {
                   <th className="px-3 py-2.5">Joined Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                 {modalFilteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-400">
+                    <td colSpan={5} className="py-6 text-center text-gray-400 dark:text-gray-500">
                       No members matching "{modalSearch}"
                     </td>
                   </tr>
                 ) : (
                   modalFilteredMembers.map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50 transition">
-                      <td className="px-3 py-2.5 font-bold text-gray-900">
+                    <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                      <td className="px-3 py-2.5 font-bold text-gray-900 dark:text-white">
                         {m.name}
                         {m.member_code && (
                           <span className="block text-[10px] text-gray-400 font-normal">
@@ -895,8 +895,8 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="font-semibold text-gray-800">{m.door_no || 'N/A'}</span>
-                        <span className="block text-[10px] text-gray-500">{m.street || 'Main Layout'}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{m.door_no || 'N/A'}</span>
+                        <span className="block text-[10px] text-gray-500 dark:text-gray-400">{m.street || 'Main Layout'}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="block font-medium text-gray-800">{m.phone || 'N/A'}</span>
@@ -951,14 +951,14 @@ export default function AdminDashboard() {
                 placeholder="Search ticket, title..."
                 value={modalSearch}
                 onChange={(e) => setModalSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto max-h-[60vh] border border-gray-100 rounded-xl">
-            <table className="w-full text-left text-xs text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider sticky top-0 border-b border-gray-200">
+          <div className="overflow-x-auto max-h-[60vh] border border-gray-100 dark:border-slate-800 rounded-xl">
+            <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-bold uppercase text-[10px] tracking-wider sticky top-0 border-b border-gray-200 dark:border-slate-700">
                 <tr>
                   <th className="px-3 py-2.5">Title & Category</th>
                   <th className="px-3 py-2.5">Resident</th>
@@ -967,22 +967,22 @@ export default function AdminDashboard() {
                   <th className="px-3 py-2.5">Filed On</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                 {modalFilteredComplaints.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-400">
+                    <td colSpan={5} className="py-6 text-center text-gray-400 dark:text-gray-500">
                       No complaints found.
                     </td>
                   </tr>
                 ) : (
                   modalFilteredComplaints.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50 transition">
+                    <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
                       <td className="px-3 py-2.5">
-                        <span className="font-bold text-gray-900 block">{c.title}</span>
-                        <span className="text-[10px] text-gray-400 uppercase font-semibold">{c.category || 'General'}</span>
+                        <span className="font-bold text-gray-900 dark:text-white block">{c.title}</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-400 uppercase font-semibold">{c.category || 'General'}</span>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="font-semibold text-gray-800">{c.user_name || 'Resident'}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{c.user_name || 'Resident'}</span>
                         <span className="block text-[10px] text-gray-400">Door: {c.door_no || 'N/A'}</span>
                       </td>
                       <td className="px-3 py-2.5">
