@@ -160,6 +160,10 @@ export default function Profile() {
     if (fileOrUrl instanceof File) {
       const isPdf = fileOrUrl.type === 'application/pdf' || fileOrUrl.name.toLowerCase().endsWith('.pdf');
       const objectUrl = URL.createObjectURL(fileOrUrl);
+      if (isPdf) {
+        // Automatically open PDF in full browser tab to bypass iframe security/plugin block in Chrome/Edge
+        window.open(objectUrl, '_blank');
+      }
       setDocPreviewModal({
         isOpen: true,
         url: objectUrl,
@@ -170,6 +174,9 @@ export default function Profile() {
     } else if (typeof fileOrUrl === 'string') {
       const resolved = resolveFileUrl(fileOrUrl);
       const isPdf = resolved.toLowerCase().includes('.pdf');
+      if (isPdf) {
+        window.open(resolved, '_blank');
+      }
       setDocPreviewModal({
         isOpen: true,
         url: resolved,
@@ -3041,21 +3048,9 @@ export default function Profile() {
 
           {/* Aadhaar Proof Document */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-gray-700">
-                Aadhaar Proof Document <span className="text-red-500">*</span>
-              </label>
-              {editingTenant?.aadhar_proof && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenDocPreview(editingTenant.aadhar_proof, `${editingTenant.name} - Current Aadhaar Proof`)}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
-                >
-                  <HiEye className="w-3.5 h-3.5" />
-                  <span>Preview Current Document</span>
-                </button>
-              )}
-            </div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              Aadhaar Proof Document <span className="text-red-500">*</span>
+            </label>
 
             <input
               type="file"
@@ -3086,15 +3081,19 @@ export default function Profile() {
               {tenantAadharFile ? (
                 <div className="flex items-center justify-between w-full px-2 py-1">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-600">
-                      {tenantAadharFile.type.includes('pdf') || tenantAadharFile.name.toLowerCase().endsWith('.pdf') ? (
-                        <span className="font-extrabold text-[10px] text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200">PDF</span>
-                      ) : (
-                        <HiDocumentText className="w-6 h-6 text-indigo-600" />
-                      )}
-                    </div>
+                    {tenantAadharPreview ? (
+                      <img
+                        src={tenantAadharPreview}
+                        alt="Preview"
+                        className="w-10 h-10 rounded-lg object-cover border border-gray-300 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-center flex-shrink-0">
+                        <span className="font-extrabold text-[10px] text-rose-600">PDF</span>
+                      </div>
+                    )}
                     <div className="text-left min-w-0">
-                      <p className="text-xs font-bold text-gray-900 truncate max-w-[180px] sm:max-w-xs">
+                      <p className="text-xs font-bold text-gray-900 truncate max-w-[170px] sm:max-w-xs">
                         {tenantAadharFile.name}
                       </p>
                       <p className="text-[10px] text-gray-400">
@@ -3109,7 +3108,7 @@ export default function Profile() {
                         e.stopPropagation();
                         handleOpenDocPreview(tenantAadharFile, `Preview: ${tenantAadharFile.name}`);
                       }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200/60"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200/60"
                       title="Preview this document"
                     >
                       <HiEye className="w-3.5 h-3.5" />
@@ -3145,61 +3144,13 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Document Preview Box for Uploaded Image */}
-            {tenantAadharFile && tenantAadharPreview && (
-              <div className="mt-2.5 p-2 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={tenantAadharPreview}
-                    alt="Aadhaar Preview"
-                    className="w-12 h-12 object-cover rounded-lg border border-gray-300 shadow-2xs"
-                  />
-                  <div>
-                    <span className="text-[11px] font-bold text-gray-800 block">Image Document Selected</span>
-                    <span className="text-[10px] text-gray-400">Click preview button to view full size</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleOpenDocPreview(tenantAadharFile, `Aadhaar Preview: ${tenantAadharFile.name}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded-lg text-xs transition shadow-2xs"
-                >
-                  <HiEye className="w-3.5 h-3.5" />
-                  <span>Full Preview</span>
-                </button>
-              </div>
-            )}
-
-            {/* Document Preview Box for Uploaded PDF */}
-            {tenantAadharFile && (tenantAadharFile.type.includes('pdf') || tenantAadharFile.name.toLowerCase().endsWith('.pdf')) && (
-              <div className="mt-2.5 p-2.5 bg-rose-50/70 border border-rose-200 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center">
-                    PDF
-                  </span>
-                  <div>
-                    <span className="text-xs font-bold text-gray-900 block truncate max-w-xs">{tenantAadharFile.name}</span>
-                    <span className="text-[10px] text-rose-700 font-medium">Ready for upload & viewing</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleOpenDocPreview(tenantAadharFile, `PDF Document: ${tenantAadharFile.name}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-100 border border-rose-300 text-rose-700 font-bold rounded-lg text-xs transition shadow-2xs"
-                >
-                  <HiEye className="w-3.5 h-3.5" />
-                  <span>Preview PDF</span>
-                </button>
-              </div>
-            )}
-
-            {/* Existing Proof in record */}
+            {/* Existing Proof in record (only shown when editing and no new file selected yet) */}
             {!tenantAadharFile && editingTenant?.aadhar_proof && (
               <div className="mt-2.5 p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <HiDocumentText className="w-6 h-6 text-indigo-600" />
                   <div>
-                    <span className="text-xs font-bold text-gray-900 block">Existing Document on File</span>
+                    <span className="text-xs font-bold text-gray-900 block">Current Proof on Record</span>
                     <span className="text-[10px] text-indigo-700 font-medium">Upload new file above only if replacing</span>
                   </div>
                 </div>
@@ -3352,12 +3303,59 @@ export default function Profile() {
       >
         <div className="flex flex-col">
           {docPreviewModal.isPdf ? (
-            <div className="w-full h-[65vh] rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
-              <iframe
-                src={docPreviewModal.url}
-                title={docPreviewModal.title}
-                className="w-full h-full border-0"
-              />
+            <div className="w-full flex flex-col items-center">
+              {/* PDF Document Summary Card with Instant Open Button */}
+              <div className="w-full p-4 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-base flex-shrink-0 shadow-2xs">
+                    PDF
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="text-sm font-bold text-gray-900 truncate max-w-xs sm:max-w-md">
+                      {docPreviewModal.fileName || docPreviewModal.title}
+                    </p>
+                    <p className="text-xs text-rose-700 font-medium mt-0.5">
+                      PDF Document Ready • Click to view in browser reader
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open(docPreviewModal.url, '_blank')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex-shrink-0 cursor-pointer"
+                >
+                  <span>Open PDF in Full Screen</span>
+                  <HiArrowTopRightOnSquare className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Embedded Object / Fallback Viewer */}
+              <div className="w-full h-[52vh] rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
+                <object
+                  data={`${docPreviewModal.url}#toolbar=1`}
+                  type="application/pdf"
+                  className="w-full h-full"
+                >
+                  <div className="flex flex-col items-center justify-center p-8 text-center h-full">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
+                      <HiDocumentText className="w-8 h-8" />
+                    </div>
+                    <p className="font-bold text-gray-900 text-sm">
+                      {docPreviewModal.fileName || 'PDF Document'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1 mb-4 max-w-sm">
+                      Click below to view the PDF document in your browser's full reader window.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => window.open(docPreviewModal.url, '_blank')}
+                      className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                    >
+                      Open PDF Now
+                    </button>
+                  </div>
+                </object>
+              </div>
             </div>
           ) : (
             <div className="w-full max-h-[68vh] flex items-center justify-center overflow-auto rounded-xl bg-gray-900/5 p-2 border border-gray-200">
@@ -3374,20 +3372,18 @@ export default function Profile() {
               {docPreviewModal.fileName || docPreviewModal.title}
             </span>
             <div className="flex items-center justify-end gap-2">
-              <a
-                href={docPreviewModal.url}
-                target="_blank"
-                rel="noreferrer"
-                download
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+              <button
+                type="button"
+                onClick={() => window.open(docPreviewModal.url, '_blank')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer"
               >
                 <span>Open in New Tab</span>
                 <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
-              </a>
+              </button>
               <button
                 type="button"
                 onClick={() => setDocPreviewModal({ isOpen: false, url: '', title: '', isPdf: false, fileName: '' })}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-2xs"
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-2xs cursor-pointer"
               >
                 Close
               </button>
