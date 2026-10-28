@@ -1069,17 +1069,17 @@ export default function Profile() {
 
             <button
               onClick={() => setIsIdCardOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-slate-700 text-xs font-bold rounded-xl transition"
             >
-              <HiIdentification className="w-4 h-4 text-indigo-600" />
+              <HiIdentification className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               <span>Digital ID Card</span>
             </button>
 
             <button
               onClick={() => setIsChangePasswordOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-slate-700 text-xs font-bold rounded-xl transition"
             >
-              <HiKey className="w-4 h-4 text-gray-600" />
+              <HiKey className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <span>Change Password</span>
             </button>
           </div>
@@ -1088,11 +1088,11 @@ export default function Profile() {
 
       {/* Registered Association Details Card (with Edit Association Option for Admins) */}
       {!isSuperAdmin && (profileData.association_id || profileData.association_name || assocDetails) && (
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <HiBuildingOffice2 className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-sm sm:text-base font-bold text-gray-900">
+              <HiBuildingOffice2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
                 Registered Association Details
               </h2>
             </div>
@@ -1100,7 +1100,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={handleOpenEditAssocModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-xs cursor-pointer"
               >
                 <HiPencilSquare className="w-4 h-4" />
                 <span>Edit Association Details</span>
@@ -1108,9 +1108,9 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/60">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-2xl bg-indigo-50/40 dark:bg-slate-800/80 border border-indigo-100/60 dark:border-slate-700/80">
             {/* Association Logo */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-indigo-100 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm p-1.5">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm p-1.5">
               {assocDetails?.logo ? (
                 <img
                   src={resolveFileUrl(assocDetails.logo)}
@@ -1119,7 +1119,7 @@ export default function Profile() {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
-                <div className="w-full h-full rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-lg">
+                <div className="w-full h-full rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-black text-lg">
                   {assocDetails?.name ? assocDetails.name.slice(0, 2).toUpperCase() : 'AS'}
                 </div>
               )}
@@ -1127,14 +1127,14 @@ export default function Profile() {
 
             <div className="flex-1 text-center sm:text-left space-y-1.5 min-w-0">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                   {assocDetails?.name || profileData.association_name || 'Layout Association'}
                 </h3>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   {assocDetails?.is_active !== false ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 flex items-center justify-center sm:justify-start gap-1">
+              <p className="text-xs text-gray-600 dark:text-gray-300 flex items-center justify-center sm:justify-start gap-1">
                 <HiMapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                 <span>
                   {assocDetails?.city ? `${assocDetails.city}` : ''}
@@ -1143,8 +1143,8 @@ export default function Profile() {
                 </span>
               </p>
               {assocDetails?.main_admin_name && (
-                <p className="text-[11px] text-gray-500">
-                  Main Administrator: <strong className="text-gray-800">{assocDetails.main_admin_name}</strong>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Main Administrator: <strong className="text-gray-800 dark:text-gray-200">{assocDetails.main_admin_name}</strong>
                 </p>
               )}
             </div>
@@ -1155,54 +1155,54 @@ export default function Profile() {
       {/* Grid: Personal Details & Layout Residence Address */}
       <div className={`grid grid-cols-1 ${isSuperAdmin ? '' : 'md:grid-cols-2'} gap-4 sm:gap-6`}>
         {/* Section 1: Personal & Contact Information */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <h2 className="text-sm sm:text-base font-bold text-gray-900 flex items-center gap-2">
-              <HiEnvelope className="w-5 h-5 text-primary-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
+            <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <HiEnvelope className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               Personal & Contact Information
             </h2>
             {!isSuperAdmin && (
-              <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
                 Step 2 of Reg
               </span>
             )}
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-              <span className="text-gray-400 block font-semibold uppercase text-[10px]">Full Name</span>
-              <span className="text-sm font-bold text-gray-900">{profileData.name || '—'}</span>
+            <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+              <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">Full Name</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.name || '—'}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-              <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+            <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+              <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                 Mobile Phone Number
               </span>
-              <span className="text-sm font-bold text-gray-900">{profileData.phone || '—'}</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.phone || '—'}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-              <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+            <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+              <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                 Email Address
               </span>
-              <span className="text-sm font-bold text-gray-900">{profileData.email || '—'}</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.email || '—'}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   Registered Role
                 </span>
-                <span className="text-xs font-bold text-primary-700 capitalize">
+                <span className="text-xs font-bold text-primary-700 dark:text-primary-300 capitalize">
                   {roleDisplay}
                 </span>
               </div>
 
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   Language Preference
                 </span>
-                <span className="text-xs font-bold text-gray-800 uppercase">
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase">
                   {profileData.language === 'ta' ? 'தமிழ் (Tamil)' : 'English (en)'}
                 </span>
               </div>
@@ -1212,49 +1212,49 @@ export default function Profile() {
 
         {/* Section 2: Layout Residence Address - Excluded for Super Admin */}
         {!isSuperAdmin && (
-          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <h2 className="text-sm sm:text-base font-bold text-gray-900 flex items-center gap-2">
-                <HiHome className="w-5 h-5 text-emerald-600" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <HiHome className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 Layout Residence Address
               </h2>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
                 Step 3 of Reg
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs">
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   Door / Plot No
                 </span>
-                <span className="text-sm font-bold text-gray-900">{profileData.door_no || '—'}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.door_no || '—'}</span>
               </div>
 
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   Street / Cross
                 </span>
-                <span className="text-sm font-bold text-gray-900">{profileData.street || '—'}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.street || '—'}</span>
               </div>
 
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100 sm:col-span-2">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 sm:col-span-2">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   Layout / Colony Name
                 </span>
-                <span className="text-sm font-bold text-gray-900">{profileData.layout_name || '—'}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.layout_name || '—'}</span>
               </div>
 
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">Taluk</span>
-                <span className="text-sm font-bold text-gray-900">{profileData.taluk || '—'}</span>
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">Taluk</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{profileData.taluk || '—'}</span>
               </div>
 
-              <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                <span className="text-gray-400 block font-semibold uppercase text-[10px]">
+              <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700">
+                <span className="text-gray-400 dark:text-gray-400 block font-semibold uppercase text-[10px]">
                   District & State
                 </span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
                   {profileData.district || '—'}
                   {profileData.state ? `, ${profileData.state}` : ''}
                 </span>
@@ -1262,9 +1262,9 @@ export default function Profile() {
             </div>
 
             {/* Formatted Postal Representation */}
-            <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100 flex items-start gap-2.5">
-              <HiMapPin className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-emerald-950 font-medium leading-relaxed">
+            <div className="p-3.5 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60 flex items-start gap-2.5">
+              <HiMapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-emerald-950 dark:text-emerald-200 font-medium leading-relaxed">
                 {[
                   profileData.door_no ? `Door / Plot ${profileData.door_no}` : null,
                   profileData.street,
@@ -1283,20 +1283,20 @@ export default function Profile() {
 
       {/* Section 3: Address Proof Documents (Step 4 of Reg) - Excluded for Super Admin */}
       {!isSuperAdmin && (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-1 pb-2 border-b border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-1 pb-2 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary-600 flex-shrink-0" />
-            <h2 className="text-xs sm:text-base font-bold text-gray-900 leading-tight">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary-600 dark:bg-primary-400 flex-shrink-0" />
+            <h2 className="text-xs sm:text-base font-bold text-gray-900 dark:text-white leading-tight">
               4. ADDRESS PROOF DOCUMENTS (MANDATORY FOR VERIFICATION)
             </h2>
           </div>
-          <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+          <span className="text-[10px] sm:text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
             Step 4 of Reg
           </span>
         </div>
 
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Uploaded verification documents saved in your profile. You can view, download, or upload updated documents anytime.
         </p>
 
@@ -1304,33 +1304,33 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-1">
           {/* Document 1: Electricity (EB) Bill Proof */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-gray-800">
+            <label className="block text-xs font-bold text-gray-800 dark:text-gray-200">
               Electricity (EB) Bill Proof
             </label>
 
             {profileData.eb_bill_proof ? (
               /* Already Uploaded Card */
-              <div className="p-4 rounded-2xl border border-sky-100 bg-sky-50/50 flex flex-col justify-between space-y-3">
+              <div className="p-4 rounded-2xl border border-sky-200 dark:border-slate-700 bg-sky-50/50 dark:bg-slate-800/90 flex flex-col justify-between space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 flex items-center justify-center flex-shrink-0">
                       <HiDocumentText className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-gray-900">Electricity Bill Document</h4>
-                      <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                        <HiCheckCircle className="w-3 h-3 text-emerald-600" /> Saved in Profile
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white">Electricity Bill Document</h4>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                        <HiCheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Saved in Profile
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-sky-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-sky-100 dark:border-slate-700">
                   <a
                     href={resolveFileUrl(profileData.eb_bill_proof)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-sky-100/50 text-sky-700 border border-sky-200 text-xs font-bold rounded-xl transition shadow-xs"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-sky-100/50 dark:bg-slate-900 dark:hover:bg-slate-750 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-xs"
                   >
                     <HiArrowTopRightOnSquare className="w-4 h-4" />
                     <span>View Proof Document</span>
@@ -1340,7 +1340,7 @@ export default function Profile() {
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center p-2 bg-white hover:bg-sky-100/50 text-sky-700 border border-sky-200 rounded-xl transition shadow-xs"
+                    className="inline-flex items-center justify-center p-2 bg-white hover:bg-sky-100/50 dark:bg-slate-900 dark:hover:bg-slate-750 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-slate-700 rounded-xl transition shadow-xs"
                     title="Download File"
                   >
                     <HiArrowDownTray className="w-4 h-4" />
@@ -1370,29 +1370,29 @@ export default function Profile() {
                 {!ebFile ? (
                   <div
                     onClick={() => ebInputRef.current?.click()}
-                    className="border-2 border-dashed border-sky-200 hover:border-primary-400 bg-sky-50/20 hover:bg-sky-50/50 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[140px] group"
+                    className="border-2 border-dashed border-sky-200 hover:border-primary-400 dark:border-slate-700 dark:hover:border-primary-500 bg-sky-50/20 hover:bg-sky-50/50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[140px] group"
                   >
-                    <div className="w-11 h-11 rounded-full bg-sky-100 group-hover:bg-primary-100 text-sky-600 group-hover:text-primary-600 flex items-center justify-center mb-2.5 transition">
+                    <div className="w-11 h-11 rounded-full bg-sky-100 group-hover:bg-primary-100 dark:bg-slate-750 text-sky-600 group-hover:text-primary-600 dark:text-sky-400 flex items-center justify-center mb-2.5 transition">
                       <HiArrowUpTray className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-bold text-primary-600 group-hover:text-primary-700 mb-0.5">
+                    <p className="text-xs font-bold text-primary-600 group-hover:text-primary-700 dark:text-primary-400 mb-0.5">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-gray-400 dark:text-gray-400">
                       Electricity Bill PDF/JPG (Max 5MB)
                     </p>
                   </div>
                 ) : (
-                  <div className="border border-sky-200 bg-sky-50/50 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="border border-sky-200 dark:border-slate-700 bg-sky-50/50 dark:bg-slate-800/80 rounded-2xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 flex items-center justify-center flex-shrink-0">
                         <HiDocumentText className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-gray-900 truncate max-w-[200px]">
+                        <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[200px]">
                           {ebFile.name}
                         </p>
-                        <p className="text-[10px] text-gray-500">{formatFileSize(ebFile.size)}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{formatFileSize(ebFile.size)}</p>
                       </div>
                     </div>
 
@@ -1402,7 +1402,7 @@ export default function Profile() {
                         setEbFile(null);
                         if (ebInputRef.current) ebInputRef.current.value = '';
                       }}
-                      className="p-1 text-gray-400 hover:text-red-500 rounded-lg hover:bg-white transition"
+                      className="p-1 text-gray-400 hover:text-red-500 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition"
                       title="Remove file"
                     >
                       <HiXMark className="w-5 h-5" />
@@ -1415,33 +1415,33 @@ export default function Profile() {
 
           {/* Document 2: Property Tax Receipt */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-gray-800">
+            <label className="block text-xs font-bold text-gray-800 dark:text-gray-200">
               Property Tax Receipt
             </label>
 
             {profileData.property_tax_receipt ? (
               /* Already Uploaded Card */
-              <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 flex flex-col justify-between space-y-3">
+              <div className="p-4 rounded-2xl border border-emerald-200 dark:border-slate-700 bg-emerald-50/50 dark:bg-slate-800/90 flex flex-col justify-between space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0">
                       <HiDocumentText className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-gray-900">Property Tax Document</h4>
-                      <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                        <HiCheckCircle className="w-3 h-3 text-emerald-600" /> Saved in Profile
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white">Property Tax Document</h4>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                        <HiCheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Saved in Profile
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-emerald-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-emerald-100 dark:border-slate-700">
                   <a
                     href={resolveFileUrl(profileData.property_tax_receipt)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-emerald-100/50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl transition shadow-xs"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-emerald-100/50 dark:bg-slate-900 dark:hover:bg-slate-750 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-xs"
                   >
                     <HiArrowTopRightOnSquare className="w-4 h-4" />
                     <span>View Proof Document</span>
@@ -1451,7 +1451,7 @@ export default function Profile() {
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center p-2 bg-white hover:bg-emerald-100/50 text-emerald-700 border border-emerald-200 rounded-xl transition shadow-xs"
+                    className="inline-flex items-center justify-center p-2 bg-white hover:bg-emerald-100/50 dark:bg-slate-900 dark:hover:bg-slate-750 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700 rounded-xl transition shadow-xs"
                     title="Download File"
                   >
                     <HiArrowDownTray className="w-4 h-4" />
@@ -1553,23 +1553,23 @@ export default function Profile() {
 
       {/* Section 4: Family Members - Excluded for Super Admin */}
       {!isSuperAdmin && (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 flex items-center justify-center flex-shrink-0">
               <HiUserGroup className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight">
                   Family Members
                 </h2>
-                <span className="px-2 py-0.5 bg-teal-50 border border-teal-200 text-teal-700 text-[11px] font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-[11px] font-bold rounded-full">
                   {familyMembers.filter((m) => m.is_active).length} Active
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Maintain family records, emergency contacts, relationships, and blood groups.
               </p>
             </div>
@@ -1578,7 +1578,7 @@ export default function Profile() {
           <button
             type="button"
             onClick={handleOpenAddFamily}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition flex-shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition flex-shrink-0 cursor-pointer"
           >
             <HiPlus className="w-4 h-4" />
             <span>Add Family Member</span>
@@ -1592,20 +1592,20 @@ export default function Profile() {
             <span className="text-xs font-medium">Loading family records...</span>
           </div>
         ) : familyMembers.filter((m) => m.is_active).length === 0 ? (
-          <div className="py-8 px-4 text-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3 shadow-xs">
+          <div className="py-8 px-4 text-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-3 shadow-xs">
               <HiUserGroup className="w-6 h-6" />
             </div>
-            <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-1">
+            <h4 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">
               No family members added yet
             </h4>
-            <p className="text-[11px] sm:text-xs text-gray-500 max-w-md mb-4">
+            <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 max-w-md mb-4">
               Add your spouse, children, parents, or other family members to keep your family directory up-to-date and enable emergency contact coordination.
             </p>
             <button
               type="button"
               onClick={handleOpenAddFamily}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
             >
               <HiPlus className="w-4 h-4" />
               <span>Add First Family Member</span>
@@ -1620,19 +1620,19 @@ export default function Profile() {
                 return (
                   <div
                     key={member.id}
-                    className="p-4 rounded-2xl border border-gray-200/80 bg-gradient-to-br from-white to-gray-50/60 hover:border-teal-200 transition shadow-xs flex flex-col justify-between space-y-3"
+                    className="p-4 rounded-2xl border border-gray-200/80 dark:border-slate-700/80 bg-gradient-to-br from-white to-gray-50/60 dark:from-slate-800 dark:to-slate-800/60 hover:border-teal-200 dark:hover:border-teal-500/50 transition shadow-xs flex flex-col justify-between space-y-3"
                   >
                     {/* Top Row: Name, Relation, Actions */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 text-teal-700 font-extrabold text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
+                        <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/80 border border-teal-100 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-extrabold text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-gray-900 truncate">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
                             {member.name}
                           </h3>
-                          <span className="inline-block px-2 py-0.5 mt-0.5 bg-teal-50 border border-teal-200/80 text-teal-700 font-bold text-[10px] rounded-md uppercase tracking-wider">
+                          <span className="inline-block px-2 py-0.5 mt-0.5 bg-teal-50 dark:bg-teal-950 border border-teal-200/80 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-bold text-[10px] rounded-md uppercase tracking-wider">
                             {member.relation}
                           </span>
                         </div>
@@ -1660,54 +1660,54 @@ export default function Profile() {
                     </div>
 
                     {/* Metadata Grid */}
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs">
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 dark:border-slate-700/80 text-xs">
                       {/* DOB / Age */}
-                      <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
+                      <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
                           <HiCalendar className="w-3.5 h-3.5 text-teal-500" />
                           <span>DOB & Age</span>
                         </span>
-                        <span className="font-semibold text-gray-800 text-xs mt-0.5 truncate">
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs mt-0.5 truncate">
                           {member.dob ? (
                             <>
                               {formatDob(member.dob)}
                               {age !== null && (
-                                <span className="text-gray-500 font-normal ml-1">
+                                <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
                                   ({age} yrs)
                                 </span>
                               )}
                             </>
                           ) : (
-                            <span className="text-gray-400 italic">Not set</span>
+                            <span className="text-gray-400 dark:text-gray-400 italic">Not set</span>
                           )}
                         </span>
                       </div>
 
                       {/* Blood Group */}
-                      <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
+                      <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
                           <HiHeart className="w-3.5 h-3.5 text-rose-500" />
                           <span>Blood Group</span>
                         </span>
                         <div className="mt-0.5">
                           {member.blood_group ? (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-xs rounded-md">
+                            <span className="inline-flex items-center px-2 py-0.5 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-extrabold text-xs rounded-md">
                               {member.blood_group}
                             </span>
                           ) : (
-                            <span className="text-gray-400 italic text-xs">Not specified</span>
+                            <span className="text-gray-400 dark:text-gray-400 italic text-xs">Not specified</span>
                           )}
                         </div>
                       </div>
 
                       {/* Phone / Contact */}
-                      <div className="p-2 bg-white rounded-xl border border-gray-100/90 col-span-2 flex items-center justify-between text-xs">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
+                      <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 col-span-2 flex items-center justify-between text-xs">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
                           <HiPhone className="w-3.5 h-3.5 text-indigo-500" />
                           <span>Contact / Mobile</span>
                         </span>
-                        <span className="font-semibold text-gray-800">
-                          {member.phone || <span className="text-gray-400 italic">Not recorded</span>}
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">
+                          {member.phone || <span className="text-gray-400 dark:text-gray-400 italic">Not recorded</span>}
                         </span>
                       </div>
                     </div>
@@ -1787,23 +1787,23 @@ export default function Profile() {
 
       {/* Section 5: Tenant Registry & Rental Management - Excluded for Super Admin */}
       {!isSuperAdmin && (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 flex items-center justify-center flex-shrink-0">
                 <HiHome className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                  <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight">
                     Tenant Registry & Rental Management
                   </h2>
-                  <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-bold rounded-full">
+                  <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold rounded-full">
                     {tenants.filter((t) => t.is_active).length} Active
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Register tenants residing in your unit with Aadhaar proof verification, blood group, and contact details.
                 </p>
               </div>
@@ -1812,7 +1812,7 @@ export default function Profile() {
             <button
               type="button"
               onClick={handleOpenAddTenant}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition flex-shrink-0"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition flex-shrink-0 cursor-pointer"
             >
               <HiPlus className="w-4 h-4" />
               <span>Add Tenant</span>
@@ -1826,20 +1826,20 @@ export default function Profile() {
               <span className="text-xs font-medium">Loading tenant records...</span>
             </div>
           ) : tenants.filter((t) => t.is_active).length === 0 ? (
-            <div className="py-8 px-4 text-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 shadow-xs">
+            <div className="py-8 px-4 text-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 shadow-xs">
                 <HiHome className="w-6 h-6" />
               </div>
-              <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-1">
+              <h4 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">
                 No active tenants registered
               </h4>
-              <p className="text-[11px] sm:text-xs text-gray-500 max-w-md mb-4">
+              <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 max-w-md mb-4">
                 If you have leased or rented your property, register tenant records with their Aadhaar proof, blood group, and date of birth for association security compliance.
               </p>
               <button
                 type="button"
                 onClick={handleOpenAddTenant}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
               >
                 <HiPlus className="w-4 h-4" />
                 <span>Add First Tenant</span>
@@ -1854,19 +1854,19 @@ export default function Profile() {
                   return (
                     <div
                       key={tenant.id}
-                      className="p-4 rounded-2xl border border-gray-200/80 bg-gradient-to-br from-white to-indigo-50/20 hover:border-indigo-200 transition shadow-xs flex flex-col justify-between space-y-3"
+                      className="p-4 rounded-2xl border border-gray-200/80 dark:border-slate-700/80 bg-gradient-to-br from-white to-indigo-50/20 dark:from-slate-800 dark:to-slate-800/60 hover:border-indigo-200 dark:hover:border-slate-600 transition shadow-xs flex flex-col justify-between space-y-3"
                     >
                       {/* Top Row: Name, Status Badge, Actions */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-extrabold text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
                             {tenant.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="text-sm font-bold text-gray-900 truncate">
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
                               {tenant.name}
                             </h3>
-                            <span className="inline-block px-2 py-0.5 mt-0.5 bg-indigo-50 border border-indigo-200/80 text-indigo-700 font-bold text-[10px] rounded-md uppercase tracking-wider">
+                            <span className="inline-block px-2 py-0.5 mt-0.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] rounded-md uppercase tracking-wider">
                               Resident Tenant
                             </span>
                           </div>
@@ -1878,7 +1878,7 @@ export default function Profile() {
                             type="button"
                             onClick={() => handleOpenEditTenant(tenant)}
                             title="Edit Tenant Details"
-                            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg transition"
                           >
                             <HiPencilSquare className="w-4 h-4" />
                           </button>
@@ -1886,7 +1886,7 @@ export default function Profile() {
                             type="button"
                             onClick={() => handleOpenRemoveTenant(tenant)}
                             title="Mark as Vacated / Remove"
-                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
                           >
                             <HiTrash className="w-4 h-4" />
                           </button>
@@ -1894,19 +1894,19 @@ export default function Profile() {
                       </div>
 
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 dark:border-slate-700 text-xs">
                         {/* DOB & Age */}
-                        <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
-                            <HiCalendar className="w-3.5 h-3.5 text-indigo-500" />
+                        <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
+                            <HiCalendar className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                             <span>DOB & Age</span>
                           </span>
-                          <span className="font-semibold text-gray-800 text-xs mt-0.5 truncate">
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs mt-0.5 truncate">
                             {tenant.dob ? (
                               <>
                                 {formatDob(tenant.dob)}
                                 {age !== null && (
-                                  <span className="text-gray-500 font-normal ml-1">
+                                  <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
                                     ({age} yrs)
                                   </span>
                                 )}
@@ -1918,14 +1918,14 @@ export default function Profile() {
                         </div>
 
                         {/* Blood Group */}
-                        <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
+                        <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
                             <HiHeart className="w-3.5 h-3.5 text-rose-500" />
                             <span>Blood Group</span>
                           </span>
                           <div className="mt-0.5">
                             {tenant.blood_group ? (
-                              <span className="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-xs rounded-md">
+                              <span className="inline-flex items-center px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 font-extrabold text-xs rounded-md">
                                 {tenant.blood_group}
                               </span>
                             ) : (
@@ -1935,20 +1935,20 @@ export default function Profile() {
                         </div>
 
                         {/* Contact / Phone */}
-                        <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
-                            <HiPhone className="w-3.5 h-3.5 text-blue-500" />
+                        <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
+                            <HiPhone className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                             <span>Contact Phone</span>
                           </span>
-                          <span className="font-semibold text-gray-800 text-xs mt-0.5 truncate">
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs mt-0.5 truncate">
                             {tenant.phone || <span className="text-gray-400 italic">Not recorded</span>}
                           </span>
                         </div>
 
                         {/* Aadhaar Proof */}
-                        <div className="p-2 bg-white rounded-xl border border-gray-100/90 flex flex-col justify-between">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
-                            <HiIdentification className="w-3.5 h-3.5 text-amber-500" />
+                        <div className="p-2 bg-white dark:bg-slate-900/90 rounded-xl border border-gray-100/90 dark:border-slate-700/80 flex flex-col justify-between">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 flex items-center gap-1">
+                            <HiIdentification className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                             <span>Aadhaar Proof</span>
                           </span>
                           <div className="mt-0.5">
@@ -1956,13 +1956,13 @@ export default function Profile() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenDocPreview(tenant.aadhar_proof, `${tenant.name} - Aadhaar Document`)}
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline cursor-pointer"
                               >
                                 <HiEye className="w-3.5 h-3.5" />
                                 <span>Preview Proof</span>
                               </button>
                             ) : (
-                              <span className="text-amber-600 italic text-[11px] font-medium">Pending upload</span>
+                              <span className="text-amber-600 dark:text-amber-400 italic text-[11px] font-medium">Pending upload</span>
                             )}
                           </div>
                         </div>
@@ -1975,13 +1975,13 @@ export default function Profile() {
 
           {/* Vacated Tenants Accordion / Toggle */}
           {tenants.some((t) => !t.is_active) && (
-            <div className="pt-3 border-t border-gray-100">
+            <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowVacatedTenants(!showVacatedTenants)}
-                className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-gray-900 transition"
+                className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition"
               >
-                <HiClock className="w-4 h-4 text-gray-400" />
+                <HiClock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <span>
                   {showVacatedTenants ? 'Hide' : 'View'} Past / Vacated Tenant Records (
                   {tenants.filter((t) => !t.is_active).length})
@@ -1995,18 +1995,18 @@ export default function Profile() {
                     .map((vacated) => (
                       <div
                         key={vacated.id}
-                        className="p-3 bg-gray-50 rounded-xl border border-gray-200/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs"
+                        className="p-3 bg-gray-50 dark:bg-slate-850 rounded-xl border border-gray-200/70 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs"
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900 line-through">
+                            <span className="font-bold text-gray-900 dark:text-gray-300 line-through">
                               {vacated.name}
                             </span>
-                            <span className="px-1.5 py-0.5 bg-gray-200 text-gray-700 font-semibold text-[10px] rounded">
+                            <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 font-semibold text-[10px] rounded">
                               Vacated
                             </span>
                             {vacated.blood_group && (
-                              <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 font-bold text-[10px] rounded">
+                              <span className="px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 font-bold text-[10px] rounded">
                                 {vacated.blood_group}
                               </span>
                             )}
@@ -2014,19 +2014,19 @@ export default function Profile() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenDocPreview(vacated.aadhar_proof, `${vacated.name} - Aadhaar Document`)}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                               >
                                 <HiEye className="w-3 h-3" />
                                 <span>Preview Aadhaar</span>
                               </button>
                             )}
                           </div>
-                          <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-900/60">
                               Reason: {vacated.removal_reason || 'Vacated'}
                             </span>
                             {vacated.removed_at && (
-                              <span className="text-gray-400">
+                              <span className="text-gray-400 dark:text-gray-500">
                                 Vacated on {formatDob(vacated.removed_at)}
                               </span>
                             )}
@@ -2036,7 +2036,7 @@ export default function Profile() {
                         <button
                           type="button"
                           onClick={() => handleRestoreTenant(vacated)}
-                          className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-gray-100 border border-gray-200 text-indigo-700 hover:text-indigo-800 font-bold rounded-lg transition text-xs shadow-xs flex-shrink-0"
+                          className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold rounded-lg transition text-xs shadow-xs flex-shrink-0"
                           title="Restore tenant to active resident list"
                         >
                           <HiArrowUturnLeft className="w-3.5 h-3.5" />
@@ -3305,16 +3305,16 @@ export default function Profile() {
           {docPreviewModal.isPdf ? (
             <div className="w-full flex flex-col items-center">
               {/* PDF Document Summary Card with Instant Open Button */}
-              <div className="w-full p-4 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-3">
+              <div className="w-full p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-base flex-shrink-0 shadow-2xs">
+                  <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center font-black text-base flex-shrink-0 shadow-2xs">
                     PDF
                   </div>
                   <div className="min-w-0 text-left">
-                    <p className="text-sm font-bold text-gray-900 truncate max-w-xs sm:max-w-md">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-xs sm:max-w-md">
                       {docPreviewModal.fileName || docPreviewModal.title}
                     </p>
-                    <p className="text-xs text-rose-700 font-medium mt-0.5">
+                    <p className="text-xs text-rose-700 dark:text-rose-400 font-medium mt-0.5">
                       PDF Document Ready • Click to view in browser reader
                     </p>
                   </div>
@@ -3330,20 +3330,20 @@ export default function Profile() {
               </div>
 
               {/* Embedded Object / Fallback Viewer */}
-              <div className="w-full h-[52vh] rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
+              <div className="w-full h-[52vh] rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex flex-col">
                 <object
                   data={`${docPreviewModal.url}#toolbar=1`}
                   type="application/pdf"
                   className="w-full h-full"
                 >
                   <div className="flex flex-col items-center justify-center p-8 text-center h-full">
-                    <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
                       <HiDocumentText className="w-8 h-8" />
                     </div>
-                    <p className="font-bold text-gray-900 text-sm">
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">
                       {docPreviewModal.fileName || 'PDF Document'}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1 mb-4 max-w-sm">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4 max-w-sm">
                       Click below to view the PDF document in your browser's full reader window.
                     </p>
                     <button
@@ -3358,7 +3358,7 @@ export default function Profile() {
               </div>
             </div>
           ) : (
-            <div className="w-full max-h-[68vh] flex items-center justify-center overflow-auto rounded-xl bg-gray-900/5 p-2 border border-gray-200">
+            <div className="w-full max-h-[68vh] flex items-center justify-center overflow-auto rounded-xl bg-gray-900/5 dark:bg-slate-900/80 p-2 border border-gray-200 dark:border-slate-700">
               <img
                 src={docPreviewModal.url}
                 alt={docPreviewModal.title}
@@ -3367,15 +3367,15 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-gray-500 font-medium truncate max-w-xs sm:max-w-md">
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-xs sm:max-w-md">
               {docPreviewModal.fileName || docPreviewModal.title}
             </span>
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => window.open(docPreviewModal.url, '_blank')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition cursor-pointer"
               >
                 <span>Open in New Tab</span>
                 <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
