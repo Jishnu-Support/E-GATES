@@ -161,6 +161,9 @@ api.interceptors.response.use(
 
 export const getFileUrl = (filePath) => {
   if (!filePath) return '';
+  if (filePath.startsWith('blob:') || filePath.startsWith('data:')) {
+    return filePath;
+  }
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
     // If an existing record contains http://localhost:5002, rewrite it to current origin in browser
     if (typeof window !== 'undefined' && window.location?.origin && filePath.includes('localhost:5002')) {

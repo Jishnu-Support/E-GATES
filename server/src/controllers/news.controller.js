@@ -309,9 +309,15 @@ const newsController = {
         ? normalizeUploadPath(req.files.attachment[0].path)
         : existing.attachment;
 
-      const voiceMessage = req.files && req.files.voice_message && req.files.voice_message[0]
-        ? normalizeUploadPath(req.files.voice_message[0].path)
-        : existing.voice_message;
+      let voiceMessage = existing.voice_message;
+      if (req.body.remove_voice_message === 'true' || req.body.remove_voice_message === true) {
+        if (existing.voice_message) safelyDeleteFile(existing.voice_message);
+        voiceMessage = null;
+      }
+      if (req.files && req.files.voice_message && req.files.voice_message[0]) {
+        if (existing.voice_message) safelyDeleteFile(existing.voice_message);
+        voiceMessage = normalizeUploadPath(req.files.voice_message[0].path);
+      }
 
       const updateQuery = `
         UPDATE news_posts

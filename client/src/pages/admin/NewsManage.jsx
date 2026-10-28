@@ -83,13 +83,17 @@ export default function AdminNewsManage() {
     audioBlob: null,
   });
 
-  // Voice recording state
+  // Voice recording & preview state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordedDuration, setRecordedDuration] = useState(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState(null);
+  const [removeExistingVoice, setRemoveExistingVoice] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
+  const recordingDurationRef = useRef(0);
+  const audioFileInputRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -160,34 +164,61 @@ export default function AdminNewsManage() {
 
   const resolveFileUrl = (filePath) => getFileUrl(filePath);
 
+  const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/wav'
+    ];
+    for (const c of candidates) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) {
+        return c;
+      }
+    }
+    return '';
+  };
+
   // Start voice recorder
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const type = mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type });
         const audioUrl = URL.createObjectURL(audioBlob);
         setRecordedAudioUrl(audioUrl);
+        setRecordedDuration(recordingDurationRef.current || 0);
         setFormData((prev) => ({ ...prev, audioBlob }));
+        setRemoveExistingVoice(false);
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250);
       setIsRecording(true);
       setRecordingDuration(0);
+      recordingDurationRef.current = 0;
 
       timerIntervalRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
+        setRecordingDuration((prev) => {
+          const next = prev + 1;
+          recordingDurationRef.current = next;
+          return next;
+        });
       }, 1000);
     } catch (err) {
       console.error('Microphone error:', err);
@@ -211,7 +242,26 @@ export default function AdminNewsManage() {
     stopRecording();
     setRecordedAudioUrl(null);
     setRecordingDuration(0);
+    setRecordedDuration(0);
     setFormData((prev) => ({ ...prev, audioBlob: null }));
+    setRemoveExistingVoice(true);
+    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
+  };
+
+  // Upload existing audio file
+  const handleAudioFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|m4a|aac|ogg|webm)$/i)) {
+      toast.error('Please upload a valid audio file (MP3, WAV, M4A, etc.)');
+      return;
+    }
+    const audioUrl = URL.createObjectURL(file);
+    setRecordedAudioUrl(audioUrl);
+    setRecordedDuration(0);
+    setFormData((prev) => ({ ...prev, audioBlob: file }));
+    setRemoveExistingVoice(false);
+    toast.success('Audio file loaded for preview!');
   };
 
   // Open Create Modal
@@ -227,6 +277,9 @@ export default function AdminNewsManage() {
     });
     setRecordedAudioUrl(null);
     setRecordingDuration(0);
+    setRecordedDuration(0);
+    setRemoveExistingVoice(false);
+    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
     setIsCreateModalOpen(true);
   };
 
@@ -243,6 +296,10 @@ export default function AdminNewsManage() {
       audioBlob: null,
     });
     setRecordedAudioUrl(post.voice_message ? resolveFileUrl(post.voice_message) : null);
+    setRecordingDuration(0);
+    setRecordedDuration(0);
+    setRemoveExistingVoice(false);
+    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
     setIsEditModalOpen(true);
   };
 
@@ -269,7 +326,7 @@ export default function AdminNewsManage() {
         data.append('attachment', formData.attachmentFile);
       }
       if (formData.audioBlob) {
-        data.append('voice_message', formData.audioBlob, 'voice_announcement.webm');
+        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || 'voice_announcement.webm');
       }
 
       await api.post('/news', data);
@@ -303,7 +360,9 @@ export default function AdminNewsManage() {
         data.append('attachment', formData.attachmentFile);
       }
       if (formData.audioBlob) {
-        data.append('voice_message', formData.audioBlob, 'voice_announcement.webm');
+        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || 'voice_announcement.webm');
+      } else if (removeExistingVoice) {
+        data.append('remove_voice_message', 'true');
       }
 
       await api.put(`/news/${selectedPost.id}`, data);
@@ -371,6 +430,96 @@ export default function AdminNewsManage() {
         return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">General</span>;
     }
   };
+
+  const renderVoiceSection = () => (
+    <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-gray-200 dark:border-slate-700 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+          <HiSpeakerWave className="w-4 h-4 text-purple-600" />
+          Audio Voice Broadcast (Tamil / English)
+        </span>
+        {recordedAudioUrl && (
+          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
+            Voice Ready
+          </span>
+        )}
+      </div>
+
+      {isRecording ? (
+        <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-xl">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold text-xs">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span>Recording Voice Circular... ({recordingDuration}s)</span>
+          </div>
+          <button
+            type="button"
+            onClick={stopRecording}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
+          >
+            <HiStop className="w-4 h-4" />
+            <span>Stop Recording</span>
+          </button>
+        </div>
+      ) : !recordedAudioUrl ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={startRecording}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
+          >
+            <HiMicrophone className="w-4 h-4" />
+            <span>Record Voice Message</span>
+          </button>
+
+          <label className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-lg border border-gray-300 dark:border-slate-600 shadow-xs transition cursor-pointer">
+            <HiPaperClip className="w-4 h-4 text-purple-600" />
+            <span>Upload Audio File (MP3 / WAV)</span>
+            <input
+              ref={audioFileInputRef}
+              type="file"
+              accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm"
+              onChange={handleAudioFileUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+      ) : (
+        <div className="space-y-2.5 bg-white dark:bg-slate-900/60 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+              <HiEye className="w-4 h-4 text-primary-600" />
+              Voice Preview (Listen before publishing)
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={startRecording}
+                className="text-xs text-primary-600 dark:text-cyan-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <HiArrowPath className="w-3.5 h-3.5" /> Re-record
+              </button>
+              <button
+                type="button"
+                onClick={discardRecording}
+                className="text-xs text-red-600 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <HiTrash className="w-3.5 h-3.5" /> Delete Voice
+              </button>
+            </div>
+          </div>
+
+          <AudioPlayer
+            src={recordedAudioUrl}
+            title="Voice Broadcast Preview"
+            initialDuration={recordedDuration}
+          />
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -713,47 +862,8 @@ export default function AdminNewsManage() {
             />
           </div>
 
-          {/* Voice Recording / Voice Message */}
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
-              Audio Voice Broadcast (Tamil / English)
-            </span>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {!isRecording ? (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm transition"
-                >
-                  <HiMicrophone className="w-4 h-4" />
-                  <span>Record Voice Message</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-lg shadow-sm transition animate-pulse"
-                >
-                  <HiStop className="w-4 h-4 text-red-400" />
-                  <span>Stop Recording ({recordingDuration}s)</span>
-                </button>
-              )}
-
-              {recordedAudioUrl && (
-                <div className="flex items-center gap-2">
-                  <audio controls src={recordedAudioUrl} className="h-8 max-w-xs" />
-                  <button
-                    type="button"
-                    onClick={discardRecording}
-                    className="text-xs text-red-600 hover:underline font-semibold"
-                  >
-                    Delete Voice
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Voice Broadcast & Preview Section */}
+          {renderVoiceSection()}
 
           {/* Media Attachments */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -866,6 +976,9 @@ export default function AdminNewsManage() {
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
+
+          {/* Voice Broadcast & Preview Section */}
+          {renderVoiceSection()}
 
           {/* Media Attachments */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

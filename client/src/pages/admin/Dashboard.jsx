@@ -32,6 +32,7 @@ import StatsCard from '../../components/common/StatsCard';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
+import AudioPlayer from '../../components/common/AudioPlayer';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -548,6 +549,15 @@ export default function AdminDashboard() {
                             <HiSpeakerWave className="w-3.5 h-3.5" /> Voice Announcement
                           </span>
                         )}
+                      </div>
+                    )}
+
+                    {news.voice_message && (
+                      <div className="pt-2">
+                        <AudioPlayer
+                          src={resolveFileUrl(news.voice_message)}
+                          title="Voice Announcement"
+                        />
                       </div>
                     )}
                   </div>
