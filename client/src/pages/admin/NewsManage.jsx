@@ -525,35 +525,40 @@ export default function AdminNewsManage() {
           </label>
         </div>
       ) : (
-        <div className="space-y-2.5 bg-white dark:bg-slate-900/60 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-              <HiEye className="w-4 h-4 text-primary-600" />
-              Voice Preview (Listen before publishing)
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={startRecording}
-                className="text-xs text-primary-600 dark:text-cyan-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <HiArrowPath className="w-3.5 h-3.5" /> Re-record
-              </button>
-              <button
-                type="button"
-                onClick={discardRecording}
-                className="text-xs text-red-600 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <HiTrash className="w-3.5 h-3.5" /> Delete Voice
-              </button>
+        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 shadow-2xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center justify-center flex-shrink-0">
+              <HiSpeakerWave className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
+                {formData.audioBlob?.name || 'Voice Message Attached'}
+              </p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                <HiCheckCircle className="w-3.5 h-3.5" />
+                <span>Voice attached & ready to publish{recordedDuration ? ` (${recordedDuration}s)` : ''}</span>
+              </p>
             </div>
           </div>
 
-          <AudioPlayer
-            src={recordedAudioUrl}
-            title="Voice Broadcast Preview"
-            initialDuration={recordedDuration}
-          />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={startRecording}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-primary-600 dark:text-cyan-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg font-semibold transition cursor-pointer"
+            >
+              <HiArrowPath className="w-3.5 h-3.5" />
+              <span>Re-record</span>
+            </button>
+            <button
+              type="button"
+              onClick={discardRecording}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg font-semibold transition cursor-pointer"
+            >
+              <HiTrash className="w-3.5 h-3.5" />
+              <span>Delete</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
