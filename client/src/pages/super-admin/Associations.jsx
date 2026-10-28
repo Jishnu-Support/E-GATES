@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   HiPlus,
   HiBuildingOffice2,
@@ -11,6 +12,12 @@ import {
   HiArrowPath,
   HiPhoto,
   HiShieldCheck,
+  HiEye,
+  HiUsers,
+  HiPhone,
+  HiEnvelope,
+  HiMapPin,
+  HiArrowTopRightOnSquare,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import api, { getFileUrl } from '../../services/api';
@@ -20,10 +27,53 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import FileUpload from '../../components/common/FileUpload';
 
 export default function Associations() {
+  const navigate = useNavigate();
   const [associations, setAssociations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'inactive'
+
+  // Stat Details Modal State ('total' | 'active' | 'residents' | null)
+  const [statModalType, setStatModalType] = useState(null);
+  const [statModalSearch, setStatModalSearch] = useState('');
+  const [statModalAssocFilter, setStatModalAssocFilter] = useState('all');
+  const [allResidents, setAllResidents] = useState([]);
+  const [loadingResidents, setLoadingResidents] = useState(false);
+  const [activeCardHighlight, setActiveCardHighlight] = useState(null);
+
+  const fetchResidents = async () => {
+    try {
+      setLoadingResidents(true);
+      const res = await api.get('/users', { params: { role: 'member', limit: 200 } });
+      setAllResidents(res.data?.data || []);
+    } catch (err) {
+      toast.error('Failed to load registered residents');
+    } finally {
+      setLoadingResidents(false);
+    }
+  };
+
+  const handleOpenTotalAssocs = () => {
+    setStatusFilter('all');
+    setActiveCardHighlight('total');
+    setStatModalType('total');
+    setStatModalSearch('');
+  };
+
+  const handleOpenActiveAssocs = () => {
+    setStatusFilter('active');
+    setActiveCardHighlight('active');
+    setStatModalType('active');
+    setStatModalSearch('');
+  };
+
+  const handleOpenResidents = () => {
+    setActiveCardHighlight('residents');
+    setStatModalType('residents');
+    setStatModalSearch('');
+    setStatModalAssocFilter('all');
+    fetchResidents();
+  };
 
   // Single Create / Edit Modal State (Combined with Admin Creation)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -501,42 +551,87 @@ export default function Associations() {
         </div>
       </div>
 
-      {/* Overview Stat Cards */}
+      {/* Overview Stat Cards - Clickable to View Detailed Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
-            <HiBuildingOffice2 className="w-6 h-6" />
+        {/* Total Associations */}
+        <div
+          onClick={handleOpenTotalAssocs}
+          className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01] flex items-center justify-between ${
+            statusFilter === 'all' && activeCardHighlight === 'total'
+              ? 'bg-blue-50/40 border-blue-400 ring-2 ring-blue-500/20'
+              : 'bg-white border-gray-100 hover:border-blue-200'
+          }`}
+          title="Click to view full Total Associations Directory"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+              <HiBuildingOffice2 className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Total Associations
+              </p>
+              <p className="text-2xl font-black text-gray-900">{totalAssocs}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Total Associations
-            </p>
-            <p className="text-2xl font-black text-gray-900">{totalAssocs}</p>
-          </div>
+          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition border border-blue-200/50">
+            <span>View Details</span>
+            <HiEye className="w-3.5 h-3.5" />
+          </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
-            <HiCheck className="w-6 h-6" />
+        {/* Active Associations */}
+        <div
+          onClick={handleOpenActiveAssocs}
+          className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01] flex items-center justify-between ${
+            statusFilter === 'active' && activeCardHighlight === 'active'
+              ? 'bg-emerald-50/40 border-emerald-400 ring-2 ring-emerald-500/20'
+              : 'bg-white border-gray-100 hover:border-emerald-200'
+          }`}
+          title="Click to view Active Associations list"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+              <HiCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Active Associations
+              </p>
+              <p className="text-2xl font-black text-emerald-700">{activeAssocs}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Active Associations
-            </p>
-            <p className="text-2xl font-black text-emerald-700">{activeAssocs}</p>
-          </div>
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition border border-emerald-200/50">
+            <span>View Details</span>
+            <HiEye className="w-3.5 h-3.5" />
+          </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold">
-            👥
+        {/* Registered Residents */}
+        <div
+          onClick={handleOpenResidents}
+          className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01] flex items-center justify-between ${
+            activeCardHighlight === 'residents'
+              ? 'bg-purple-50/40 border-purple-400 ring-2 ring-purple-500/20'
+              : 'bg-white border-gray-100 hover:border-purple-200'
+          }`}
+          title="Click to view Registered Residents across all associations"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+              👥
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Registered Residents
+              </p>
+              <p className="text-2xl font-black text-purple-700">{totalMembers}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Registered Residents
-            </p>
-            <p className="text-2xl font-black text-purple-700">{totalMembers}</p>
-          </div>
+          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition border border-purple-200/50">
+            <span>View Details</span>
+            <HiEye className="w-3.5 h-3.5" />
+          </span>
         </div>
       </div>
 
@@ -1475,6 +1570,309 @@ export default function Associations() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* =========================================================================
+          MODAL: OVERVIEW STAT CARDS DETAILED BREAKDOWN
+         ========================================================================= */}
+      <Modal
+        isOpen={Boolean(statModalType)}
+        onClose={() => setStatModalType(null)}
+        title={
+          statModalType === 'residents'
+            ? `Registered Residents Across All Associations (${allResidents.length || totalMembers})`
+            : statModalType === 'active'
+            ? `Active Associations Directory (${activeAssocs})`
+            : `Total Associations Directory (${totalAssocs})`
+        }
+        size="2xl"
+      >
+        <div className="space-y-4">
+          {/* Header Action & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200/70">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-72">
+              <HiMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={statModalSearch}
+                onChange={(e) => setStatModalSearch(e.target.value)}
+                placeholder={
+                  statModalType === 'residents'
+                    ? 'Search resident name, phone, code, door...'
+                    : 'Search layout name, city, admin...'
+                }
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            {/* If Residents Modal, show Association Filter & Link to Users Page */}
+            {statModalType === 'residents' ? (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={statModalAssocFilter}
+                  onChange={(e) => setStatModalAssocFilter(e.target.value)}
+                  className="px-2.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="all">All Associations</option>
+                  {associations.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatModalType(null);
+                    navigate('/super-admin/users');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-xs flex-shrink-0"
+                >
+                  <span>Open Users Registry</span>
+                  <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="text-xs font-semibold text-gray-500 flex items-center gap-2">
+                <span>Showing:</span>
+                <span className="px-2 py-0.5 rounded-lg bg-blue-100/70 text-blue-800 font-bold">
+                  {statModalType === 'active' ? 'Active Layouts Only' : 'All Layouts Registry'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* TABLE CONTENT */}
+          {statModalType === 'residents' ? (
+            /* Residents Table */
+            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+              {loadingResidents ? (
+                <div className="py-12">
+                  <LoadingSpinner message="Fetching registered residents across associations..." />
+                </div>
+              ) : (
+                (() => {
+                  const filtered = allResidents.filter((r) => {
+                    if (statModalAssocFilter !== 'all' && String(r.association_id) !== String(statModalAssocFilter)) {
+                      return false;
+                    }
+                    if (!statModalSearch.trim()) return true;
+                    const q = statModalSearch.toLowerCase().trim();
+                    return (
+                      r.name?.toLowerCase().includes(q) ||
+                      r.email?.toLowerCase().includes(q) ||
+                      r.phone?.includes(q) ||
+                      r.member_code?.toLowerCase().includes(q) ||
+                      r.door_no?.toLowerCase().includes(q) ||
+                      r.street?.toLowerCase().includes(q) ||
+                      r.association_name?.toLowerCase().includes(q)
+                    );
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-8 text-center text-xs text-gray-500">
+                        No registered resident members found matching criteria.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                        <tr>
+                          <th className="py-2.5 px-3">Resident & Code</th>
+                          <th className="py-2.5 px-3">Association Layout</th>
+                          <th className="py-2.5 px-3">Contact Info</th>
+                          <th className="py-2.5 px-3">Door / Street</th>
+                          <th className="py-2.5 px-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {filtered.map((resident) => (
+                          <tr key={resident.id} className="hover:bg-purple-50/20 transition">
+                            <td className="py-2.5 px-3">
+                              <span className="font-bold text-gray-900 block truncate max-w-[150px]">
+                                {resident.name}
+                              </span>
+                              <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                                #{resident.member_code || `RES-${resident.id}`}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="font-semibold text-gray-800 block text-xs truncate max-w-[160px]">
+                                {resident.association_name || 'Community Layout'}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="font-mono text-gray-800 block text-xs">{resident.phone || '—'}</span>
+                              <span className="text-[10px] text-gray-400 block truncate max-w-[130px]">
+                                {resident.email || 'No email'}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="text-gray-700 block text-xs">
+                                {resident.door_no ? `Door #${resident.door_no}` : '—'}
+                              </span>
+                              <span className="text-[10px] text-gray-400 block truncate max-w-[120px]">
+                                {resident.street || ''}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  resident.status === 'approved'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : resident.status === 'pending'
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
+                              >
+                                {resident.status ? resident.status.toUpperCase() : 'APPROVED'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()
+              )}
+            </div>
+          ) : (
+            /* Associations Table */
+            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+              {(() => {
+                const list = associations.filter((a) => {
+                  if (statModalType === 'active' && !a.is_active) return false;
+                  if (!statModalSearch.trim()) return true;
+                  const q = statModalSearch.toLowerCase().trim();
+                  return (
+                    a.name?.toLowerCase().includes(q) ||
+                    a.city?.toLowerCase().includes(q) ||
+                    a.district?.toLowerCase().includes(q) ||
+                    a.address?.toLowerCase().includes(q) ||
+                    a.admin_name?.toLowerCase().includes(q) ||
+                    a.admin_phone?.includes(q)
+                  );
+                });
+
+                if (list.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-xs text-gray-500">
+                      No associations found matching criteria.
+                    </div>
+                  );
+                }
+
+                return (
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                      <tr>
+                        <th className="py-2.5 px-3">Layout Association</th>
+                        <th className="py-2.5 px-3">Location / City</th>
+                        <th className="py-2.5 px-3">Main Admin</th>
+                        <th className="py-2.5 px-3 text-center">Residents</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {list.map((assoc) => (
+                        <tr key={assoc.id} className="hover:bg-blue-50/20 transition">
+                          <td className="py-2.5 px-3">
+                            <span className="font-bold text-gray-900 block text-xs truncate max-w-[170px]">
+                              {assoc.name}
+                            </span>
+                            <span className="text-[10px] text-gray-400 block truncate max-w-[170px]">
+                              {assoc.address || 'Layout registered'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-semibold text-gray-800 block text-xs">
+                              {assoc.city || assoc.district || '—'}
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                              {assoc.state || 'Tamil Nadu'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-bold text-gray-800 block text-xs truncate max-w-[120px]">
+                              {assoc.admin_name || 'Admin'}
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-mono">
+                              {assoc.admin_phone || '—'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold text-xs border border-purple-200">
+                              {assoc.member_count || 0}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                assoc.is_active
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}
+                            >
+                              {assoc.is_active ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatModalType(null);
+                                  handleOpenEditAssocAdmin(assoc);
+                                }}
+                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-[11px] transition shadow-2xs"
+                                title="Edit Association Admin details"
+                              >
+                                Edit Admin
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatModalType(null);
+                                  handleOpenEdit(assoc);
+                                }}
+                                className="px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-bold text-[11px] transition"
+                                title="Edit Association Profile"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Modal Footer */}
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-400">
+              {statModalType === 'residents'
+                ? `Total ${allResidents.length || totalMembers} registered resident accounts across associations.`
+                : `${totalAssocs} associations registered in system (${activeAssocs} active).`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setStatModalType(null)}
+              className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* DELETE ASSOCIATION CONFIRM DIALOG */}

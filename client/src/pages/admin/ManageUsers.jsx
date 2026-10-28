@@ -34,6 +34,43 @@ export default function AdminManageUsers() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Metric Details Modal State ('total' | 'admins' | 'residents' | 'pending' | null)
+  const [metricModalType, setMetricModalType] = useState(null);
+  const [metricModalSearch, setMetricModalSearch] = useState('');
+  const [activeCardHighlight, setActiveCardHighlight] = useState(null);
+
+  const handleClickTotalUsers = () => {
+    setRoleFilter('all');
+    setStatusFilter('all');
+    setActiveCardHighlight('total');
+    setMetricModalType('total');
+    setMetricModalSearch('');
+  };
+
+  const handleClickAdmins = () => {
+    setRoleFilter('admins_all');
+    setStatusFilter('all');
+    setActiveCardHighlight('admins');
+    setMetricModalType('admins');
+    setMetricModalSearch('');
+  };
+
+  const handleClickResidents = () => {
+    setRoleFilter('member');
+    setStatusFilter('all');
+    setActiveCardHighlight('residents');
+    setMetricModalType('residents');
+    setMetricModalSearch('');
+  };
+
+  const handleClickPending = () => {
+    setRoleFilter('all');
+    setStatusFilter('pending');
+    setActiveCardHighlight('pending');
+    setMetricModalType('pending');
+    setMetricModalSearch('');
+  };
+
   // Change Role Modal State
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [roleTargetUser, setRoleTargetUser] = useState(null);
@@ -198,6 +235,8 @@ export default function AdminManageUsers() {
         if (!u.is_main_admin && u.display_role !== 'Main Association Admin') return false;
       } else if (roleFilter === 'admin') {
         if (u.role !== 'admin' || u.is_main_admin || u.display_role === 'Main Association Admin') return false;
+      } else if (roleFilter === 'admins_all' || roleFilter === 'all_admins') {
+        if (u.role !== 'admin' && !u.is_main_admin && u.display_role !== 'Main Association Admin') return false;
       } else if (roleFilter === 'member') {
         if (u.role !== 'member') return false;
       }
@@ -480,45 +519,105 @@ export default function AdminManageUsers() {
         </div>
       </div>
 
-      {/* Quick Summary Metric Cards */}
+      {/* Quick Summary Metric Cards - Clickable to View & Filter User Details */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-            👥
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Total Users</span>
-            <span className="text-xl font-black text-gray-900">{stats.total}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg">
-            🛡️
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Admins</span>
-            <span className="text-xl font-black text-gray-900">{stats.mainAdmins + stats.layoutAdmins}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
-            🏡
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Residents</span>
-            <span className="text-xl font-black text-gray-900">{stats.members}</span>
+        {/* Total Users */}
+        <div
+          onClick={handleClickTotalUsers}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.02] flex items-center justify-between select-none ${
+            activeCardHighlight === 'total' || (roleFilter === 'all' && statusFilter === 'all' && activeCardHighlight)
+              ? 'bg-blue-50/40 border-blue-400 ring-2 ring-blue-500/20'
+              : 'bg-white border-gray-100 hover:border-blue-200'
+          }`}
+          title="Click to view full Total Users directory"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+              👥
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Total Users</span>
+              <span className="text-xl font-black text-gray-900">{stats.total}</span>
+              <span className="text-[10px] font-bold text-blue-600 flex items-center gap-0.5 mt-0.5">
+                <span>View Details</span>
+                <HiEye className="w-3 h-3" />
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
-            ⏳
+        {/* Admins */}
+        <div
+          onClick={handleClickAdmins}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.02] flex items-center justify-between select-none ${
+            activeCardHighlight === 'admins' || roleFilter === 'admins_all'
+              ? 'bg-purple-50/40 border-purple-400 ring-2 ring-purple-500/20'
+              : 'bg-white border-gray-100 hover:border-purple-200'
+          }`}
+          title="Click to view Administrators details"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+              🛡️
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Admins</span>
+              <span className="text-xl font-black text-gray-900">{stats.mainAdmins + stats.layoutAdmins}</span>
+              <span className="text-[10px] font-bold text-purple-700 flex items-center gap-0.5 mt-0.5">
+                <span>View Details</span>
+                <HiEye className="w-3 h-3" />
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Pending</span>
-            <span className="text-xl font-black text-amber-700">{stats.pending}</span>
+        </div>
+
+        {/* Residents */}
+        <div
+          onClick={handleClickResidents}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.02] flex items-center justify-between select-none ${
+            activeCardHighlight === 'residents' || roleFilter === 'member'
+              ? 'bg-emerald-50/40 border-emerald-400 ring-2 ring-emerald-500/20'
+              : 'bg-white border-gray-100 hover:border-emerald-200'
+          }`}
+          title="Click to view Resident Members details"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+              🏡
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Residents</span>
+              <span className="text-xl font-black text-gray-900">{stats.members}</span>
+              <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-0.5 mt-0.5">
+                <span>View Details</span>
+                <HiEye className="w-3 h-3" />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pending */}
+        <div
+          onClick={handleClickPending}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.02] flex items-center justify-between select-none ${
+            activeCardHighlight === 'pending' || statusFilter === 'pending'
+              ? 'bg-amber-50/40 border-amber-400 ring-2 ring-amber-500/20'
+              : 'bg-white border-gray-100 hover:border-amber-200'
+          }`}
+          title="Click to view Pending Registration approvals"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+              ⏳
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Pending</span>
+              <span className="text-xl font-black text-amber-700">{stats.pending}</span>
+              <span className="text-[10px] font-bold text-amber-700 flex items-center gap-0.5 mt-0.5">
+                <span>View Details</span>
+                <HiEye className="w-3 h-3" />
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -544,10 +643,14 @@ export default function AdminManageUsers() {
             <span>Role:</span>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setActiveCardHighlight(null);
+              }}
               className="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="all">All Roles</option>
+              <option value="admins_all">All Administrators</option>
               <option value="main_admin">Main Association Admin</option>
               <option value="admin">Layout Admins</option>
               <option value="member">Resident Members</option>
@@ -558,7 +661,10 @@ export default function AdminManageUsers() {
             <span>Status:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setActiveCardHighlight(null);
+              }}
               className="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="all">All Statuses</option>
@@ -1042,6 +1148,203 @@ export default function AdminManageUsers() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* =========================================================================
+          MODAL: METRIC CARDS DETAILED DIRECTORY (USERS / ADMINS / RESIDENTS / PENDING)
+         ========================================================================= */}
+      <Modal
+        isOpen={Boolean(metricModalType)}
+        onClose={() => setMetricModalType(null)}
+        title={
+          metricModalType === 'admins'
+            ? `Association Administrators (${stats.mainAdmins + stats.layoutAdmins})`
+            : metricModalType === 'residents'
+            ? `Registered Resident Members (${stats.members})`
+            : metricModalType === 'pending'
+            ? `Pending Registrations (${stats.pending})`
+            : `Total Association Users (${users.length})`
+        }
+        size="2xl"
+      >
+        <div className="space-y-4">
+          {/* Search bar inside modal */}
+          <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200/70">
+            <div className="relative flex-1">
+              <HiMagnifyingGlass className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={metricModalSearch}
+                onChange={(e) => setMetricModalSearch(e.target.value)}
+                placeholder="Filter by name, phone, door no, or member code..."
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            {metricModalSearch && (
+              <button
+                type="button"
+                onClick={() => setMetricModalSearch('')}
+                className="text-xs text-gray-400 hover:text-gray-600 font-bold px-2 py-1"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Table List */}
+          <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+            {(() => {
+              let baseList = [];
+              if (metricModalType === 'admins') {
+                baseList = users.filter((u) => u.role === 'admin' || u.is_main_admin || u.display_role === 'Main Association Admin');
+              } else if (metricModalType === 'residents') {
+                baseList = users.filter((u) => u.role === 'member');
+              } else if (metricModalType === 'pending') {
+                baseList = users.filter((u) => u.status === 'pending');
+              } else {
+                baseList = users;
+              }
+
+              const filtered = baseList.filter((u) => {
+                if (!metricModalSearch.trim()) return true;
+                const q = metricModalSearch.toLowerCase().trim();
+                return (
+                  u.name?.toLowerCase().includes(q) ||
+                  u.email?.toLowerCase().includes(q) ||
+                  u.phone?.includes(q) ||
+                  u.member_code?.toLowerCase().includes(q) ||
+                  u.door_no?.toLowerCase().includes(q) ||
+                  u.street?.toLowerCase().includes(q)
+                );
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-8 text-center text-xs text-gray-500">
+                    {metricModalType === 'pending'
+                      ? 'No pending registration requests! All users are approved.'
+                      : 'No users found matching your search.'}
+                  </div>
+                );
+              }
+
+              return (
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-bold sticky top-0 z-10 border-b border-gray-200">
+                    <tr>
+                      <th className="py-2.5 px-3">User & Code</th>
+                      <th className="py-2.5 px-3">Role / Designation</th>
+                      <th className="py-2.5 px-3">Contact Info</th>
+                      <th className="py-2.5 px-3">Door / Street</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filtered.map((u) => (
+                      <tr key={u.id} className="hover:bg-purple-50/20 transition">
+                        <td className="py-2.5 px-3">
+                          <span className="font-bold text-gray-900 block truncate max-w-[150px]">
+                            {u.name}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-gray-500">
+                            #{u.member_code || `USR-${u.id}`}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              u.is_main_admin || u.display_role === 'Main Association Admin'
+                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                : u.role === 'admin'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            }`}
+                          >
+                            {u.is_main_admin || u.display_role === 'Main Association Admin'
+                              ? 'Main Admin'
+                              : u.role === 'admin'
+                              ? 'Layout Admin'
+                              : 'Resident Member'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="font-mono text-gray-800 block text-xs">{u.phone || '—'}</span>
+                          <span className="text-[10px] text-gray-400 block truncate max-w-[130px]">
+                            {u.email || '—'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="text-gray-700 block text-xs">
+                            {u.door_no ? `Door #${u.door_no}` : '—'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 block truncate max-w-[110px]">
+                            {u.street || ''}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              u.status === 'approved'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : u.status === 'pending'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {u.status ? u.status.toUpperCase() : 'APPROVED'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedUser(u);
+                                setIsDetailModalOpen(true);
+                              }}
+                              className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-bold rounded-lg text-[10px] transition"
+                              title="View Digital ID"
+                            >
+                              Digital ID
+                            </button>
+                            {(currentUser?.is_main_admin || currentUser?.role === 'admin') && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMetricModalType(null);
+                                  handleOpenEditUserModal(u);
+                                }}
+                                className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-semibold rounded-lg text-[10px] transition"
+                                title="Edit User"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })()}
+          </div>
+
+          {/* Footer */}
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-400">
+              Showing filtered details. The main page table below is also synchronized.
+            </span>
+            <button
+              type="button"
+              onClick={() => setMetricModalType(null)}
+              className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* =========================================================================
