@@ -29,6 +29,7 @@ import {
   HiHeart,
   HiExclamationTriangle,
   HiArrowUturnLeft,
+  HiEye,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -143,6 +144,41 @@ export default function Profile() {
   const [tenantAadharFile, setTenantAadharFile] = useState(null);
   const [tenantAadharPreview, setTenantAadharPreview] = useState(null);
   const tenantAadharInputRef = useRef(null);
+
+  // Document Fullscreen Preview Modal State
+  const [docPreviewModal, setDocPreviewModal] = useState({
+    isOpen: false,
+    url: '',
+    title: '',
+    isPdf: false,
+    fileName: '',
+  });
+
+  const handleOpenDocPreview = (fileOrUrl, title = 'Document Preview', fileName = '') => {
+    if (!fileOrUrl) return;
+
+    if (fileOrUrl instanceof File) {
+      const isPdf = fileOrUrl.type === 'application/pdf' || fileOrUrl.name.toLowerCase().endsWith('.pdf');
+      const objectUrl = URL.createObjectURL(fileOrUrl);
+      setDocPreviewModal({
+        isOpen: true,
+        url: objectUrl,
+        title: title || fileOrUrl.name,
+        isPdf,
+        fileName: fileName || fileOrUrl.name,
+      });
+    } else if (typeof fileOrUrl === 'string') {
+      const resolved = resolveFileUrl(fileOrUrl);
+      const isPdf = resolved.toLowerCase().includes('.pdf');
+      setDocPreviewModal({
+        isOpen: true,
+        url: resolved,
+        title,
+        isPdf,
+        fileName: fileName || title,
+      });
+    }
+  };
 
   // Tenant Removal / Vacate State
   const [removingTenant, setRemovingTenant] = useState(null);
@@ -414,8 +450,43 @@ export default function Profile() {
 
   const handleSaveTenant = async (e) => {
     e.preventDefault();
+
+    // 1. Mandatory Name
     if (!tenantForm.name.trim()) {
-      toast.error('Please enter the tenant name');
+      toast.error('Tenant Full Name is mandatory.');
+      return;
+    }
+
+    // 2. Mandatory Date of Birth
+    if (!tenantForm.dob) {
+      toast.error('Tenant Date of Birth (DOB) is mandatory.');
+      return;
+    }
+
+    // 3. Mandatory Blood Group
+    if (!tenantForm.blood_group) {
+      toast.error('Tenant Blood Group is mandatory. Please select a blood group.');
+      return;
+    }
+
+    // 4. Mandatory Contact Mobile Number
+    const cleanPhone = tenantForm.phone.trim();
+    if (!cleanPhone) {
+      toast.error('Tenant Contact Mobile Number is mandatory.');
+      return;
+    }
+    if (!/^\d{10}$/.test(cleanPhone)) {
+      toast.error('Please enter a valid 10-digit mobile number for the tenant.');
+      return;
+    }
+
+    // 5. Mandatory Aadhaar Proof Document
+    if (!editingTenant && !tenantAadharFile) {
+      toast.error('Aadhaar Proof Document is mandatory. Please upload document (JPG/PNG/PDF).');
+      return;
+    }
+    if (editingTenant && !editingTenant.aadhar_proof && !tenantAadharFile) {
+      toast.error('Aadhaar Proof Document is mandatory. Please upload document (JPG/PNG/PDF).');
       return;
     }
 
@@ -423,9 +494,9 @@ export default function Profile() {
       setSubmittingTenant(true);
       const formData = new FormData();
       formData.append('name', tenantForm.name.trim());
-      if (tenantForm.dob) formData.append('dob', tenantForm.dob);
-      if (tenantForm.blood_group) formData.append('blood_group', tenantForm.blood_group);
-      if (tenantForm.phone) formData.append('phone', tenantForm.phone.trim());
+      formData.append('dob', tenantForm.dob);
+      formData.append('blood_group', tenantForm.blood_group);
+      formData.append('phone', cleanPhone);
 
       if (tenantAadharFile) {
         formData.append('aadhar_proof', tenantAadharFile);
@@ -438,7 +509,7 @@ export default function Profile() {
         toast.success('Tenant details updated successfully!');
       } else {
         await api.post(`/users/${user.id}/tenants`, formData, { headers });
-        toast.success('Tenant added successfully!');
+        toast.success('Tenant registered successfully with Aadhaar proof!');
       }
 
       setIsAddTenantOpen(false);
@@ -1875,15 +1946,14 @@ export default function Profile() {
                           </span>
                           <div className="mt-0.5">
                             {tenant.aadhar_proof ? (
-                              <a
-                                href={resolveFileUrl(tenant.aadhar_proof)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDocPreview(tenant.aadhar_proof, `${tenant.name} - Aadhaar Document`)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
                               >
-                                <span>View Proof</span>
-                                <HiArrowTopRightOnSquare className="w-3 h-3" />
-                              </a>
+                                <HiEye className="w-3.5 h-3.5" />
+                                <span>Preview Proof</span>
+                              </button>
                             ) : (
                               <span className="text-amber-600 italic text-[11px] font-medium">Pending upload</span>
                             )}
@@ -1934,15 +2004,14 @@ export default function Profile() {
                               </span>
                             )}
                             {vacated.aadhar_proof && (
-                              <a
-                                href={resolveFileUrl(vacated.aadhar_proof)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:underline"
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDocPreview(vacated.aadhar_proof, `${vacated.name} - Aadhaar Document`)}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
                               >
-                                <span>Aadhaar</span>
-                                <HiArrowTopRightOnSquare className="w-3 h-3" />
-                              </a>
+                                <HiEye className="w-3 h-3" />
+                                <span>Preview Aadhaar</span>
+                              </button>
                             )}
                           </div>
                           <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
@@ -2931,10 +3000,11 @@ export default function Profile() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
-                Date of Birth (DOB)
+                Date of Birth (DOB) <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
+                required
                 max={new Date().toISOString().split('T')[0]}
                 value={tenantForm.dob}
                 onChange={(e) => setTenantForm({ ...tenantForm, dob: e.target.value })}
@@ -2944,14 +3014,15 @@ export default function Profile() {
 
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
-                Blood Group
+                Blood Group <span className="text-red-500">*</span>
               </label>
               <select
+                required
                 value={tenantForm.blood_group}
                 onChange={(e) => setTenantForm({ ...tenantForm, blood_group: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
               >
-                <option value="">Select Blood Group</option>
+                <option value="">Select Blood Group *</option>
                 {BLOOD_GROUP_OPTIONS.map((bg) => (
                   <option key={bg} value={bg}>
                     {bg}
@@ -2972,18 +3043,17 @@ export default function Profile() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-xs font-bold text-gray-700">
-                Aadhaar Proof Document
+                Aadhaar Proof Document <span className="text-red-500">*</span>
               </label>
               {editingTenant?.aadhar_proof && (
-                <a
-                  href={resolveFileUrl(editingTenant.aadhar_proof)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:underline"
+                <button
+                  type="button"
+                  onClick={() => handleOpenDocPreview(editingTenant.aadhar_proof, `${editingTenant.name} - Current Aadhaar Proof`)}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
                 >
-                  <span>Current Proof</span>
-                  <HiArrowTopRightOnSquare className="w-3 h-3" />
-                </a>
+                  <HiEye className="w-3.5 h-3.5" />
+                  <span>Preview Current Document</span>
+                </button>
               )}
             </div>
 
@@ -3014,49 +3084,133 @@ export default function Profile() {
               className="cursor-pointer border-2 border-dashed border-gray-200 hover:border-indigo-400 bg-gray-50/70 hover:bg-indigo-50/20 rounded-xl p-3.5 transition flex flex-col items-center justify-center text-center"
             >
               {tenantAadharFile ? (
-                <div className="flex items-center justify-between w-full px-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <HiDocumentText className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <div className="flex items-center justify-between w-full px-2 py-1">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-600">
+                      {tenantAadharFile.type.includes('pdf') || tenantAadharFile.name.toLowerCase().endsWith('.pdf') ? (
+                        <span className="font-extrabold text-[10px] text-rose-600 bg-rose-50 px-1 py-0.5 rounded border border-rose-200">PDF</span>
+                      ) : (
+                        <HiDocumentText className="w-6 h-6 text-indigo-600" />
+                      )}
+                    </div>
                     <div className="text-left min-w-0">
-                      <p className="text-xs font-bold text-gray-900 truncate">
+                      <p className="text-xs font-bold text-gray-900 truncate max-w-[180px] sm:max-w-xs">
                         {tenantAadharFile.name}
                       </p>
                       <p className="text-[10px] text-gray-400">
-                        {formatFileSize(tenantAadharFile.size)} - Click to change
+                        {formatFileSize(tenantAadharFile.size)} • Click to replace file
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTenantAadharFile(null);
-                      setTenantAadharPreview(null);
-                      if (tenantAadharInputRef.current) {
-                        tenantAadharInputRef.current.value = '';
-                      }
-                    }}
-                    className="p-1 text-gray-400 hover:text-rose-600 rounded-lg"
-                  >
-                    <HiXMark className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDocPreview(tenantAadharFile, `Preview: ${tenantAadharFile.name}`);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200/60"
+                      title="Preview this document"
+                    >
+                      <HiEye className="w-3.5 h-3.5" />
+                      <span>Preview</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTenantAadharFile(null);
+                        setTenantAadharPreview(null);
+                        if (tenantAadharInputRef.current) {
+                          tenantAadharInputRef.current.value = '';
+                        }
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg transition"
+                      title="Remove file"
+                    >
+                      <HiXMark className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
                   <HiArrowUpTray className="w-5 h-5 text-indigo-500 mb-1" />
                   <p className="text-xs font-bold text-gray-700">
-                    {editingTenant?.aadhar_proof ? 'Upload New Aadhaar Proof to Replace' : 'Upload Aadhaar Proof (Card/PDF)'}
+                    {editingTenant?.aadhar_proof ? 'Upload New Aadhaar Proof to Replace' : 'Upload Aadhaar Proof (Card/PDF) *'}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-0.5">
-                    PNG, JPG, PDF up to 10MB
+                    PNG, JPG, PDF up to 10MB (Mandatory)
                   </p>
                 </>
               )}
             </div>
 
-            {tenantAadharPreview && (
-              <div className="mt-2 relative w-24 h-16 rounded-lg overflow-hidden border border-gray-200 shadow-xs">
-                <img src={tenantAadharPreview} alt="Aadhaar Preview" className="w-full h-full object-cover" />
+            {/* Document Preview Box for Uploaded Image */}
+            {tenantAadharFile && tenantAadharPreview && (
+              <div className="mt-2.5 p-2 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={tenantAadharPreview}
+                    alt="Aadhaar Preview"
+                    className="w-12 h-12 object-cover rounded-lg border border-gray-300 shadow-2xs"
+                  />
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-800 block">Image Document Selected</span>
+                    <span className="text-[10px] text-gray-400">Click preview button to view full size</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDocPreview(tenantAadharFile, `Aadhaar Preview: ${tenantAadharFile.name}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded-lg text-xs transition shadow-2xs"
+                >
+                  <HiEye className="w-3.5 h-3.5" />
+                  <span>Full Preview</span>
+                </button>
+              </div>
+            )}
+
+            {/* Document Preview Box for Uploaded PDF */}
+            {tenantAadharFile && (tenantAadharFile.type.includes('pdf') || tenantAadharFile.name.toLowerCase().endsWith('.pdf')) && (
+              <div className="mt-2.5 p-2.5 bg-rose-50/70 border border-rose-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center">
+                    PDF
+                  </span>
+                  <div>
+                    <span className="text-xs font-bold text-gray-900 block truncate max-w-xs">{tenantAadharFile.name}</span>
+                    <span className="text-[10px] text-rose-700 font-medium">Ready for upload & viewing</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDocPreview(tenantAadharFile, `PDF Document: ${tenantAadharFile.name}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-100 border border-rose-300 text-rose-700 font-bold rounded-lg text-xs transition shadow-2xs"
+                >
+                  <HiEye className="w-3.5 h-3.5" />
+                  <span>Preview PDF</span>
+                </button>
+              </div>
+            )}
+
+            {/* Existing Proof in record */}
+            {!tenantAadharFile && editingTenant?.aadhar_proof && (
+              <div className="mt-2.5 p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HiDocumentText className="w-6 h-6 text-indigo-600" />
+                  <div>
+                    <span className="text-xs font-bold text-gray-900 block">Existing Document on File</span>
+                    <span className="text-[10px] text-indigo-700 font-medium">Upload new file above only if replacing</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDocPreview(editingTenant.aadhar_proof, `${editingTenant.name} - Aadhaar Document`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-100 border border-indigo-300 text-indigo-700 font-bold rounded-lg text-xs transition shadow-2xs"
+                >
+                  <HiEye className="w-3.5 h-3.5" />
+                  <span>Preview Current</span>
+                </button>
               </div>
             )}
           </div>
@@ -3064,15 +3218,18 @@ export default function Profile() {
           {/* Contact / Phone */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">
-              Contact / Mobile Number
+              Contact / Mobile Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
+              required
+              maxLength={10}
               value={tenantForm.phone}
-              onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })}
-              placeholder="e.g. 9876543210 (Optional)"
+              onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+              placeholder="e.g. 9876543210 (10 Digits Mandatory)"
               className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
             />
+            <p className="text-[11px] text-gray-400 mt-1">10-digit mobile number is mandatory for tenant registration.</p>
           </div>
 
           {/* Modal Actions */}
@@ -3184,6 +3341,59 @@ export default function Profile() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Document Fullscreen Preview Modal */}
+      <Modal
+        isOpen={docPreviewModal.isOpen}
+        onClose={() => setDocPreviewModal({ isOpen: false, url: '', title: '', isPdf: false, fileName: '' })}
+        title={docPreviewModal.title || 'Document Preview'}
+        size="2xl"
+      >
+        <div className="flex flex-col">
+          {docPreviewModal.isPdf ? (
+            <div className="w-full h-[65vh] rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
+              <iframe
+                src={docPreviewModal.url}
+                title={docPreviewModal.title}
+                className="w-full h-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="w-full max-h-[68vh] flex items-center justify-center overflow-auto rounded-xl bg-gray-900/5 p-2 border border-gray-200">
+              <img
+                src={docPreviewModal.url}
+                alt={docPreviewModal.title}
+                className="max-h-[62vh] max-w-full object-contain rounded-lg shadow-sm"
+              />
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-100">
+            <span className="text-xs text-gray-500 font-medium truncate max-w-xs sm:max-w-md">
+              {docPreviewModal.fileName || docPreviewModal.title}
+            </span>
+            <div className="flex items-center justify-end gap-2">
+              <a
+                href={docPreviewModal.url}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+              >
+                <span>Open in New Tab</span>
+                <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setDocPreviewModal({ isOpen: false, url: '', title: '', isPdf: false, fileName: '' })}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-2xs"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       </Modal>
 
       {/* Digital ID Card Modal */}

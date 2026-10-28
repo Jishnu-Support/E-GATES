@@ -1899,7 +1899,19 @@ const userController = {
 
       const { name, dob, blood_group, phone, email } = req.body;
       if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Tenant name is required' });
+        return res.status(400).json({ success: false, message: 'Tenant full name is required' });
+      }
+      if (!dob) {
+        return res.status(400).json({ success: false, message: 'Tenant date of birth (DOB) is required' });
+      }
+      if (!blood_group || !blood_group.trim()) {
+        return res.status(400).json({ success: false, message: 'Tenant blood group is required' });
+      }
+      if (!phone || !phone.trim()) {
+        return res.status(400).json({ success: false, message: 'Tenant contact mobile number is required' });
+      }
+      if (!/^\d{10}$/.test(phone.trim())) {
+        return res.status(400).json({ success: false, message: 'Tenant contact mobile number must be 10 digits' });
       }
 
       let aadharProof = null;
@@ -1907,6 +1919,10 @@ const userController = {
         aadharProof = normalizeFilePath(req.files.aadhar_proof[0], 'proofs');
       } else if (req.file) {
         aadharProof = normalizeFilePath(req.file, 'proofs');
+      }
+
+      if (!aadharProof) {
+        return res.status(400).json({ success: false, message: 'Tenant Aadhaar proof document is required' });
       }
 
       const insertResult = await pool.query(
@@ -1972,7 +1988,16 @@ const userController = {
 
       const { name, dob, blood_group, phone, email } = req.body;
       if (name !== undefined && !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Tenant name cannot be empty' });
+        return res.status(400).json({ success: false, message: 'Tenant full name cannot be empty' });
+      }
+      if (dob !== undefined && !dob) {
+        return res.status(400).json({ success: false, message: 'Tenant date of birth (DOB) is required' });
+      }
+      if (blood_group !== undefined && !blood_group.trim()) {
+        return res.status(400).json({ success: false, message: 'Tenant blood group is required' });
+      }
+      if (phone !== undefined && (!phone.trim() || !/^\d{10}$/.test(phone.trim()))) {
+        return res.status(400).json({ success: false, message: 'Tenant contact mobile number must be 10 digits' });
       }
 
       let aadharProof = tenantCheck.rows[0].aadhar_proof;
