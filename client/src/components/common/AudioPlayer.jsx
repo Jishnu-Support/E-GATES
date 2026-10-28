@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark } from 'react-icons/hi2';
+import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath } from 'react-icons/hi2';
 import { getFileUrl } from '../../services/api';
 
 export default function AudioPlayer({ src, title = 'Voice Message', initialDuration = 0, className = '' }) {
@@ -28,21 +28,17 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     setCurrentTime(0);
     setError(false);
 
+    try {
+      audio.load();
+    } catch {
+      // Ignore load invocation issues
+    }
+
     const handleLoadedMetadata = () => {
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
-      } else if (audio.duration === Infinity) {
-        // Chromium WebM blob duration fix: seek to far end to force metadata parse
-        const tempCurrent = audio.currentTime;
-        audio.currentTime = 1e8;
-        const fixHandler = () => {
-          audio.removeEventListener('timeupdate', fixHandler);
-          if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
-            setDuration(audio.duration);
-          }
-          audio.currentTime = tempCurrent;
-        };
-        audio.addEventListener('timeupdate', fixHandler);
+      } else if (initialDuration && initialDuration > 0) {
+        setDuration(initialDuration);
       }
       setError(false);
     };
@@ -58,20 +54,25 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       setCurrentTime(cur);
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
-      } else if (cur > duration) {
-        // Fallback: duration tracks at least the highest playback position reached
-        setDuration(cur);
+      } else {
+        // Fallback: track highest position reached or initialDuration
+        setDuration((prev) => Math.max(prev || 0, cur, initialDuration || 0));
       }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+      if (audio) {
+        audio.currentTime = 0;
+      }
     };
 
     const handleError = () => {
       console.warn('Audio element error for url:', audioUrl);
-      setError(true);
+      if (!audioUrl) {
+        setError(true);
+      }
       setIsPlaying(false);
     };
 
@@ -88,32 +89,63 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioUrl]);
+  }, [audioUrl, initialDuration]);
+
+  const effectiveDuration = duration > 0 ? duration : (initialDuration > 0 ? initialDuration : (currentTime > 0 ? currentTime : 0));
+  const percent = effectiveDuration > 0 ? Math.min(100, Math.max(0, (currentTime / effectiveDuration) * 100)) : 0;
 
   const togglePlay = () => {
-    if (!audioRef.current || error) return;
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        setError(false);
-        if (audioRef.current.duration && audioRef.current.duration !== Infinity) {
-          setDuration(audioRef.current.duration);
-        }
-      }).catch((err) => {
-        console.warn('Playback error:', err);
-        setError(true);
-      });
+      // If at end or near end, rewind to start before playing
+      if (audio.ended || (audio.duration && !isNaN(audio.duration) && audio.currentTime >= audio.duration - 0.1) || (effectiveDuration > 0 && currentTime >= effectiveDuration - 0.1)) {
+        audio.currentTime = 0;
+        setCurrentTime(0);
+      }
+
+      setError(false);
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setError(false);
+            if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
+              setDuration(audio.duration);
+            }
+          })
+          .catch((err) => {
+            console.warn('Audio playback error:', err);
+            setIsPlaying(false);
+          });
+      }
     }
   };
 
   const handleSeek = (e) => {
-    if (!audioRef.current || error) return;
+    const audio = audioRef.current;
+    if (!audio) return;
     const seekTime = Number(e.target.value);
-    audioRef.current.currentTime = seekTime;
+    audio.currentTime = seekTime;
     setCurrentTime(seekTime);
+  };
+
+  const handleReplay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    setCurrentTime(0);
+    audio.play().then(() => {
+      setIsPlaying(true);
+      setError(false);
+    }).catch(() => {
+      setIsPlaying(false);
+    });
   };
 
   const toggleMute = () => {
@@ -129,51 +161,79 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const effectiveDuration = duration > 0 ? duration : (initialDuration > 0 ? initialDuration : (currentTime > 0 ? currentTime : 0));
-
   return (
-    <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-200 dark:border-slate-700 w-full ${className}`}>
-      <audio ref={audioRef} src={audioUrl} preload="auto" />
+    <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/90 rounded-xl border border-gray-200 dark:border-slate-700 w-full shadow-2xs ${className}`}>
+      <audio key={audioUrl} ref={audioRef} src={audioUrl} preload="auto" playsInline />
 
       {/* Play/Pause Button */}
       <button
         type="button"
         onClick={togglePlay}
-        disabled={error || !audioUrl}
+        disabled={!audioUrl}
         aria-label={isPlaying ? 'Pause' : 'Play'}
-        className="flex-shrink-0 w-9 h-9 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center focus:outline-none transition shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+        className="shrink-0 w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center focus:outline-none transition shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
       >
-        {isPlaying ? <HiPause className="w-4 h-4" /> : <HiPlay className="w-4 h-4 ml-0.5" />}
+        {isPlaying ? <HiPause className="w-5 h-5" /> : <HiPlay className="w-5 h-5 ml-0.5" />}
       </button>
 
       {/* Progress & Time */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
           <span className="font-semibold truncate text-gray-800 dark:text-gray-200">{title}</span>
-          <span className="font-mono text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+          <span className="font-mono text-[11px] text-gray-600 dark:text-gray-400 font-medium shrink-0 ml-2">
             {formatTime(currentTime)} / {formatTime(effectiveDuration)}
           </span>
         </div>
 
-        <input
-          type="range"
-          min="0"
-          max={effectiveDuration > 0 ? effectiveDuration : 100}
-          step="0.1"
-          value={currentTime}
-          onChange={handleSeek}
-          disabled={error || !effectiveDuration}
-          className="w-full h-1.5 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-600 disabled:opacity-50"
-        />
+        {/* High-Contrast Interactive Progress Bar */}
+        <div className="relative w-full h-3 flex items-center group cursor-pointer">
+          {/* Visible Track with boundary in both Light and Dark modes */}
+          <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden border border-gray-300/40 dark:border-slate-600/40">
+            <div
+              className="h-full bg-primary-600 dark:bg-primary-500 rounded-full transition-all duration-75"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+
+          {/* Scrubber thumb circle */}
+          <div
+            className="absolute h-3.5 w-3.5 rounded-full bg-white dark:bg-primary-400 border-2 border-primary-600 dark:border-white shadow-sm pointer-events-none -translate-x-1/2 transition-all duration-75"
+            style={{ left: `${percent}%` }}
+          />
+
+          {/* Transparent Input Range Overlay for seamless dragging & seeking */}
+          <input
+            type="range"
+            min="0"
+            max={effectiveDuration > 0 ? effectiveDuration : 100}
+            step="0.05"
+            value={currentTime}
+            onChange={handleSeek}
+            disabled={!audioUrl}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            aria-label="Seek voice playback"
+          />
+        </div>
       </div>
+
+      {/* Replay from Start Button */}
+      <button
+        type="button"
+        onClick={handleReplay}
+        disabled={!audioUrl}
+        title="Replay from start"
+        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer disabled:opacity-40"
+      >
+        <HiArrowPath className="w-4 h-4" />
+      </button>
 
       {/* Mute button */}
       <button
         type="button"
         onClick={toggleMute}
-        disabled={error}
+        disabled={!audioUrl}
         aria-label={isMuted ? 'Unmute' : 'Mute'}
-        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded transition"
+        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer disabled:opacity-40"
       >
         {isMuted ? <HiSpeakerXMark className="w-4 h-4 text-red-500" /> : <HiSpeakerWave className="w-4 h-4" />}
       </button>

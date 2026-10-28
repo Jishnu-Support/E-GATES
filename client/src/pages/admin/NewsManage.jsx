@@ -93,6 +93,7 @@ export default function AdminNewsManage() {
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
   const recordingDurationRef = useRef(0);
+  const recordingStartTimeRef = useRef(null);
   const audioFileInputRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -184,6 +185,15 @@ export default function AdminNewsManage() {
   // Start voice recorder
   const startRecording = async () => {
     try {
+      if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(recordedAudioUrl);
+        } catch {
+          // ignore
+        }
+        setRecordedAudioUrl(null);
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = getSupportedMimeType();
       const options = mimeType ? { mimeType } : {};
@@ -201,8 +211,11 @@ export default function AdminNewsManage() {
         const type = mimeType || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type });
         const audioUrl = URL.createObjectURL(audioBlob);
+        const elapsedSecs = recordingStartTimeRef.current
+          ? Math.max(1, Math.round((Date.now() - recordingStartTimeRef.current) / 1000))
+          : (recordingDurationRef.current || 1);
         setRecordedAudioUrl(audioUrl);
-        setRecordedDuration(recordingDurationRef.current || 0);
+        setRecordedDuration(elapsedSecs);
         setFormData((prev) => ({ ...prev, audioBlob }));
         setRemoveExistingVoice(false);
         stream.getTracks().forEach((track) => track.stop());
@@ -212,6 +225,7 @@ export default function AdminNewsManage() {
       setIsRecording(true);
       setRecordingDuration(0);
       recordingDurationRef.current = 0;
+      recordingStartTimeRef.current = Date.now();
 
       timerIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => {
@@ -240,6 +254,13 @@ export default function AdminNewsManage() {
   // Discard recording
   const discardRecording = () => {
     stopRecording();
+    if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(recordedAudioUrl);
+      } catch {
+        // ignore
+      }
+    }
     setRecordedAudioUrl(null);
     setRecordingDuration(0);
     setRecordedDuration(0);
@@ -256,11 +277,28 @@ export default function AdminNewsManage() {
       toast.error('Please upload a valid audio file (MP3, WAV, M4A, etc.)');
       return;
     }
+    if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(recordedAudioUrl);
+      } catch {
+        // ignore
+      }
+    }
     const audioUrl = URL.createObjectURL(file);
     setRecordedAudioUrl(audioUrl);
     setRecordedDuration(0);
     setFormData((prev) => ({ ...prev, audioBlob: file }));
     setRemoveExistingVoice(false);
+
+    // Extract file duration if possible
+    const tempAudio = new Audio();
+    tempAudio.src = audioUrl;
+    tempAudio.onloadedmetadata = () => {
+      if (tempAudio.duration && !isNaN(tempAudio.duration) && tempAudio.duration !== Infinity) {
+        setRecordedDuration(Math.round(tempAudio.duration));
+      }
+    };
+
     toast.success('Audio file loaded for preview!');
   };
 
