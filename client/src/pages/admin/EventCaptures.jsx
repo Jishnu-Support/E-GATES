@@ -893,7 +893,20 @@ export default function EventCaptures() {
                         )}
                       </button>
 
-                      {/* Download */}
+                      {/* Open in New Tab */}
+                      {capture.file_path && (
+                        <a
+                          href={mediaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition"
+                          title="Open original in new browser tab"
+                        >
+                          <HiArrowTopRightOnSquare className="w-4 h-4" />
+                        </a>
+                      )}
+
+              {/* Download */}
                       <button
                         type="button"
                         onClick={(e) => handleDownload(capture, e)}
@@ -1119,7 +1132,7 @@ export default function EventCaptures() {
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                           {item.isVideo ? 'Video' : 'Photo'} • {formatFileSize(item.size)}
                         </p>
-                        <div className="mt-1.5 flex items-center gap-2">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
                           <button
                             type="button"
                             onClick={() => {
@@ -1127,11 +1140,22 @@ export default function EventCaptures() {
                               setIsVideoMuted(true);
                               setPreviewItem(item);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] font-semibold transition"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] font-semibold transition cursor-pointer"
                           >
                             <HiEye className="w-3.5 h-3.5" />
-                            <span>Preview Clearly</span>
+                            <span>Preview Here</span>
                           </button>
+                          {item.preview && (
+                            <button
+                              type="button"
+                              onClick={() => window.open(item.preview, '_blank')}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                              title="Directly open media in a new browser tab"
+                            >
+                              <HiArrowTopRightOnSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              <span>Open in New Tab</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1233,16 +1257,15 @@ export default function EventCaptures() {
                 </span>
               </div>
               {previewItem.preview && (
-                <a
-                  href={previewItem.preview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold shrink-0"
-                  title="Open video in a new browser tab"
+                <button
+                  type="button"
+                  onClick={() => window.open(previewItem.preview, '_blank')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/80 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-semibold transition shrink-0 cursor-pointer"
+                  title="Directly open media in a new browser tab"
                 >
                   <HiArrowTopRightOnSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Open in new tab</span>
-                </a>
+                  <span>Open in New Tab</span>
+                </button>
               )}
             </div>
 
@@ -1267,20 +1290,19 @@ export default function EventCaptures() {
                         The video file is selected and will be safely uploaded in full original quality when you click <strong>Save Event Capture</strong>.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={previewItem.preview}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                    <div className="flex flex-wrap items-center justify-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => window.open(previewItem.preview, '_blank')}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                       >
                         <HiArrowTopRightOnSquare className="w-4 h-4" />
-                        <span>Open in New Tab</span>
-                      </a>
+                        <span>Directly Open in New Tab</span>
+                      </button>
                       <a
                         href={previewItem.preview}
                         download={previewItem.name}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border border-slate-700"
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border border-slate-700 cursor-pointer"
                       >
                         <HiArrowDownTray className="w-4 h-4" />
                         <span>Download to Test</span>
@@ -1297,20 +1319,20 @@ export default function EventCaptures() {
                       muted={isVideoMuted}
                       playsInline
                       preload="auto"
-                      onLoadedMetadata={(e) => {
-                        const vid = e.currentTarget;
-                        if (vid.currentTime === 0 && vid.duration > 0.5) {
-                          vid.currentTime = Math.min(0.5, vid.duration / 4);
+                      onError={(e) => {
+                        const err = e.currentTarget?.error;
+                        console.warn('Video preview error event:', err);
+                        if (err && (err.code === 3 || err.code === 4)) {
+                          setVideoError(true);
                         }
                       }}
-                      onError={() => setVideoError(true)}
                       className="max-h-[58vh] w-auto max-w-full aspect-video rounded-xl shadow-2xl bg-black"
                     />
                     <div className="mt-3 flex items-center justify-between w-full px-2 text-[11px] text-gray-400">
                       <button
                         type="button"
                         onClick={() => setIsVideoMuted(!isVideoMuted)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                           isVideoMuted
                             ? 'bg-slate-800 text-amber-300 hover:bg-slate-700'
                             : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
@@ -1356,20 +1378,32 @@ export default function EventCaptures() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Uploaded as high-resolution original upon saving.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewItem(null);
-                  setVideoError(false);
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
-              >
-                Close Preview
-              </button>
+              <div className="flex items-center gap-2">
+                {previewItem.preview && (
+                  <button
+                    type="button"
+                    onClick={() => window.open(previewItem.preview, '_blank')}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-gray-200 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <HiArrowTopRightOnSquare className="w-4 h-4 text-indigo-400" />
+                    <span>Open in New Tab</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewItem(null);
+                    setVideoError(false);
+                  }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm cursor-pointer"
+                >
+                  Close Preview
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1570,6 +1604,20 @@ export default function EventCaptures() {
                     </>
                   )}
                 </button>
+              )}
+
+              {/* Open in New Tab */}
+              {lightboxCapture.file_path && (
+                <a
+                  href={resolveFileUrl(lightboxCapture.file_path)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  title="Open original media in new browser tab"
+                >
+                  <HiArrowTopRightOnSquare className="w-4 h-4" />
+                  <span>Open in New Tab</span>
+                </a>
               )}
 
               {/* Download */}
