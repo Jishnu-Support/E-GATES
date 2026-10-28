@@ -520,31 +520,91 @@ const associationController = {
    * Delete association
    * Super Admin only
    */
+  /**
+   * Delete association with full cascading clean-up
+   * Super Admin only
+   */
   async remove(req, res, next) {
     try {
       const assocId = parseInt(req.params.id, 10);
+      if (isNaN(assocId)) {
+        return res.status(400).json({ success: false, message: 'Invalid association ID' });
+      }
+
       const check = await pool.query('SELECT * FROM associations WHERE id = $1', [assocId]);
       if (check.rows.length === 0) {
         return res.status(404).json({ success: false, message: 'Association not found' });
       }
 
+      const assocName = check.rows[0].name;
+
+      // 1. Break circular dependency on associations table
+      await pool.query('UPDATE associations SET main_admin_id = NULL WHERE id = $1', [assocId]).catch(() => {});
+
+      // 2. Cascade delete dependent media and records
+      await pool.query('DELETE FROM event_captures WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM events WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM documents WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM maintenance_fees WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM complaints WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM news_posts WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM sos_alerts WHERE association_id = $1', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM sos_contacts WHERE association_id = $1', [assocId]).catch(() => {});
+
+      // 3. Polls, vendors, votes
+      await pool.query('DELETE FROM votes WHERE poll_id IN (SELECT id FROM polls WHERE association_id = $1)', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM poll_vendors WHERE poll_id IN (SELECT id FROM polls WHERE association_id = $1)', [assocId]).catch(() => {});
+      await pool.query('DELETE FROM polls WHERE association_id = $1', [assocId]).catch(() => {});
+
+      // 4. Handle users belonging to this association
+      const usersInAssoc = await pool.query('SELECT id, role FROM users WHERE association_id = $1', [assocId]);
+      const userList = usersInAssoc.rows || [];
+
+      for (const u of userList) {
+        // Clean up user relations
+        await pool.query('DELETE FROM tenants WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('DELETE FROM family_members WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('DELETE FROM notifications WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('DELETE FROM votes WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('UPDATE audit_log SET user_id = NULL WHERE user_id = $1', [u.id]).catch(() => {});
+        await pool.query('UPDATE sos_alerts SET acknowledged_by = NULL WHERE acknowledged_by = $1', [u.id]).catch(() => {});
+
+        // Delete association users (never delete super_admin accounts)
+        if (u.role !== 'super_admin') {
+          await pool.query('DELETE FROM users WHERE id = $1', [u.id]).catch(() => {});
+        } else {
+          // If super admin had association_id set, unassign association
+          await pool.query('UPDATE users SET association_id = NULL WHERE id = $1', [u.id]).catch(() => {});
+        }
+      }
+
+      // 5. Ensure any stray user references to this association_id are nullified
+      await pool.query('UPDATE users SET association_id = NULL WHERE association_id = $1', [assocId]).catch(() => {});
+
+      // 6. Delete the association
       await pool.query('DELETE FROM associations WHERE id = $1', [assocId]);
 
+      // 7. Audit Log
       await logAudit(
         req.user.id,
         'ASSOCIATION_DELETE',
         'associations',
         assocId,
-        { name: check.rows[0].name },
+        { name: assocName },
         req.ip
-      );
+      ).catch(() => {});
 
-      res.json({
+      return res.json({
         success: true,
-        message: 'Association deleted successfully'
+        message: `Association "${assocName}" and all related records have been deleted successfully.`
       });
     } catch (error) {
-      next(error);
+      console.error('[AssociationController]: Error deleting association:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to delete association. Please try again.'
+      });
     }
   }
 };

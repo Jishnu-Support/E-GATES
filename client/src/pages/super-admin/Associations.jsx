@@ -1846,6 +1846,18 @@ export default function Associations() {
                               >
                                 Edit
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatModalType(null);
+                                  setDeleteAssoc(assoc);
+                                }}
+                                className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-bold text-[11px] transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                                title="Delete Association"
+                              >
+                                <HiTrash className="w-3.5 h-3.5 text-red-600" />
+                                <span>Delete</span>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1881,9 +1893,11 @@ export default function Associations() {
         onClose={() => setDeleteAssoc(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Layout Association"
-        message={`Are you sure you want to permanently delete "${deleteAssoc?.name}"? All related association records will be deleted.`}
+        message={`Are you sure you want to permanently delete "${deleteAssoc?.name}"? All related resident records, administrators, events, complaints, and documents under this layout will be permanently deleted.`}
         confirmText={isDeleting ? 'Deleting...' : 'Delete Permanently'}
-        variant="danger"
+        cancelText="Cancel"
+        isDanger={true}
+        isLoading={isDeleting}
       />
     </div>
   );
