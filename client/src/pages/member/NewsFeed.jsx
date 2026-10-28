@@ -151,14 +151,6 @@ export default function MemberNewsFeed() {
             Stay updated with official layout notices, meeting minutes, emergency advisories, and voice circulars.
           </p>
         </div>
-
-        <button
-          onClick={fetchNews}
-          title="Refresh Feed"
-          className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition self-start sm:self-auto"
-        >
-          <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600 dark:text-cyan-400' : ''}`} />
-        </button>
       </div>
 
       {/* Filter and Search Bar */}

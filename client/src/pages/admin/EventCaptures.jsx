@@ -475,15 +475,6 @@ export default function EventCaptures() {
                 <span>Upload Captures</span>
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={fetchCaptures}
-              title="Refresh Gallery"
-              className="p-3 bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 rounded-2xl transition text-white"
-            >
-              <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
           </div>
         </div>
 

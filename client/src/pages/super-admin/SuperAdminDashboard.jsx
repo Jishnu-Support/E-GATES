@@ -172,15 +172,6 @@ export default function SuperAdminDashboard() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={fetchData}
-            className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition"
-            title="Refresh Data"
-          >
-            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-
-          <button
-            type="button"
             onClick={() => setIsSuperAdminModalOpen(true)}
             className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-600/20 flex items-center gap-2 transition"
           >

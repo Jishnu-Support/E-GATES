@@ -353,13 +353,6 @@ export default function MemberSOSContacts() {
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={fetchContacts}
-            title="Refresh"
-            className="p-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer"
-          >
-            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin text-primary-600' : ''}`} />
-          </button>
-          <button
             onClick={handleOpenAddFamily}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition active:scale-95 cursor-pointer"
           >

@@ -474,14 +474,6 @@ export default function AdminManageUsers() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={fetchUsers}
-            title="Refresh user directory"
-            className="p-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition shadow-sm"
-          >
-            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin text-primary-600' : ''}`} />
-          </button>
-
           {canManageRoles && (
             <>
               {/* Change Roles & Main Admin Master Button */}

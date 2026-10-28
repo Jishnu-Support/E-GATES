@@ -281,17 +281,6 @@ export default function AdminComplaints() {
             Track and resolve resident grievances, examine attachment proofs, and update ticket statuses.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={fetchComplaints}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition shadow-sm"
-          >
-            <HiArrowPath className={`w-4 h-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
-        </div>
       </div>
 
       {/* Filter Tabs */}

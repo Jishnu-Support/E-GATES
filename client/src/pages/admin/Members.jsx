@@ -190,14 +190,6 @@ export default function AdminMembers() {
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={fetchMembers}
-            title="Refresh members"
-            className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
-          >
-            <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600' : ''}`} />
-          </button>
-
-          <button
             onClick={() => handleExport('excel')}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition"
           >

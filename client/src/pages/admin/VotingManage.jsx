@@ -681,14 +681,6 @@ export default function AdminVotingManage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => fetchPolls(selectedPoll?.id)}
-            title="Refresh"
-            className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
-          >
-            <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600 dark:text-cyan-400' : ''}`} />
-          </button>
-
-          <button
             onClick={() => setIsCreatePollOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-lg shadow-sm transition"
           >

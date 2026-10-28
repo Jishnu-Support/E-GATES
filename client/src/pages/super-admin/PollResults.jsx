@@ -112,15 +112,6 @@ export default function PollResults() {
             Platform-wide vendor selection polls, live resident vote metrics, and winning contract quotations.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={fetchPolls}
-          className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition self-start sm:self-auto"
-          title="Refresh Polls"
-        >
-          <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
       {/* Filter Toolbar */}

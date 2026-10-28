@@ -340,14 +340,6 @@ export default function MemberVotingPage() {
             Cast your resident ballot on maintenance contractors, security vendor quotations, and layout development decisions.
           </p>
         </div>
-
-        <button
-          onClick={() => fetchPolls(selectedPoll?.id)}
-          title="Refresh polls"
-          className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition self-start sm:self-auto"
-        >
-          <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600 dark:text-cyan-400' : ''}`} />
-        </button>
       </div>
 
       {/* Main Grid */}

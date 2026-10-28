@@ -520,15 +520,6 @@ export default function Associations() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={fetchAssociations}
-            className="p-2.5 text-gray-600 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition shadow-sm"
-            title="Refresh List"
-          >
-            <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-
-
           {/* Manage / Assign Admin Button */}
           <button
             onClick={() => handleOpenAdminModal(null)}

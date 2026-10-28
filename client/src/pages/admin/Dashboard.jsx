@@ -365,14 +365,6 @@ export default function AdminDashboard() {
             <HiMegaphone className="w-4 h-4 text-amber-300" />
             <span>Set Scrolling Ticker</span>
           </button>
-          <button
-            onClick={fetchDashboardData}
-            title="Refresh dashboard"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm transition cursor-pointer"
-          >
-            <HiArrowPath className={`w-4 h-4 text-gray-500 dark:text-gray-300 ${loading ? 'animate-spin text-primary-600 dark:text-primary-400' : ''}`} />
-            <span className="text-gray-700 dark:text-gray-200">Refresh</span>
-          </button>
         </div>
       </div>
 

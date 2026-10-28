@@ -98,15 +98,6 @@ export default function AuditLog() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={fetchLogs}
-            className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition"
-            title="Refresh Logs"
-          >
-            <HiArrowPath className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-
           {logs.length > 0 && (
             <button
               type="button"

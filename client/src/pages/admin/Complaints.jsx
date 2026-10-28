@@ -202,14 +202,6 @@ export default function AdminComplaints() {
             Track resident issues, assign repair priorities, log progress updates, and mark tickets resolved.
           </p>
         </div>
-
-        <button
-          onClick={fetchComplaints}
-          title="Refresh"
-          className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition self-start sm:self-auto"
-        >
-          <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-primary-600' : ''}`} />
-        </button>
       </div>
 
       {/* Filter and Table */}
