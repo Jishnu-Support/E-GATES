@@ -7,16 +7,20 @@ import { lazy } from 'react';
  */
 export function lazyWithRetry(componentImport) {
   return lazy(async () => {
-    const hasRefreshed = window.sessionStorage.getItem('lazy_chunk_retry_refreshed');
-
     try {
       const component = await componentImport();
+      // Clear flag upon successful load
       window.sessionStorage.removeItem('lazy_chunk_retry_refreshed');
       return component;
     } catch (error) {
       console.warn('Chunk load error occurred during navigation, auto-refreshing:', error);
-      if (!hasRefreshed) {
-        window.sessionStorage.setItem('lazy_chunk_retry_refreshed', 'true');
+      
+      const lastReload = window.sessionStorage.getItem('lazy_chunk_retry_refreshed');
+      const now = Date.now();
+      const recentlyReloaded = lastReload && (now - parseInt(lastReload, 10) < 8000);
+
+      if (!recentlyReloaded) {
+        window.sessionStorage.setItem('lazy_chunk_retry_refreshed', now.toString());
         window.location.reload();
         // Return a forever-pending promise so React stays calm while the browser reloads
         return new Promise(() => {});
