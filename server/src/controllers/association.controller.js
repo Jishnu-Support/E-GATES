@@ -141,6 +141,7 @@ const associationController = {
 
       let queryText = `
         SELECT a.id, a.name, a.city, a.address, a.logo, a.is_active, a.main_admin_id, a.created_at,
+               a.scrolling_announcement, a.is_scrolling_active,
                COUNT(DISTINCT u.id) FILTER (WHERE u.status = 'approved' AND u.role = 'member') as member_count,
                COUNT(DISTINCT adm.id) as admin_count,
                COALESCE(main_adm.name, (SELECT name FROM users WHERE association_id = a.id AND is_main_admin = true LIMIT 1), 'None Assigned') as main_admin_name,
@@ -170,7 +171,7 @@ const associationController = {
         queryText += ` WHERE ${conditions.join(' AND ')}`;
       }
 
-      queryText += ' GROUP BY a.id, main_adm.name ORDER BY a.name ASC';
+      queryText += ' GROUP BY a.id, a.scrolling_announcement, a.is_scrolling_active, main_adm.name ORDER BY a.name ASC';
 
       const result = await pool.query(queryText, params);
 

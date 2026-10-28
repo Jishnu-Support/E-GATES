@@ -3,9 +3,8 @@ import api from '../../services/api';
 import { useSocket } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
 
-const DEFAULT_ANNOUNCEMENT = 'Jishnu Infotech\nJishnu Learning Labs';
-
 export default function ScrollingAnnouncement({
+  associationId = null,
   previewText = null,
   previewActive = null,
   previewMode = false,
@@ -14,7 +13,10 @@ export default function ScrollingAnnouncement({
   const { user } = useAuth();
   const { socket } = useSocket();
 
-  const [rawText, setRawText] = useState(previewText !== null ? previewText : DEFAULT_ANNOUNCEMENT);
+  // Resolved association ID: explicit prop takes precedence, otherwise current user's association
+  const targetAssocId = associationId || user?.association_id || null;
+
+  const [rawText, setRawText] = useState(previewText !== null ? previewText : '');
   const [isActive, setIsActive] = useState(previewActive !== null ? previewActive : true);
 
   // Sync if preview props change (used in Admin Panel preview)
@@ -25,21 +27,36 @@ export default function ScrollingAnnouncement({
     }
   }, [previewMode, previewText, previewActive]);
 
-  // Fetch announcement from backend if not in preview mode
+  // Fetch announcement from backend for this specific association if not in preview mode
   useEffect(() => {
     if (previewMode) return;
+
+    // If there is no specific association context (e.g. guest or Super Admin without selected association), do not show
+    if (!targetAssocId) {
+      setRawText('');
+      setIsActive(false);
+      return;
+    }
+
     let isMounted = true;
 
     const fetchAnnouncement = async () => {
       try {
-        const res = await api.get('/news/scrolling-announcement');
+        const res = await api.get('/news/scrolling-announcement', {
+          params: { association_id: targetAssocId },
+        });
         if (isMounted && res.data?.data) {
-          const incomingText = res.data.data.scrolling_announcement;
-          setRawText(incomingText && incomingText.trim() ? incomingText : DEFAULT_ANNOUNCEMENT);
-          setIsActive(Boolean(res.data.data.is_scrolling_active));
+          const incomingText = res.data.data.scrolling_announcement || '';
+          setRawText(incomingText);
+          setIsActive(
+            Boolean(res.data.data.is_scrolling_active) && Boolean(incomingText.trim())
+          );
         }
       } catch (err) {
-        // Silently catch and use default
+        if (isMounted) {
+          setRawText('');
+          setIsActive(false);
+        }
       }
     };
 
@@ -48,21 +65,30 @@ export default function ScrollingAnnouncement({
     return () => {
       isMounted = false;
     };
-  }, [previewMode]);
+  }, [previewMode, targetAssocId]);
 
-  // Real-time socket sync
+  // Real-time socket sync: ONLY accept updates for our association
   useEffect(() => {
-    if (!socket || previewMode) return;
+    if (!socket || previewMode || !targetAssocId) return;
 
     const handleUpdate = (data) => {
-      if (data) {
-        if (data.scrolling_announcement !== undefined) {
-          const newText = data.scrolling_announcement;
-          setRawText(newText && newText.trim() ? newText : DEFAULT_ANNOUNCEMENT);
-        }
-        if (data.is_scrolling_active !== undefined) {
-          setIsActive(Boolean(data.is_scrolling_active));
-        }
+      if (!data) return;
+
+      // Strict association isolation: discard updates meant for another association!
+      if (data.association_id && Number(data.association_id) !== Number(targetAssocId)) {
+        return;
+      }
+
+      if (data.scrolling_announcement !== undefined) {
+        const newText = data.scrolling_announcement || '';
+        setRawText(newText);
+        const shouldBeActive =
+          data.is_scrolling_active !== undefined
+            ? Boolean(data.is_scrolling_active)
+            : isActive;
+        setIsActive(Boolean(shouldBeActive) && Boolean(newText.trim()));
+      } else if (data.is_scrolling_active !== undefined) {
+        setIsActive(Boolean(data.is_scrolling_active) && Boolean(rawText.trim()));
       }
     };
 
@@ -70,11 +96,11 @@ export default function ScrollingAnnouncement({
     return () => {
       socket.off('news:scrolling_updated', handleUpdate);
     };
-  }, [socket, previewMode]);
+  }, [socket, previewMode, targetAssocId, isActive, rawText]);
 
   // Split lines and sanitize messages (up to 6 lines)
   const messages = useMemo(() => {
-    const textToSplit = rawText || DEFAULT_ANNOUNCEMENT;
+    const textToSplit = rawText || '';
     return textToSplit
       .split('\n')
       .map((line) => line.trim())

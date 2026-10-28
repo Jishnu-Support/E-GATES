@@ -112,7 +112,9 @@ export default function AdminNewsManage() {
 
   const fetchScrollingAnnouncement = useCallback(async () => {
     try {
-      const res = await api.get('/news/scrolling-announcement');
+      const res = await api.get('/news/scrolling-announcement', {
+        params: user?.association_id ? { association_id: user.association_id } : {},
+      });
       if (res.data?.data) {
         setScrollingText(res.data.data.scrolling_announcement || '');
         setIsScrollingActive(Boolean(res.data.data.is_scrolling_active));
@@ -120,17 +122,18 @@ export default function AdminNewsManage() {
     } catch (err) {
       console.warn('Could not load scrolling announcement:', err.message);
     }
-  }, []);
+  }, [user?.association_id]);
 
   const handleSaveScrolling = async (e) => {
     if (e) e.preventDefault();
     try {
       setSavingScrolling(true);
       await api.put('/news/scrolling-announcement', {
+        association_id: user?.association_id,
         scrolling_announcement: scrollingText,
         is_scrolling_active: isScrollingActive,
       });
-      toast.success('Scrolling announcement updated for residents!');
+      toast.success(`Scrolling announcement updated for ${user?.association_name || 'your association'}!`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update scrolling announcement');
     } finally {
@@ -421,7 +424,7 @@ export default function AdminNewsManage() {
               </span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              One message per line, up to six messages. The text scrolls continuously across the header for residents.
+              One message per line, up to six messages. The text scrolls continuously across the header specifically for residents of <strong className="text-emerald-700 dark:text-emerald-400">{user?.association_name || 'your association'}</strong>. Other associations will not see this.
             </p>
           </div>
 

@@ -78,7 +78,9 @@ export default function AdminDashboard() {
 
   const fetchScrollingAnnouncement = useCallback(async () => {
     try {
-      const res = await api.get('/news/scrolling-announcement');
+      const res = await api.get('/news/scrolling-announcement', {
+        params: user?.association_id ? { association_id: user.association_id } : {},
+      });
       if (res.data?.data) {
         setScrollingText(res.data.data.scrolling_announcement || '');
         setIsScrollingActive(Boolean(res.data.data.is_scrolling_active));
@@ -86,17 +88,18 @@ export default function AdminDashboard() {
     } catch (err) {
       // Silently catch
     }
-  }, []);
+  }, [user?.association_id]);
 
   const handleSaveScrolling = async (e) => {
     if (e) e.preventDefault();
     try {
       setSavingScrolling(true);
       await api.put('/news/scrolling-announcement', {
+        association_id: user?.association_id,
         scrolling_announcement: scrollingText,
         is_scrolling_active: isScrollingActive,
       });
-      toast.success('Scrolling announcement submitted and live for residents!');
+      toast.success(`Scrolling announcement live for ${user?.association_name || 'your association'}!`);
       setIsScrollingModalOpen(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update scrolling announcement');
@@ -1139,13 +1142,13 @@ export default function AdminDashboard() {
         <Modal
           isOpen={isScrollingModalOpen}
           onClose={() => setIsScrollingModalOpen(false)}
-          title="📢 Configure Resident Scrolling Announcement"
+          title={`📢 Configure Scrolling Announcement — ${user?.association_name || 'Your Association'}`}
           size="lg"
         >
           <div className="space-y-4 p-2">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Enter messages to scroll continuously across the top of the Resident Portal. One message per line, up to 6 messages.
+                Announce news or notices specifically for residents of <strong className="text-emerald-700 dark:text-emerald-400">{user?.association_name || 'your association'}</strong>. One message per line, up to 6 messages. Other associations will not see this.
               </p>
             </div>
 

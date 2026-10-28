@@ -436,32 +436,44 @@ const newsController = {
    */
   async getScrollingAnnouncement(req, res, next) {
     try {
-      const { role, association_id: userAssocId } = req.user;
+      const { role, association_id: userAssocId } = req.user || {};
       const assocId = req.query.association_id ? parseInt(req.query.association_id, 10) : userAssocId;
 
-      let assoc = null;
-      if (assocId) {
-        const result = await pool.query(
-          'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations WHERE id = $1',
-          [assocId]
-        );
-        assoc = result.rows[0];
+      if (!assocId) {
+        // Unauthenticated or Super Admin with no association specified:
+        // Do not leak any single association's announcement!
+        return res.json({
+          success: true,
+          data: {
+            association_id: null,
+            association_name: null,
+            scrolling_announcement: '',
+            is_scrolling_active: false
+          }
+        });
       }
 
-      if (!assoc) {
-        const fallback = await pool.query(
-          'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations ORDER BY id ASC LIMIT 1'
-        );
-        assoc = fallback.rows[0];
+      const result = await pool.query(
+        'SELECT id, name, scrolling_announcement, is_scrolling_active FROM associations WHERE id = $1',
+        [assocId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Association not found'
+        });
       }
 
-      const defaultText = 'Jishnu Infotech\nJishnu Learning Labs';
-      const text = assoc?.scrolling_announcement?.trim() ? assoc.scrolling_announcement : defaultText;
-      const isActive = assoc ? (assoc.is_scrolling_active === 1 || assoc.is_scrolling_active === true) : true;
+      const assoc = result.rows[0];
+      const text = assoc.scrolling_announcement ? assoc.scrolling_announcement.trim() : '';
+      const isActive = (assoc.is_scrolling_active === 1 || assoc.is_scrolling_active === true) && Boolean(text);
 
       return res.json({
         success: true,
         data: {
+          association_id: assoc.id,
+          association_name: assoc.name,
           scrolling_announcement: text,
           is_scrolling_active: isActive
         }
@@ -487,7 +499,15 @@ const newsController = {
       if (!targetAssocId) {
         return res.status(400).json({
           success: false,
-          message: 'Association ID is required'
+          message: 'Association ID is required to set scrolling announcement'
+        });
+      }
+
+      // Security check: Layout admins can ONLY post for their own association!
+      if (role !== 'super_admin' && Number(targetAssocId) !== Number(userAssocId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized: You can only announce for your own association'
         });
       }
 
@@ -514,16 +534,19 @@ const newsController = {
       const updated = result.rows[0];
       const payload = {
         association_id: targetAssocId,
+        association_name: updated.name,
         scrolling_announcement: updated.scrolling_announcement || '',
-        is_scrolling_active: updated.is_scrolling_active === 1 || updated.is_scrolling_active === true
+        is_scrolling_active: (updated.is_scrolling_active === 1 || updated.is_scrolling_active === true) && Boolean(updated.scrolling_announcement && updated.scrolling_announcement.trim())
       };
 
-      // Broadcast via socket
+      // Broadcast ONLY to the specific association room and super_admin room
       try {
         const io = getIO();
         if (io) {
+          // Emit strictly to members and admins of this association
           io.to(`association_${targetAssocId}`).emit('news:scrolling_updated', payload);
-          io.emit('news:scrolling_updated', payload);
+          // Also notify super admin room for oversight
+          io.to('super_admin').emit('news:scrolling_updated', payload);
         }
       } catch (err) {
         console.error('Socket error on news:scrolling_updated:', err.message);
@@ -531,7 +554,7 @@ const newsController = {
 
       return res.json({
         success: true,
-        message: 'Scrolling announcement updated successfully',
+        message: `Scrolling announcement updated for ${updated.name}`,
         data: payload
       });
     } catch (error) {
