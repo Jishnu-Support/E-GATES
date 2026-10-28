@@ -403,7 +403,7 @@ export default function Profile() {
       await api.delete(`/users/${user.id}/family-members/${removingFamily.id}`, {
         data: { removal_reason: finalReason },
       });
-      toast.success(`${removingFamily.name} removed from active household directory.`);
+      toast.success(`${removingFamily.name} removed from active family members.`);
       setRemovingFamily(null);
       await fetchFamilyMembers();
     } catch (err) {
@@ -1551,7 +1551,7 @@ export default function Profile() {
       </div>
       )}
 
-      {/* Section 4: Family Members & Household Directory - Excluded for Super Admin */}
+      {/* Section 4: Family Members - Excluded for Super Admin */}
       {!isSuperAdmin && (
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
         {/* Header */}
@@ -1563,14 +1563,14 @@ export default function Profile() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
-                  Family Members & Household Directory
+                  Family Members
                 </h2>
                 <span className="px-2 py-0.5 bg-teal-50 border border-teal-200 text-teal-700 text-[11px] font-bold rounded-full">
                   {familyMembers.filter((m) => m.is_active).length} Active
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                Maintain household records, emergency contacts, relationships, and blood groups.
+                Maintain family records, emergency contacts, relationships, and blood groups.
               </p>
             </div>
           </div>
@@ -1600,7 +1600,7 @@ export default function Profile() {
               No family members added yet
             </h4>
             <p className="text-[11px] sm:text-xs text-gray-500 max-w-md mb-4">
-              Add your spouse, children, parents, or other household members to keep your community directory up-to-date and enable emergency contact coordination.
+              Add your spouse, children, parents, or other family members to keep your family directory up-to-date and enable emergency contact coordination.
             </p>
             <button
               type="button"
@@ -2751,7 +2751,7 @@ export default function Profile() {
         <form onSubmit={handleSaveFamily} className="space-y-4">
           <p className="text-xs text-gray-500">
             {editingFamily
-              ? 'Update details for this household family member.'
+              ? 'Update details for this family member.'
               : 'Add a new family member residing at your plot/door number.'}
           </p>
 
