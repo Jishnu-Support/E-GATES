@@ -24,8 +24,10 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import AudioPlayer from '../../components/common/AudioPlayer';
 import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function AdminNewsManage() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
