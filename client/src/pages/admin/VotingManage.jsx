@@ -9,6 +9,7 @@ import {
   HiArrowDownTray,
   HiArrowPath,
   HiUserGroup,
+  HiUsers,
   HiBuildingStorefront,
   HiCurrencyRupee,
   HiDocumentText,
@@ -1286,23 +1287,23 @@ export default function AdminVotingManage() {
         <form onSubmit={handleCreatePoll} className="space-y-5">
           {/* Step 1: Poll Type Toggle */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-2">
               Select Poll Type *
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'vendor_selection' })}
-                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'vendor_selection'
-                    ? 'border-primary-600 bg-primary-50/50 text-primary-900 ring-1 ring-primary-500'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-primary-600 bg-primary-50/70 text-primary-950 dark:bg-primary-950/40 dark:border-primary-400 dark:text-primary-100 ring-2 ring-primary-500/20'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
-                <HiWrenchScrewdriver className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5" />
+                <HiWrenchScrewdriver className="w-5 h-5 text-primary-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-xs font-bold">Service Vendor Selection</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     Compare contractor quotes (plumber, electrician, painter).
                   </p>
                 </div>
@@ -1311,16 +1312,16 @@ export default function AdminVotingManage() {
               <button
                 type="button"
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'resolution_passing' })}
-                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'resolution_passing'
-                    ? 'border-purple-600 bg-purple-50/50 text-purple-900 ring-1 ring-purple-500'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-purple-600 bg-purple-50/70 text-purple-950 dark:bg-purple-950/40 dark:border-purple-400 dark:text-purple-100 ring-2 ring-purple-500/20'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
-                <HiScale className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <HiScale className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-xs font-bold">Resolution Passing (Yes/No)</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     Layout decisions, streetlights, gates with Yes / No member ballot.
                   </p>
                 </div>
@@ -1329,16 +1330,16 @@ export default function AdminVotingManage() {
               <button
                 type="button"
                 onClick={() => setPollForm({ ...pollForm, poll_type: 'election' })}
-                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                   pollForm.poll_type === 'election'
-                    ? 'border-amber-600 bg-amber-50/60 text-amber-950 ring-1 ring-amber-500'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-amber-600 bg-amber-50/80 text-amber-950 dark:bg-amber-950/40 dark:border-amber-400 dark:text-amber-100 ring-2 ring-amber-500/20'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white dark:bg-slate-800/60 dark:border-slate-700 dark:hover:border-slate-600 dark:text-gray-300'
                 }`}
               >
                 <span className="text-xl flex-shrink-0 mt-0.5">🗳️</span>
                 <div>
-                  <h4 className="text-xs font-bold text-amber-950">Association Election Polling</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
+                  <h4 className="text-xs font-bold">Association Election Polling</h4>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     Executive committee election (all roles or single role) with polling officers & secret ballot.
                   </p>
                 </div>
@@ -1349,13 +1350,13 @@ export default function AdminVotingManage() {
           {/* Conditional Controls by Poll Type */}
           {pollForm.poll_type === 'vendor_selection' && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Service Category *
               </label>
               <select
                 value={pollForm.service_category}
                 onChange={(e) => setPollForm({ ...pollForm, service_category: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
                 {SERVICE_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -1368,13 +1369,13 @@ export default function AdminVotingManage() {
 
           {pollForm.poll_type === 'resolution_passing' && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Resolution Task / Project Type *
               </label>
               <select
                 value={pollForm.resolution_task_type}
                 onChange={(e) => setPollForm({ ...pollForm, resolution_task_type: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500"
               >
                 {RESOLUTION_TASK_TYPES.map((task) => (
                   <option key={task} value={task}>
@@ -1387,49 +1388,49 @@ export default function AdminVotingManage() {
 
           {/* Election Setup Section */}
           {pollForm.poll_type === 'election' && (
-            <div className="space-y-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
+            <div className="space-y-4 p-4 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40">
               {/* Multi-Role Election Scope Banner */}
-              <div className="p-3.5 bg-amber-100/70 rounded-xl border border-amber-300">
+              <div className="p-3.5 bg-amber-100/70 dark:bg-amber-900/40 rounded-xl border border-amber-300 dark:border-amber-700/60">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-base">🏛️</span>
-                    <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                    <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                       Multi-Role Association Election
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-amber-900 dark:text-amber-200 bg-amber-200/80 dark:bg-amber-800/60 px-2.5 py-0.5 rounded-full">
                     {pollForm.election_roles_builder.length} {pollForm.election_roles_builder.length === 1 ? 'Role' : 'Roles'} Configured
                   </span>
                 </div>
-                <p className="text-[11px] text-amber-800 mt-1 leading-snug">
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-1 leading-snug">
                   Role #1 is mandatory. If you want to elect multiple posts (e.g. President, Secretary, Treasurer), use the <strong>"+ Add Another Role"</strong> button below.
                 </p>
               </div>
 
               {/* Polling Officers Assignment */}
-              <div className="pt-2 border-t border-amber-200/60 space-y-3">
+              <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-900">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
                     Official Polling Officers (Nominated by Admin) *
                   </label>
-                  <span className="text-[10px] bg-amber-200/80 text-amber-900 font-bold px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-amber-200/80 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200 font-bold px-2 py-0.5 rounded-full">
                     2 Officers Required
                   </span>
                 </div>
-                <p className="text-[11px] text-amber-800">
+                <p className="text-[11px] text-amber-800 dark:text-amber-300">
                   Select 1 resident member as the Internal Polling Officer, and enter 1 outside observer as the External Polling Officer.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Internal Polling Officer (Picked from Association Members) */}
-                  <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
-                    <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-900/50 space-y-2">
+                    <span className="text-xs font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
                       🏛️ Internal Polling Officer (Resident Member) *
                     </span>
                     <select
                       value={pollForm.internal_officer_id}
                       onChange={(e) => handleInternalOfficerSelect(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
                       required
                     >
                       <option value="">-- Choose Approved Member --</option>
@@ -1440,16 +1441,16 @@ export default function AdminVotingManage() {
                       ))}
                     </select>
                     {pollForm.internal_officer_contact && (
-                      <p className="text-[11px] text-gray-500 italic">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 italic">
                         Contact: {pollForm.internal_officer_contact}
                       </p>
                     )}
                   </div>
 
-                  {/* External Polling Officer (Choose Approved Member or Enter Outside Observer) */}
-                  <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                  {/* External Polling Officer */}
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-900/50 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
                         🌐 External Polling Officer *
                       </span>
                       <button
@@ -1464,7 +1465,7 @@ export default function AdminVotingManage() {
                             external_officer_org: '',
                           }));
                         }}
-                        className="text-[10px] text-amber-700 hover:text-amber-900 underline font-semibold"
+                        className="text-[10px] text-amber-700 dark:text-amber-300 hover:underline font-semibold"
                       >
                         {pollForm.external_officer_is_manual ? 'Choose from Members' : 'Enter Outside Person'}
                       </button>
@@ -1475,7 +1476,7 @@ export default function AdminVotingManage() {
                         <select
                           value={pollForm.external_officer_id || ''}
                           onChange={(e) => handleExternalOfficerSelect(e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100"
                           required={!pollForm.external_officer_is_manual}
                         >
                           <option value="">-- Choose Approved Member --</option>
@@ -1491,7 +1492,7 @@ export default function AdminVotingManage() {
                           ))}
                         </select>
                         {pollForm.external_officer_name && (
-                          <p className="text-[11px] text-gray-500 italic mt-1">
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 italic mt-1">
                             Selected: {pollForm.external_officer_name} ({pollForm.external_officer_contact})
                           </p>
                         )}
@@ -1504,7 +1505,7 @@ export default function AdminVotingManage() {
                           placeholder="Outside Observer Full Name *"
                           value={pollForm.external_officer_name}
                           onChange={(e) => setPollForm({ ...pollForm, external_officer_name: e.target.value })}
-                          className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-amber-500"
                         />
                         <div className="grid grid-cols-2 gap-2">
                           <input
@@ -1512,14 +1513,14 @@ export default function AdminVotingManage() {
                             placeholder="Phone / Contact"
                             value={pollForm.external_officer_contact}
                             onChange={(e) => setPollForm({ ...pollForm, external_officer_contact: e.target.value })}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg"
+                            className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg"
                           />
                           <input
                             type="text"
                             placeholder="Agency / Designation"
                             value={pollForm.external_officer_org}
                             onChange={(e) => setPollForm({ ...pollForm, external_officer_org: e.target.value })}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg"
+                            className="w-full px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg"
                           />
                         </div>
                       </div>
@@ -1532,7 +1533,7 @@ export default function AdminVotingManage() {
 
           {/* Title & Description */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Poll Title *
             </label>
             <input
@@ -1547,12 +1548,12 @@ export default function AdminVotingManage() {
               }
               value={pollForm.title}
               onChange={(e) => setPollForm({ ...pollForm, title: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Description / Proposal Details
             </label>
             <textarea
@@ -1560,132 +1561,241 @@ export default function AdminVotingManage() {
               placeholder="Provide background, quotation summaries, cost sharing, and guidelines for voters..."
               value={pollForm.description}
               onChange={(e) => setPollForm({ ...pollForm, description: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           {/* Target Audience / Voter Eligibility */}
           {pollForm.poll_type === 'election' ? (
-            <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 space-y-1.5">
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/50 space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-amber-950">
+                <label className="block text-xs font-bold uppercase tracking-wider text-amber-950 dark:text-amber-200">
                   Voter Eligibility (This Association Only)
                 </label>
-                <span className="text-[10px] bg-amber-200 text-amber-950 font-extrabold px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] bg-amber-200 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 font-extrabold px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">
                   Current Layout Only
                 </span>
               </div>
-              <p className="text-xs font-bold text-gray-800">
-                ✓ All Approved Resident Members of This Layout ({associationMembers.length} Members)
+              <p className="text-xs font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
+                <HiCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                All Approved Resident Members of This Layout ({associationMembers.length} Members)
               </p>
-              <p className="text-[11px] text-gray-600">
+              <p className="text-[11px] text-gray-600 dark:text-gray-400">
                 Franchise is restricted strictly to approved residents of this community layout. External or other associations cannot view or vote.
               </p>
             </div>
           ) : (
-            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2">
+            <div className="bg-gray-50 dark:bg-slate-800/60 p-4 rounded-xl border border-gray-200 dark:border-slate-700 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Voter Eligibility & Target Audience (This Layout Only) *
                 </label>
-                <span className="text-[10px] text-gray-500 font-semibold">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                   Restricted to this layout
                 </span>
               </div>
-              <div className="flex flex-wrap gap-4 text-xs font-medium text-gray-700">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="target_audience"
-                    checked={pollForm.target_audience === 'all'}
-                    onChange={() => setPollForm({ ...pollForm, target_audience: 'all' })}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span>All Residents of This Layout</span>
-                </label>
 
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="target_audience"
-                    checked={pollForm.target_audience === 'street'}
-                    onChange={() => setPollForm({ ...pollForm, target_audience: 'street' })}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span>Specific Street / Block (This Layout Only)</span>
-                </label>
+              {/* Modern User-Friendly Interactive Selection Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1. All Residents */}
+                <div
+                  onClick={() => setPollForm({ ...pollForm, target_audience: 'all' })}
+                  className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between select-none ${
+                    pollForm.target_audience === 'all'
+                      ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20 shadow-xs'
+                      : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      pollForm.target_audience === 'all'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                    }`}>
+                      <HiUsers className="w-4 h-4" />
+                    </div>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                      pollForm.target_audience === 'all'
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-gray-300 dark:border-slate-600'
+                    }`}>
+                      {pollForm.target_audience === 'all' && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <div className="mt-2.5">
+                    <h5 className="text-xs font-bold leading-tight">All Residents</h5>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                      Full layout franchise ({associationMembers.length} members)
+                    </p>
+                  </div>
+                </div>
 
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="target_audience"
-                    checked={pollForm.target_audience === 'selected'}
-                    onChange={() => setPollForm({ ...pollForm, target_audience: 'selected' })}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span>Designated Committee / Selected Members</span>
-                </label>
+                {/* 2. Specific Street / Block */}
+                <div
+                  onClick={() => setPollForm({ ...pollForm, target_audience: 'street' })}
+                  className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between select-none ${
+                    pollForm.target_audience === 'street'
+                      ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-100 ring-2 ring-blue-500/20 shadow-xs'
+                      : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      pollForm.target_audience === 'street'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300'
+                    }`}>
+                      <HiMapPin className="w-4 h-4" />
+                    </div>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                      pollForm.target_audience === 'street'
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-gray-300 dark:border-slate-600'
+                    }`}>
+                      {pollForm.target_audience === 'street' && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <div className="mt-2.5">
+                    <h5 className="text-xs font-bold leading-tight">Specific Street / Block</h5>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                      Restrict to a designated lane, cross, or sector
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Designated Committee */}
+                <div
+                  onClick={() => setPollForm({ ...pollForm, target_audience: 'selected' })}
+                  className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between select-none ${
+                    pollForm.target_audience === 'selected'
+                      ? 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/40 text-purple-950 dark:text-purple-100 ring-2 ring-purple-500/20 shadow-xs'
+                      : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      pollForm.target_audience === 'selected'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300'
+                    }`}>
+                      <HiUserGroup className="w-4 h-4" />
+                    </div>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                      pollForm.target_audience === 'selected'
+                        ? 'border-purple-600 bg-purple-600 text-white'
+                        : 'border-gray-300 dark:border-slate-600'
+                    }`}>
+                      {pollForm.target_audience === 'selected' && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <div className="mt-2.5">
+                    <h5 className="text-xs font-bold leading-tight">Designated Committee</h5>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                      Hand-pick committee members
+                    </p>
+                  </div>
+                </div>
               </div>
 
+              {/* Conditional: Street Input */}
               {pollForm.target_audience === 'street' && (
-                <div className="pt-2">
-                  <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-900/60 space-y-1.5">
+                  <label className="block text-[11px] font-bold text-blue-900 dark:text-blue-200">
                     Specify Target Street / Block Name (e.g. 1st Cross Street, Main Avenue):
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 1st Cross Street"
-                    value={pollForm.target_street}
-                    onChange={(e) => setPollForm({ ...pollForm, target_street: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
+                  <div className="relative">
+                    <HiMapPin className="w-4 h-4 text-blue-500 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 1st Cross Street, Block B"
+                      value={pollForm.target_street}
+                      onChange={(e) => setPollForm({ ...pollForm, target_street: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-blue-300 dark:border-blue-800 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               )}
 
+              {/* Conditional: Selected Committee Members */}
               {pollForm.target_audience === 'selected' && (
-                <div className="pt-2 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-gray-600">
-                      Select Committee Members Allowed to Vote:
-                    </label>
-                    <span className="text-[10px] text-primary-600 font-bold">
-                      {(pollForm.target_user_ids || []).length} selected
-                    </span>
+                <div className="p-3.5 bg-purple-50/60 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/60 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-purple-950 dark:text-purple-200">
+                        Select Committee Members Allowed to Vote:
+                      </label>
+                      <p className="text-[11px] text-purple-800/80 dark:text-purple-300">
+                        Only checked members will have access to vote on this ballot.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] bg-purple-200 dark:bg-purple-900/80 text-purple-950 dark:text-purple-200 font-bold px-2.5 py-0.5 rounded-full">
+                        {(pollForm.target_user_ids || []).length} / {associationMembers.length} Selected
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allIds = associationMembers.map((m) => m.id);
+                          const isAllSelected = (pollForm.target_user_ids || []).length === allIds.length;
+                          setPollForm({
+                            ...pollForm,
+                            target_user_ids: isAllSelected ? [] : allIds,
+                          });
+                        }}
+                        className="text-[11px] text-purple-700 dark:text-purple-300 hover:underline font-bold cursor-pointer"
+                      >
+                        {(pollForm.target_user_ids || []).length === associationMembers.length ? 'Clear All' : 'Select All'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1 bg-white">
+
+                  <div className="max-h-48 overflow-y-auto border border-purple-200 dark:border-slate-700 rounded-xl p-2 space-y-1 bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-750">
                     {associationMembers.length === 0 ? (
-                      <p className="text-xs text-gray-400 p-2">No approved members found in this layout.</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 p-3 text-center">No approved members found in this layout.</p>
                     ) : (
                       associationMembers.map((m) => {
                         const isChecked = (pollForm.target_user_ids || []).includes(m.id);
                         return (
                           <label
                             key={m.id}
-                            className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer text-xs"
+                            className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition ${
+                              isChecked
+                                ? 'bg-purple-50/70 dark:bg-purple-950/40 text-purple-950 dark:text-purple-200'
+                                : 'hover:bg-gray-50 dark:hover:bg-slate-700/60 text-gray-700 dark:text-gray-300'
+                            }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setPollForm({
-                                    ...pollForm,
-                                    target_user_ids: [...(pollForm.target_user_ids || []), m.id],
-                                  });
-                                } else {
-                                  setPollForm({
-                                    ...pollForm,
-                                    target_user_ids: (pollForm.target_user_ids || []).filter((id) => id !== m.id),
-                                  });
-                                }
-                              }}
-                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                            />
-                            <span className="font-semibold text-gray-800">{m.name}</span>
-                            <span className="text-gray-400 text-[11px]">
-                              ({m.email} {m.door_number ? `• Door: ${m.door_number}` : ''})
-                            </span>
+                            <div className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setPollForm({
+                                      ...pollForm,
+                                      target_user_ids: [...(pollForm.target_user_ids || []), m.id],
+                                    });
+                                  } else {
+                                    setPollForm({
+                                      ...pollForm,
+                                      target_user_ids: (pollForm.target_user_ids || []).filter((id) => id !== m.id),
+                                    });
+                                  }
+                                }}
+                                className="rounded border-gray-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500"
+                              />
+                              <div>
+                                <span className="font-bold text-gray-900 dark:text-white block">{m.name}</span>
+                                <span className="text-[11px] text-gray-400 dark:text-gray-500 block">
+                                  {m.email} {m.phone ? `• ${m.phone}` : ''}
+                                </span>
+                              </div>
+                            </div>
+                            {m.door_number && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                                Door {m.door_number}
+                              </span>
+                            )}
                           </label>
                         );
                       })
@@ -1700,13 +1810,13 @@ export default function AdminVotingManage() {
           {pollForm.poll_type === 'vendor_selection' ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Vendor Candidates / Options ({pollForm.vendors.length})
                 </label>
                 <button
                   type="button"
                   onClick={handleAddVendorOption}
-                  className="text-xs font-bold text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                  className="text-xs font-bold text-primary-600 dark:text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <HiPlus className="w-3.5 h-3.5" /> Add Another Vendor Option
                 </button>
@@ -1715,17 +1825,17 @@ export default function AdminVotingManage() {
               {pollForm.vendors.map((vendor, vIdx) => (
                 <div
                   key={vIdx}
-                  className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2 relative"
+                  className="p-3 bg-gray-50 dark:bg-slate-800/70 border border-gray-200 dark:border-slate-700 rounded-xl space-y-2 relative"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-primary-800">
+                    <span className="text-[11px] font-bold text-primary-800 dark:text-cyan-300">
                       Option #{vIdx + 1}
                     </span>
                     {pollForm.vendors.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveVendorOption(vIdx)}
-                        className="text-gray-400 hover:text-red-600 p-1"
+                        className="text-gray-400 hover:text-red-600 p-1 cursor-pointer"
                         title="Remove Option"
                       >
                         <HiTrash className="w-3.5 h-3.5" />
@@ -1740,21 +1850,21 @@ export default function AdminVotingManage() {
                       placeholder="Vendor / Agency Name *"
                       value={vendor.name}
                       onChange={(e) => handleVendorFieldChange(vIdx, 'name', e.target.value)}
-                      className="px-2.5 py-1.5 text-xs bg-white border border-gray-300 rounded-lg"
+                      className="px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                     />
                     <input
                       type="number"
                       placeholder="Quotation (₹)"
                       value={vendor.quotation}
                       onChange={(e) => handleVendorFieldChange(vIdx, 'quotation', e.target.value)}
-                      className="px-2.5 py-1.5 text-xs bg-white border border-gray-300 rounded-lg"
+                      className="px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                     />
                     <input
                       type="text"
                       placeholder="Contact / Phone"
                       value={vendor.contact}
                       onChange={(e) => handleVendorFieldChange(vIdx, 'contact', e.target.value)}
-                      className="px-2.5 py-1.5 text-xs bg-white border border-gray-300 rounded-lg"
+                      className="px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                     />
                   </div>
                   <input
@@ -1762,20 +1872,20 @@ export default function AdminVotingManage() {
                     placeholder="Short proposal notes or terms (optional)"
                     value={vendor.notes}
                     onChange={(e) => handleVendorFieldChange(vIdx, 'notes', e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-300 rounded-lg"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
               ))}
             </div>
           ) : pollForm.poll_type === 'resolution_passing' ? (
             /* Resolution passing Yes/No note */
-            <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 flex items-center justify-between text-xs text-purple-900">
+            <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-900/50 flex items-center justify-between text-xs text-purple-900 dark:text-purple-200">
               <span className="font-semibold">Automatic Ballot Options:</span>
               <div className="flex gap-2">
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-bold">
                   ✓ Yes (In Favor / Approve)
                 </span>
-                <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">
+                <span className="px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 font-bold">
                   ✗ No (Against / Reject)
                 </span>
               </div>
@@ -1785,10 +1895,10 @@ export default function AdminVotingManage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-900">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
                     Executive Committee Roles & Candidates ({pollForm.election_roles_builder.length} {pollForm.election_roles_builder.length === 1 ? 'Role' : 'Roles'}) *
                   </label>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
                     Role #1 is mandatory. If you want to elect multiple roles, click "+ Add Another Role" to configure more posts.
                   </p>
                 </div>
@@ -1796,7 +1906,7 @@ export default function AdminVotingManage() {
                 <button
                   type="button"
                   onClick={handleAddElectionRole}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 hover:text-amber-950 bg-amber-200/90 hover:bg-amber-300 px-3 py-1.5 rounded-lg border border-amber-400 transition cursor-pointer shadow-xs active:scale-95"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 dark:text-amber-100 hover:text-amber-950 bg-amber-200/90 dark:bg-amber-800/60 hover:bg-amber-300 px-3 py-1.5 rounded-lg border border-amber-400 dark:border-amber-700 transition cursor-pointer shadow-xs active:scale-95"
                 >
                   <HiPlus className="w-3.5 h-3.5" />
                   <span>+ Add Another Role</span>
@@ -1806,7 +1916,7 @@ export default function AdminVotingManage() {
               {pollForm.election_roles_builder.map((roleObj, rIdx) => (
                 <div
                   key={rIdx}
-                  className="p-4 bg-amber-50/40 rounded-xl border border-amber-200 space-y-3"
+                  className="p-4 bg-amber-50/40 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/40 space-y-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 flex items-center gap-2">
@@ -1815,8 +1925,8 @@ export default function AdminVotingManage() {
                       </span>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-0.5">
-                          <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900">
-                            Role #{rIdx + 1} Post Name * {rIdx === 0 ? <span className="text-red-600 font-bold">(Mandatory Role)</span> : <span className="text-amber-700 font-medium">(Additional Role)</span>}
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                            Role #{rIdx + 1} Post Name * {rIdx === 0 ? <span className="text-red-600 dark:text-red-400 font-bold">(Mandatory Role)</span> : <span className="text-amber-700 dark:text-amber-300 font-medium">(Additional Role)</span>}
                           </label>
                         </div>
                         <input
@@ -1825,7 +1935,7 @@ export default function AdminVotingManage() {
                           placeholder={rIdx === 0 ? "e.g. President" : rIdx === 1 ? "e.g. Secretary" : rIdx === 2 ? "e.g. Treasurer" : "e.g. Vice President"}
                           value={roleObj.role_name}
                           onChange={(e) => handleRoleNameChange(rIdx, e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs bg-white font-bold text-gray-900 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 font-bold text-gray-900 dark:text-white border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 placeholder-gray-400 dark:placeholder-gray-500"
                         />
                       </div>
                     </div>
@@ -1834,7 +1944,7 @@ export default function AdminVotingManage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveElectionRole(rIdx)}
-                        className="text-gray-400 hover:text-red-600 p-1.5 self-end mb-1 cursor-pointer transition rounded-lg hover:bg-red-50"
+                        className="text-gray-400 hover:text-red-600 p-1.5 self-end mb-1 cursor-pointer transition rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
                         title="Remove this role"
                       >
                         <HiTrash className="w-4 h-4" />
@@ -1843,15 +1953,15 @@ export default function AdminVotingManage() {
                   </div>
 
                   {/* Contesting Candidates under this role */}
-                  <div className="space-y-2 pt-2 border-t border-amber-200/50">
+                  <div className="space-y-2 pt-2 border-t border-amber-200/50 dark:border-amber-900/40">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black text-amber-950 uppercase tracking-wide">
+                      <span className="text-[11px] font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                         🏛️ {roleObj.role_name ? `${roleObj.role_name} Election` : 'Role'} — Contesting Members ({(roleObj.candidates || []).length})
                       </span>
                       <button
                         type="button"
                         onClick={() => handleAddCandidateToRole(rIdx)}
-                        className="text-[11px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1"
+                        className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <HiPlus className="w-3 h-3" /> Add Candidate
                       </button>
@@ -1860,17 +1970,17 @@ export default function AdminVotingManage() {
                     {(roleObj.candidates || []).map((cand, cIdx) => (
                       <div
                         key={cIdx}
-                        className="p-2.5 bg-white rounded-lg border border-gray-200 space-y-2"
+                        className="p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 space-y-2"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold text-gray-500">
+                          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
                             Candidate #{cIdx + 1}
                           </span>
                           {roleObj.candidates.length > 1 && (
                             <button
                               type="button"
                               onClick={() => handleRemoveCandidateFromRole(rIdx, cIdx)}
-                              className="text-gray-400 hover:text-red-600 p-0.5"
+                              className="text-gray-400 hover:text-red-600 p-0.5 cursor-pointer"
                               title="Remove Candidate"
                             >
                               <HiTrash className="w-3.5 h-3.5" />
@@ -1885,14 +1995,14 @@ export default function AdminVotingManage() {
                             placeholder="Candidate Full Name *"
                             value={cand.name}
                             onChange={(e) => handleCandidateFieldChange(rIdx, cIdx, 'name', e.target.value)}
-                            className="px-2.5 py-1 text-xs border border-gray-300 rounded-lg"
+                            className="px-2.5 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                           />
                           <input
                             type="text"
                             placeholder="Door / Contact / Flat Details"
                             value={cand.contact}
                             onChange={(e) => handleCandidateFieldChange(rIdx, cIdx, 'contact', e.target.value)}
-                            className="px-2.5 py-1 text-xs border border-gray-300 rounded-lg"
+                            className="px-2.5 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                           />
                         </div>
                         <input
@@ -1900,7 +2010,7 @@ export default function AdminVotingManage() {
                           placeholder="Candidate manifesto or note (optional)"
                           value={cand.notes}
                           onChange={(e) => handleCandidateFieldChange(rIdx, cIdx, 'notes', e.target.value)}
-                          className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded-lg"
+                          className="w-full px-2.5 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
                         />
                       </div>
                     ))}
@@ -1913,7 +2023,7 @@ export default function AdminVotingManage() {
           {/* Scheduling Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Start Date & Time *
               </label>
               <input
@@ -1921,12 +2031,12 @@ export default function AdminVotingManage() {
                 required
                 value={pollForm.start_date}
                 onChange={(e) => setPollForm({ ...pollForm, start_date: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 End Date & Time *
               </label>
               <input
@@ -1934,14 +2044,14 @@ export default function AdminVotingManage() {
                 required
                 value={pollForm.end_date}
                 onChange={(e) => setPollForm({ ...pollForm, end_date: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
           {/* Anonymous Ballot Checkbox */}
           <div>
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700 dark:text-gray-300">
               <input
                 type="checkbox"
                 checked={pollForm.is_anonymous}
@@ -1952,19 +2062,19 @@ export default function AdminVotingManage() {
             </label>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsCreatePollOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm disabled:opacity-50 transition"
+              className="px-5 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm disabled:opacity-50 transition cursor-pointer"
             >
               {submitting ? 'Creating Poll...' : 'Start Scheduled Poll'}
             </button>
@@ -1981,7 +2091,7 @@ export default function AdminVotingManage() {
       >
         <form onSubmit={handleAddVendor} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Vendor / Option Name *
             </label>
             <input
@@ -1990,13 +2100,13 @@ export default function AdminVotingManage() {
               placeholder="e.g. Master Plumbing Services"
               value={vendorForm.name}
               onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Company / Agency
               </label>
               <input
@@ -2004,12 +2114,12 @@ export default function AdminVotingManage() {
                 placeholder="e.g. Master Enterprises"
                 value={vendorForm.company}
                 onChange={(e) => setVendorForm({ ...vendorForm, company: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
                 Contact Person / Phone
               </label>
               <input
@@ -2017,13 +2127,13 @@ export default function AdminVotingManage() {
                 placeholder="e.g. 9876543210"
                 value={vendorForm.contact}
                 onChange={(e) => setVendorForm({ ...vendorForm, contact: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Quotation (INR ₹)
             </label>
             <input
@@ -2031,12 +2141,12 @@ export default function AdminVotingManage() {
               placeholder="e.g. 45000"
               value={vendorForm.quotation}
               onChange={(e) => setVendorForm({ ...vendorForm, quotation: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 mb-1">
               Proposal Notes
             </label>
             <textarea
@@ -2044,23 +2154,23 @@ export default function AdminVotingManage() {
               placeholder="Warranty terms, completion timeline, etc."
               value={vendorForm.notes}
               onChange={(e) => setVendorForm({ ...vendorForm, notes: e.target.value })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
             <button
               type="button"
               disabled={submitting}
               onClick={() => setIsAddVendorOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm disabled:opacity-50 transition"
+              className="px-5 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm disabled:opacity-50 transition cursor-pointer"
             >
               {submitting ? 'Adding...' : 'Add Proposal'}
             </button>
