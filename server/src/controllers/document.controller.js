@@ -37,8 +37,20 @@ const documentController = {
         });
       }
 
-      const filePath = req.file.path.replace(/\\/g, '/');
-      const fileType = req.file.mimetype || path.extname(req.file.originalname).slice(1);
+      // Helper to store clean relative upload path
+      const normalizeUploadPath = (p) => {
+        if (!p) return null;
+        const normalized = p.replace(/\\/g, '/');
+        const idx = normalized.indexOf('uploads/');
+        return idx !== -1 ? normalized.substring(idx) : normalized;
+      };
+
+      const filePath = normalizeUploadPath(req.file.path);
+      const ext = path.extname(req.file.originalname || '').toLowerCase().replace(/^\./, '');
+      const rawMime = req.file.mimetype || '';
+      // If MIME type exceeds 50 chars (e.g. .xlsx or .docx OpenXML mimetypes with 65+ chars),
+      // use the clean extension 'xlsx' / 'docx' to prevent VARCHAR(50) overflow on all PostgreSQL instances
+      const fileType = rawMime && rawMime.length <= 50 ? rawMime : (ext || rawMime.substring(0, 50));
       const fileSize = req.file.size;
 
       const insertQuery = `

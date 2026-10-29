@@ -134,12 +134,15 @@ const fileFilter = (req, file, cb) => {
     } else {
       cb(new Error('Invalid audio format. Allowed: MP3, WAV, WEBM, M4A, OGG'), false);
     }
-  } else if (ALL_ALLOWED_MIMES.includes(file.mimetype)) {
+  } else if (
+    ALL_ALLOWED_MIMES.includes(file.mimetype) ||
+    /\.(pdf|doc|docx|xls|xlsx|csv|txt|png|jpe?g|webp|gif|mp3|wav|webm|mp4)$/i.test(file.originalname || '')
+  ) {
     cb(null, true);
   } else {
     cb(
       new Error(
-        `Invalid file format for "${file.fieldname}". Allowed formats: PDF, JPG, JPEG, PNG, MP3, WAV, WEBM`
+        `Invalid file format for "${file.fieldname}". Allowed formats: PDF, DOC, DOCX, XLS, XLSX, CSV, JPG, JPEG, PNG, MP3, WAV, WEBM`
       ),
       false
     );
@@ -189,7 +192,12 @@ const uploadVotingVendor = multer({
 const uploadDocument = multer({
   storage: createDiskStorage('documents'),
   fileFilter: (req, file, cb) => {
-    if (DOC_IMAGE_MIMES.includes(file.mimetype) || file.mimetype.startsWith('application/') || file.mimetype.startsWith('image/')) {
+    if (
+      DOC_IMAGE_MIMES.includes(file.mimetype) ||
+      file.mimetype.startsWith('application/') ||
+      file.mimetype.startsWith('image/') ||
+      /\.(pdf|doc|docx|xls|xlsx|csv|txt|png|jpe?g|webp)$/i.test(file.originalname || '')
+    ) {
       cb(null, true);
     } else {
       cb(new Error('Document must be PDF, DOC, DOCX, XLS, XLSX, CSV, TXT, or Image (max 25MB)'), false);

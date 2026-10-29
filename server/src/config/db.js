@@ -63,6 +63,7 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE sos_alerts ADD CONSTRAINT sos_alerts_association_id_fkey FOREIGN KEY (association_id) REFERENCES associations(id) ON DELETE CASCADE;
       ALTER TABLE sos_contacts DROP CONSTRAINT IF EXISTS sos_contacts_contact_type_check;
       ALTER TABLE event_captures ALTER COLUMN file_size TYPE BIGINT;
+      ALTER TABLE documents ALTER COLUMN file_type TYPE VARCHAR(255);
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration

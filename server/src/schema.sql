@@ -208,7 +208,7 @@ CREATE TABLE IF NOT EXISTS documents (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   file_path VARCHAR(500) NOT NULL,
-  file_type VARCHAR(50),
+  file_type VARCHAR(255),
   file_size INTEGER,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
