@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath, HiArrowDownTray, HiExclamationTriangle } from 'react-icons/hi2';
+import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath, HiArrowDownTray, HiExclamationTriangle, HiBolt } from 'react-icons/hi2';
 import { getFileUrl } from '../../services/api';
 
 export default function AudioPlayer({ src, title = 'Voice Message', initialDuration = 0, className = '' }) {
@@ -9,7 +9,11 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
   const [duration, setDuration] = useState(initialDuration || 0);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState(false);
+  const [isBoosted, setIsBoosted] = useState(false);
   const knownDurationRef = useRef(initialDuration || 0);
+
+  const boostAudioCtxRef = useRef(null);
+  const boostGainRef = useRef(null);
 
   // Sync initial duration if passed
   useEffect(() => {
@@ -53,29 +57,13 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
 
     const handleLoadedMetadata = () => {
       audio.volume = 1.0;
+      audio.muted = isMuted;
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
         knownDurationRef.current = audio.duration;
       } else if (initialDuration && initialDuration > 0) {
         setDuration(initialDuration);
         knownDurationRef.current = initialDuration;
-      } else {
-        // Safe WebM duration probe: seek to end to read duration, then restore 0
-        try {
-          const originalTime = audio.currentTime;
-          audio.currentTime = 1e101;
-          const onSeekProbe = () => {
-            audio.removeEventListener('seeked', onSeekProbe);
-            if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
-              setDuration(audio.duration);
-              knownDurationRef.current = audio.duration;
-            }
-            audio.currentTime = originalTime;
-          };
-          audio.addEventListener('seeked', onSeekProbe, { once: true });
-        } catch {
-          // ignore seek error
-        }
       }
       setError(false);
     };
@@ -96,7 +84,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
         setDuration(audio.duration);
         knownDurationRef.current = audio.duration;
       } else if (!knownDurationRef.current || knownDurationRef.current <= 0) {
-        // Live streaming duration indicator
+        // Dynamic live streaming duration tracker
         setDuration((prev) => Math.max(prev || 0, cur));
       }
 
@@ -217,6 +205,39 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     setIsMuted(nextMuted);
   };
 
+  // 2.5x Volume Booster for quiet microphones or faint audio recordings
+  const toggleBoost = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      if (!boostAudioCtxRef.current) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const srcNode = ctx.createMediaElementSource(audio);
+          const gain = ctx.createGain();
+          srcNode.connect(gain);
+          gain.connect(ctx.destination);
+          boostAudioCtxRef.current = ctx;
+          boostGainRef.current = gain;
+        }
+      }
+
+      if (boostAudioCtxRef.current && boostAudioCtxRef.current.state === 'suspended') {
+        boostAudioCtxRef.current.resume();
+      }
+
+      const next = !isBoosted;
+      if (boostGainRef.current) {
+        boostGainRef.current.gain.value = next ? 2.5 : 1.0;
+      }
+      setIsBoosted(next);
+    } catch (err) {
+      console.warn('Audio boost error:', err);
+    }
+  };
+
   const formatTime = (timeInSeconds) => {
     if (isNaN(timeInSeconds) || timeInSeconds === Infinity || timeInSeconds <= 0) return '0:00';
     const mins = Math.floor(timeInSeconds / 60);
@@ -317,6 +338,22 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer disabled:opacity-40"
       >
         <HiArrowPath className="w-4 h-4" />
+      </button>
+
+      {/* 2.5x Audio Volume Booster for Quiet Devices / Faint Recordings */}
+      <button
+        type="button"
+        onClick={toggleBoost}
+        disabled={!audioUrl}
+        title={isBoosted ? 'Audio boosted 2.5x (Click to reset)' : 'Click to amplify audio volume 2.5x'}
+        className={`inline-flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold border transition cursor-pointer disabled:opacity-40 ${
+          isBoosted
+            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 shadow-2xs'
+            : 'bg-white dark:bg-slate-700/60 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-slate-600 hover:text-gray-700'
+        }`}
+      >
+        <HiBolt className={`w-3 h-3 ${isBoosted ? 'text-amber-500' : 'text-gray-400'}`} />
+        <span>{isBoosted ? '2.5x' : 'Boost'}</span>
       </button>
 
       {/* Direct Download/Test File Button */}

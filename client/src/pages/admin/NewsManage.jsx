@@ -225,31 +225,52 @@ export default function AdminNewsManage() {
         setRecordedAudioUrl(null);
       }
 
-      let stream;
+      // 1. Get raw microphone stream without aggressive echo-cancellation voice filtering
+      let rawStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        rawStream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
+            echoCancellation: false,
+            noiseSuppression: false,
             autoGainControl: true,
           },
         });
       } catch (err) {
-        console.warn('Constrained getUserMedia failed, retrying simple audio stream:', err);
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.warn('Raw getUserMedia fallback:', err);
+        rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
 
-      // Attach Web Audio Analyser for live visual feedback
+      // 2. Active Web Audio amplification pipeline (boosts quiet mics & guarantees un-suspended clock)
+      let recordStream = rawStream;
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
           const ctx = new AudioCtx();
-          const source = ctx.createMediaStreamSource(stream);
+          if (ctx.state === 'suspended') {
+            await ctx.resume();
+          }
+
+          const source = ctx.createMediaStreamSource(rawStream);
+
+          // Boost microphone input by 2.5x so voice is loud, full, and clear
+          const gainNode = ctx.createGain();
+          gainNode.gain.value = 2.5;
+
+          const destination = ctx.createMediaStreamDestination();
+          source.connect(gainNode);
+          gainNode.connect(destination);
+
+          // Connect to analyser for live level feedback
           const analyser = ctx.createAnalyser();
           analyser.fftSize = 64;
-          source.connect(analyser);
+          gainNode.connect(analyser);
+
           audioContextRef.current = ctx;
           analyserRef.current = analyser;
+
+          if (destination && destination.stream && destination.stream.getAudioTracks().length > 0) {
+            recordStream = destination.stream;
+          }
 
           const dataArray = new Uint8Array(analyser.frequencyBinCount);
           const checkLevel = () => {
@@ -265,7 +286,7 @@ export default function AdminNewsManage() {
           checkLevel();
         }
       } catch (analyserErr) {
-        console.warn('Live audio analyser unavailable:', analyserErr);
+        console.warn('Live audio analyser/gain unavailable:', analyserErr);
       }
 
       const mimeType = getSupportedMimeType();
@@ -274,7 +295,7 @@ export default function AdminNewsManage() {
         audioBitsPerSecond: 128000,
       };
 
-      const mediaRecorder = new MediaRecorder(stream, options);
+      const mediaRecorder = new MediaRecorder(recordStream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -295,7 +316,10 @@ export default function AdminNewsManage() {
         setRecordedDuration(elapsedSecs);
         setFormData((prev) => ({ ...prev, audioBlob }));
         setRemoveExistingVoice(false);
-        stream.getTracks().forEach((track) => track.stop());
+        rawStream.getTracks().forEach((track) => track.stop());
+        if (recordStream !== rawStream) {
+          recordStream.getTracks().forEach((track) => track.stop());
+        }
         stopAnalyser();
       };
 
