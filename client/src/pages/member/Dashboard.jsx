@@ -273,8 +273,7 @@ export default function MemberDashboard() {
         </h1>
 
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1 max-w-lg mx-auto">
-          Welcome back, <strong className="text-gray-800 dark:text-white font-bold">{user?.name}</strong>{' '}
-          {user?.door_no ? `(Door #${user.door_no})` : ''} • Member Code:{' '}
+          Welcome back, <strong className="text-gray-800 dark:text-white font-bold">{user?.name}</strong> • Member Code:{' '}
           <span className="font-mono font-bold text-primary-700 dark:text-cyan-400">{user?.member_code || 'PENDING'}</span>
         </p>
       </div>
