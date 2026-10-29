@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath } from 'react-icons/hi2';
+import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath, HiArrowDownTray } from 'react-icons/hi2';
 import { getFileUrl } from '../../services/api';
 
 export default function AudioPlayer({ src, title = 'Voice Message', initialDuration = 0, className = '' }) {
@@ -27,6 +27,8 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     setIsPlaying(false);
     setCurrentTime(0);
     setError(false);
+    audio.volume = 1.0;
+    audio.muted = isMuted;
 
     try {
       audio.load();
@@ -35,6 +37,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     }
 
     const handleLoadedMetadata = () => {
+      audio.volume = 1.0;
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
       } else if (initialDuration && initialDuration > 0) {
@@ -52,11 +55,24 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     const handleTimeUpdate = () => {
       const cur = audio.currentTime || 0;
       setCurrentTime(cur);
+
+      let totalDur = duration;
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
-        setDuration(audio.duration);
+        totalDur = audio.duration;
+        setDuration(totalDur);
       } else {
-        // Fallback: track highest position reached or initialDuration
-        setDuration((prev) => Math.max(prev || 0, cur, initialDuration || 0));
+        totalDur = Math.max(duration || 0, cur, initialDuration || 0);
+        setDuration(totalDur);
+      }
+
+      // Auto-detect when audio reaches the end (prevents player getting stuck on WebM streams)
+      const endThreshold = totalDur > 0 ? totalDur - 0.15 : 0;
+      if (endThreshold > 0 && cur >= endThreshold) {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        if (audio) {
+          audio.currentTime = 0;
+        }
       }
     };
 
@@ -89,7 +105,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioUrl, initialDuration]);
+  }, [audioUrl, initialDuration, isMuted]);
 
   const effectiveDuration = duration > 0 ? duration : (initialDuration > 0 ? initialDuration : (currentTime > 0 ? currentTime : 0));
   const percent = effectiveDuration > 0 ? Math.min(100, Math.max(0, (currentTime / effectiveDuration) * 100)) : 0;
@@ -102,8 +118,16 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.pause();
       setIsPlaying(false);
     } else {
+      audio.volume = 1.0;
+      audio.muted = isMuted;
+
       // If at end or near end, rewind to start before playing
-      if (audio.ended || (audio.duration && !isNaN(audio.duration) && audio.currentTime >= audio.duration - 0.1) || (effectiveDuration > 0 && currentTime >= effectiveDuration - 0.1)) {
+      const isAtEnd =
+        audio.ended ||
+        (audio.duration && !isNaN(audio.duration) && audio.currentTime >= audio.duration - 0.15) ||
+        (effectiveDuration > 0 && currentTime >= effectiveDuration - 0.15);
+
+      if (isAtEnd) {
         audio.currentTime = 0;
         setCurrentTime(0);
       }
@@ -131,27 +155,41 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     const audio = audioRef.current;
     if (!audio) return;
     const seekTime = Number(e.target.value);
-    audio.currentTime = seekTime;
     setCurrentTime(seekTime);
+    try {
+      audio.currentTime = seekTime;
+    } catch {
+      // Seek catch for unbuffered streams
+    }
   };
 
   const handleReplay = () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !audioUrl) return;
+    audio.pause();
     audio.currentTime = 0;
     setCurrentTime(0);
-    audio.play().then(() => {
-      setIsPlaying(true);
-      setError(false);
-    }).catch(() => {
-      setIsPlaying(false);
-    });
+    audio.volume = 1.0;
+    audio.muted = isMuted;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+          setError(false);
+        })
+        .catch((err) => {
+          console.warn('Replay error:', err);
+          setIsPlaying(false);
+        });
+    }
   };
 
   const toggleMute = () => {
     if (!audioRef.current) return;
-    audioRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    const nextMuted = !isMuted;
+    audioRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
   };
 
   const formatTime = (timeInSeconds) => {
@@ -163,7 +201,14 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
 
   return (
     <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/90 rounded-xl border border-gray-200 dark:border-slate-700 w-full shadow-2xs ${className}`}>
-      <audio key={audioUrl} ref={audioRef} src={audioUrl} preload="auto" playsInline />
+      <audio
+        key={audioUrl}
+        ref={audioRef}
+        src={audioUrl}
+        preload="auto"
+        playsInline
+        crossOrigin="anonymous"
+      />
 
       {/* Play/Pause Button */}
       <button
@@ -226,6 +271,20 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       >
         <HiArrowPath className="w-4 h-4" />
       </button>
+
+      {/* Direct Download/Test File Button */}
+      {audioUrl && (
+        <a
+          href={audioUrl}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Download audio file"
+          className="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+        >
+          <HiArrowDownTray className="w-4 h-4" />
+        </a>
+      )}
 
       {/* Mute button */}
       <button

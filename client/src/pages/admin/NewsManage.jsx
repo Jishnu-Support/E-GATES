@@ -89,12 +89,14 @@ export default function AdminNewsManage() {
   const [recordedDuration, setRecordedDuration] = useState(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState(null);
   const [removeExistingVoice, setRemoveExistingVoice] = useState(false);
+  const [isPlayingTestAudio, setIsPlayingTestAudio] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
   const recordingDurationRef = useRef(0);
   const recordingStartTimeRef = useRef(null);
   const audioFileInputRef = useRef(null);
+  const testAudioRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -182,9 +184,54 @@ export default function AdminNewsManage() {
     return '';
   };
 
-  // Start voice recorder
+  // Sound check / test playback for recorded audio
+  const handleToggleTestAudio = () => {
+    if (!recordedAudioUrl) return;
+
+    if (isPlayingTestAudio && testAudioRef.current) {
+      testAudioRef.current.pause();
+      testAudioRef.current.currentTime = 0;
+      setIsPlayingTestAudio(false);
+      return;
+    }
+
+    try {
+      if (testAudioRef.current) {
+        testAudioRef.current.pause();
+      }
+      const audio = new Audio(recordedAudioUrl);
+      audio.volume = 1.0;
+      testAudioRef.current = audio;
+
+      audio.onended = () => {
+        setIsPlayingTestAudio(false);
+      };
+      audio.onerror = () => {
+        setIsPlayingTestAudio(false);
+        toast.error('Unable to play audio sound test');
+      };
+
+      audio.play().then(() => {
+        setIsPlayingTestAudio(true);
+      }).catch((err) => {
+        console.warn('Test audio error:', err);
+        setIsPlayingTestAudio(false);
+        toast.error('Browser sound blocked or silent. Please check volume or output device.');
+      });
+    } catch (e) {
+      console.warn('Audio test error:', e);
+      setIsPlayingTestAudio(false);
+    }
+  };
+
+  // Start voice recorder with noise suppression, echo cancellation, and auto gain
   const startRecording = async () => {
     try {
+      if (testAudioRef.current) {
+        testAudioRef.current.pause();
+        setIsPlayingTestAudio(false);
+      }
+
       if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(recordedAudioUrl);
@@ -194,9 +241,21 @@ export default function AdminNewsManage() {
         setRecordedAudioUrl(null);
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
+
       const mimeType = getSupportedMimeType();
-      const options = mimeType ? { mimeType } : {};
+      const options = {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 128000,
+      };
+
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -243,6 +302,11 @@ export default function AdminNewsManage() {
   // Stop voice recorder
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.requestData();
+      } catch {
+        // ignore
+      }
       mediaRecorderRef.current.stop();
     }
     if (timerIntervalRef.current) {
@@ -253,6 +317,11 @@ export default function AdminNewsManage() {
 
   // Discard recording
   const discardRecording = () => {
+    if (testAudioRef.current) {
+      testAudioRef.current.pause();
+      testAudioRef.current.currentTime = 0;
+    }
+    setIsPlayingTestAudio(false);
     stopRecording();
     if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
       try {
@@ -542,6 +611,26 @@ export default function AdminNewsManage() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            {recordedAudioUrl && (
+              <button
+                type="button"
+                onClick={handleToggleTestAudio}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg font-bold transition cursor-pointer shadow-2xs"
+                title="Test audio sound through your speaker"
+              >
+                {isPlayingTestAudio ? (
+                  <>
+                    <HiStop className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <HiPlay className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Test Sound</span>
+                  </>
+                )}
+              </button>
+            )}
             <button
               type="button"
               onClick={startRecording}

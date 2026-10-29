@@ -51,7 +51,7 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 // Apply general rate limiting to API routes
 app.use('/api', generalLimiter);
 
-// Serve static uploads / attachments
+// Serve static uploads / attachments with audio & range support
 const uploadsPath = config.attachmentsPath || path.resolve(__dirname, '../uploads');
 if (!fs.existsSync(uploadsPath)) {
   try {
@@ -60,10 +60,21 @@ if (!fs.existsSync(uploadsPath)) {
     console.warn('Could not auto-create uploads directory:', err.message);
   }
 }
-app.use('/uploads', express.static(uploadsPath));
+
+const staticOptions = {
+  setHeaders: (res, filePath) => {
+    res.setHeader('Accept-Ranges', 'bytes');
+    const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+    if (normalized.includes('/audio/') && normalized.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'audio/webm; codecs=opus');
+    }
+  },
+};
+
+app.use('/uploads', express.static(uploadsPath, staticOptions));
 if (config.attachmentsPath) {
   // Also serve directly from attachments path in case old records stored the absolute path
-  app.use(config.attachmentsPath, express.static(uploadsPath));
+  app.use(config.attachmentsPath, express.static(uploadsPath, staticOptions));
 }
 
 // Universal Health Check endpoints (for Easypanel, Traefik, Docker Swarm, Kubernetes)
