@@ -107,7 +107,12 @@ const createDiskStorage = (defaultSubdir = 'documents') => {
       cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
+      let ext = path.extname(file.originalname || '').toLowerCase();
+      if (!ext && (file.fieldname === 'voice_message' || (file.mimetype && file.mimetype.startsWith('audio/')))) {
+        ext = file.mimetype && file.mimetype.includes('wav') ? '.wav' :
+              file.mimetype && file.mimetype.includes('mp4') ? '.mp4' :
+              file.mimetype && file.mimetype.includes('mpeg') ? '.mp3' : '.webm';
+      }
       const uniqueName = `${Date.now()}-${uuidv4()}${ext}`;
       cb(null, uniqueName);
     },
@@ -117,10 +122,17 @@ const createDiskStorage = (defaultSubdir = 'documents') => {
 // Common file filter
 const fileFilter = (req, file, cb) => {
   if (file.fieldname === 'voice_message') {
-    if (AUDIO_MIMES.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
+    const isAudioMime = file.mimetype && (
+      file.mimetype.startsWith('audio/') ||
+      file.mimetype.startsWith('video/webm') ||
+      file.mimetype === 'application/octet-stream' ||
+      AUDIO_MIMES.includes(file.mimetype)
+    );
+    const hasAudioExt = /\.(mp3|wav|webm|ogg|m4a|aac|mp4)$/i.test(file.originalname || '');
+    if (isAudioMime || hasAudioExt) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid audio format. Allowed: MP3, WAV, WEBM'), false);
+      cb(new Error('Invalid audio format. Allowed: MP3, WAV, WEBM, M4A, OGG'), false);
     }
   } else if (ALL_ALLOWED_MIMES.includes(file.mimetype)) {
     cb(null, true);

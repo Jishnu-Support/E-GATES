@@ -89,14 +89,16 @@ export default function AdminNewsManage() {
   const [recordedDuration, setRecordedDuration] = useState(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState(null);
   const [removeExistingVoice, setRemoveExistingVoice] = useState(false);
-  const [isPlayingTestAudio, setIsPlayingTestAudio] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
   const recordingDurationRef = useRef(0);
   const recordingStartTimeRef = useRef(null);
   const audioFileInputRef = useRef(null);
-  const testAudioRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -155,10 +157,18 @@ export default function AdminNewsManage() {
     fetchScrollingAnnouncement();
   }, [fetchPosts, fetchScrollingAnnouncement]);
 
-  // Clean recording timer on unmount
+  // Clean recording timer & audio context on unmount
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.close();
+        } catch {
+          // ignore
+        }
+      }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
@@ -184,53 +194,27 @@ export default function AdminNewsManage() {
     return '';
   };
 
-  // Sound check / test playback for recorded audio
-  const handleToggleTestAudio = () => {
-    if (!recordedAudioUrl) return;
-
-    if (isPlayingTestAudio && testAudioRef.current) {
-      testAudioRef.current.pause();
-      testAudioRef.current.currentTime = 0;
-      setIsPlayingTestAudio(false);
-      return;
+  const stopAnalyser = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
-
-    try {
-      if (testAudioRef.current) {
-        testAudioRef.current.pause();
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch {
+        // ignore
       }
-      const audio = new Audio(recordedAudioUrl);
-      audio.volume = 1.0;
-      testAudioRef.current = audio;
-
-      audio.onended = () => {
-        setIsPlayingTestAudio(false);
-      };
-      audio.onerror = () => {
-        setIsPlayingTestAudio(false);
-        toast.error('Unable to play audio sound test');
-      };
-
-      audio.play().then(() => {
-        setIsPlayingTestAudio(true);
-      }).catch((err) => {
-        console.warn('Test audio error:', err);
-        setIsPlayingTestAudio(false);
-        toast.error('Browser sound blocked or silent. Please check volume or output device.');
-      });
-    } catch (e) {
-      console.warn('Audio test error:', e);
-      setIsPlayingTestAudio(false);
+      audioContextRef.current = null;
     }
+    analyserRef.current = null;
+    setAudioLevel(0);
   };
 
-  // Start voice recorder with noise suppression, echo cancellation, and auto gain
+  // Start voice recorder with noise suppression, echo cancellation, auto gain & live level analyser
   const startRecording = async () => {
     try {
-      if (testAudioRef.current) {
-        testAudioRef.current.pause();
-        setIsPlayingTestAudio(false);
-      }
+      stopAnalyser();
 
       if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
         try {
@@ -241,14 +225,48 @@ export default function AdminNewsManage() {
         setRecordedAudioUrl(null);
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-        },
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      } catch (err) {
+        console.warn('Constrained getUserMedia failed, retrying simple audio stream:', err);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+
+      // Attach Web Audio Analyser for live visual feedback
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const source = ctx.createMediaStreamSource(stream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 64;
+          source.connect(analyser);
+          audioContextRef.current = ctx;
+          analyserRef.current = analyser;
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const checkLevel = () => {
+            if (analyserRef.current) {
+              analyserRef.current.getByteFrequencyData(dataArray);
+              let sum = 0;
+              for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+              const avg = sum / dataArray.length;
+              setAudioLevel(Math.min(100, Math.round((avg / 64) * 100)));
+              animFrameRef.current = requestAnimationFrame(checkLevel);
+            }
+          };
+          checkLevel();
+        }
+      } catch (analyserErr) {
+        console.warn('Live audio analyser unavailable:', analyserErr);
+      }
 
       const mimeType = getSupportedMimeType();
       const options = {
@@ -278,9 +296,11 @@ export default function AdminNewsManage() {
         setFormData((prev) => ({ ...prev, audioBlob }));
         setRemoveExistingVoice(false);
         stream.getTracks().forEach((track) => track.stop());
+        stopAnalyser();
       };
 
-      mediaRecorder.start(250);
+      // Start recording with 1-second chunks for clean cluster framing
+      mediaRecorder.start(1000);
       setIsRecording(true);
       setRecordingDuration(0);
       recordingDurationRef.current = 0;
@@ -295,34 +315,27 @@ export default function AdminNewsManage() {
       }, 1000);
     } catch (err) {
       console.error('Microphone error:', err);
-      toast.error('Microphone permission denied or not available.');
+      stopAnalyser();
+      toast.error('Microphone permission denied or microphone not found.');
     }
   };
 
   // Stop voice recorder
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      try {
-        mediaRecorderRef.current.requestData();
-      } catch {
-        // ignore
-      }
       mediaRecorderRef.current.stop();
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
+    stopAnalyser();
     setIsRecording(false);
   };
 
   // Discard recording
   const discardRecording = () => {
-    if (testAudioRef.current) {
-      testAudioRef.current.pause();
-      testAudioRef.current.currentTime = 0;
-    }
-    setIsPlayingTestAudio(false);
     stopRecording();
+    stopAnalyser();
     if (recordedAudioUrl && recordedAudioUrl.startsWith('blob:')) {
       try {
         URL.revokeObjectURL(recordedAudioUrl);
@@ -433,7 +446,15 @@ export default function AdminNewsManage() {
         data.append('attachment', formData.attachmentFile);
       }
       if (formData.audioBlob) {
-        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || 'voice_announcement.webm');
+        let ext = '.webm';
+        if (formData.audioBlob.type) {
+          if (formData.audioBlob.type.includes('mp4')) ext = '.mp4';
+          else if (formData.audioBlob.type.includes('wav')) ext = '.wav';
+          else if (formData.audioBlob.type.includes('ogg')) ext = '.ogg';
+          else if (formData.audioBlob.type.includes('mpeg')) ext = '.mp3';
+        }
+        const defaultFilename = `voice_circular_${Date.now()}${ext}`;
+        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || defaultFilename);
       }
 
       await api.post('/news', data);
@@ -467,7 +488,15 @@ export default function AdminNewsManage() {
         data.append('attachment', formData.attachmentFile);
       }
       if (formData.audioBlob) {
-        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || 'voice_announcement.webm');
+        let ext = '.webm';
+        if (formData.audioBlob.type) {
+          if (formData.audioBlob.type.includes('mp4')) ext = '.mp4';
+          else if (formData.audioBlob.type.includes('wav')) ext = '.wav';
+          else if (formData.audioBlob.type.includes('ogg')) ext = '.ogg';
+          else if (formData.audioBlob.type.includes('mpeg')) ext = '.mp3';
+        }
+        const defaultFilename = `voice_circular_${Date.now()}${ext}`;
+        data.append('voice_message', formData.audioBlob, formData.audioBlob.name || defaultFilename);
       } else if (removeExistingVoice) {
         data.append('remove_voice_message', 'true');
       }
@@ -542,33 +571,54 @@ export default function AdminNewsManage() {
     <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-gray-200 dark:border-slate-700 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
-          <HiSpeakerWave className="w-4 h-4 text-purple-600" />
+          <HiSpeakerWave className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           Audio Voice Broadcast (Tamil / English)
         </span>
         {recordedAudioUrl && (
-          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
-            Voice Ready
+          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
+            Voice Attached
           </span>
         )}
       </div>
 
       {isRecording ? (
-        <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-xl">
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold text-xs">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-            <span>Recording Voice Circular... ({recordingDuration}s)</span>
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+              </span>
+              <span>Recording Voice Circular... ({recordingDuration}s)</span>
+            </div>
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer"
+            >
+              <HiStop className="w-4 h-4" />
+              <span>Stop Recording</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={stopRecording}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
-          >
-            <HiStop className="w-4 h-4" />
-            <span>Stop Recording</span>
-          </button>
+
+          {/* Real-Time Microphone Audio Wave Visualizer */}
+          <div className="flex items-center gap-3 pt-1">
+            <div className="flex items-end gap-1 h-6 shrink-0">
+              {[0.3, 0.7, 1.0, 0.8, 0.4, 0.9, 0.6].map((scale, i) => {
+                const heightPct = Math.max(15, Math.min(100, (audioLevel || 10) * scale * 1.5));
+                return (
+                  <span
+                    key={i}
+                    className="w-1.5 bg-rose-500 rounded-full transition-all duration-75"
+                    style={{ height: `${heightPct}%` }}
+                  />
+                );
+              })}
+            </div>
+            <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">
+              {audioLevel > 5 ? '🎙️ Voice detected — microphone is recording clearly' : '🎙️ Speak clearly into your microphone...'}
+            </span>
+          </div>
         </div>
       ) : !recordedAudioUrl ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -582,7 +632,7 @@ export default function AdminNewsManage() {
           </button>
 
           <label className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-lg border border-gray-300 dark:border-slate-600 shadow-xs transition cursor-pointer">
-            <HiPaperClip className="w-4 h-4 text-purple-600" />
+            <HiPaperClip className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             <span>Upload Audio File (MP3 / WAV)</span>
             <input
               ref={audioFileInputRef}
@@ -594,60 +644,49 @@ export default function AdminNewsManage() {
           </label>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 shadow-2xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center justify-center flex-shrink-0">
-              <HiSpeakerWave className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900/70 p-4 rounded-xl border border-gray-200 dark:border-slate-700 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shrink-0">
+                <HiSpeakerWave className="w-4 h-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
+                  {formData.audioBlob?.name || 'Voice Circular Attached'}
+                </p>
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <HiCheckCircle className="w-3.5 h-3.5" />
+                  <span>Ready to broadcast{recordedDuration ? ` (${recordedDuration}s)` : ''}</span>
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
-                {formData.audioBlob?.name || 'Voice Message Attached'}
-              </p>
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
-                <HiCheckCircle className="w-3.5 h-3.5" />
-                <span>Voice attached & ready to publish{recordedDuration ? ` (${recordedDuration}s)` : ''}</span>
-              </p>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={startRecording}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-primary-600 dark:text-cyan-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg font-semibold transition cursor-pointer"
+              >
+                <HiArrowPath className="w-3.5 h-3.5" />
+                <span>Re-record</span>
+              </button>
+              <button
+                type="button"
+                onClick={discardRecording}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg font-semibold transition cursor-pointer"
+              >
+                <HiTrash className="w-3.5 h-3.5" />
+                <span>Remove</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {recordedAudioUrl && (
-              <button
-                type="button"
-                onClick={handleToggleTestAudio}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg font-bold transition cursor-pointer shadow-2xs"
-                title="Test audio sound through your speaker"
-              >
-                {isPlayingTestAudio ? (
-                  <>
-                    <HiStop className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Stop</span>
-                  </>
-                ) : (
-                  <>
-                    <HiPlay className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span>Test Sound</span>
-                  </>
-                )}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={startRecording}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-primary-600 dark:text-cyan-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg font-semibold transition cursor-pointer"
-            >
-              <HiArrowPath className="w-3.5 h-3.5" />
-              <span>Re-record</span>
-            </button>
-            <button
-              type="button"
-              onClick={discardRecording}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg font-semibold transition cursor-pointer"
-            >
-              <HiTrash className="w-3.5 h-3.5" />
-              <span>Delete</span>
-            </button>
-          </div>
+          {/* Embedded Full Audio Player for Instant Sound Preview */}
+          <AudioPlayer
+            src={recordedAudioUrl}
+            title="Voice Announcement Preview"
+            initialDuration={recordedDuration}
+          />
         </div>
       )}
     </div>

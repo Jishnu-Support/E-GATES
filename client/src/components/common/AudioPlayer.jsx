@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath, HiArrowDownTray } from 'react-icons/hi2';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { HiPlay, HiPause, HiSpeakerWave, HiSpeakerXMark, HiArrowPath, HiArrowDownTray, HiExclamationTriangle } from 'react-icons/hi2';
 import { getFileUrl } from '../../services/api';
 
 export default function AudioPlayer({ src, title = 'Voice Message', initialDuration = 0, className = '' }) {
@@ -9,16 +9,31 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
   const [duration, setDuration] = useState(initialDuration || 0);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState(false);
+  const knownDurationRef = useRef(initialDuration || 0);
 
   // Sync initial duration if passed
   useEffect(() => {
     if (initialDuration && initialDuration > 0) {
       setDuration(initialDuration);
+      knownDurationRef.current = initialDuration;
     }
   }, [initialDuration]);
 
   // Adjust URL if relative to backend uploads or full path
   const audioUrl = getFileUrl(src);
+
+  const resetPlayer = useCallback(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    const audio = audioRef.current;
+    if (audio) {
+      try {
+        audio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -40,8 +55,27 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.volume = 1.0;
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
+        knownDurationRef.current = audio.duration;
       } else if (initialDuration && initialDuration > 0) {
         setDuration(initialDuration);
+        knownDurationRef.current = initialDuration;
+      } else {
+        // Safe WebM duration probe: seek to end to read duration, then restore 0
+        try {
+          const originalTime = audio.currentTime;
+          audio.currentTime = 1e101;
+          const onSeekProbe = () => {
+            audio.removeEventListener('seeked', onSeekProbe);
+            if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
+              setDuration(audio.duration);
+              knownDurationRef.current = audio.duration;
+            }
+            audio.currentTime = originalTime;
+          };
+          audio.addEventListener('seeked', onSeekProbe, { once: true });
+        } catch {
+          // ignore seek error
+        }
       }
       setError(false);
     };
@@ -49,6 +83,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     const handleDurationChange = () => {
       if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setDuration(audio.duration);
+        knownDurationRef.current = audio.duration;
       }
     };
 
@@ -56,39 +91,29 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       const cur = audio.currentTime || 0;
       setCurrentTime(cur);
 
-      let totalDur = duration;
-      if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
-        totalDur = audio.duration;
-        setDuration(totalDur);
-      } else {
-        totalDur = Math.max(duration || 0, cur, initialDuration || 0);
-        setDuration(totalDur);
+      const hasFiniteDuration = audio.duration && audio.duration !== Infinity && !isNaN(audio.duration);
+      if (hasFiniteDuration) {
+        setDuration(audio.duration);
+        knownDurationRef.current = audio.duration;
+      } else if (!knownDurationRef.current || knownDurationRef.current <= 0) {
+        // Live streaming duration indicator
+        setDuration((prev) => Math.max(prev || 0, cur));
       }
 
-      // Auto-detect when audio reaches the end (prevents player getting stuck on WebM streams)
-      const endThreshold = totalDur > 0 ? totalDur - 0.15 : 0;
-      if (endThreshold > 0 && cur >= endThreshold) {
-        setIsPlaying(false);
-        setCurrentTime(0);
-        if (audio) {
-          audio.currentTime = 0;
-        }
+      // Check if finished naturally or near known end (prevents WebM hanging)
+      const targetDuration = hasFiniteDuration ? audio.duration : knownDurationRef.current;
+      if (targetDuration > 0.5 && cur >= targetDuration - 0.2) {
+        resetPlayer();
       }
     };
 
     const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-      if (audio) {
-        audio.currentTime = 0;
-      }
+      resetPlayer();
     };
 
     const handleError = () => {
       console.warn('Audio element error for url:', audioUrl);
-      if (!audioUrl) {
-        setError(true);
-      }
+      setError(true);
       setIsPlaying(false);
     };
 
@@ -105,7 +130,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioUrl, initialDuration, isMuted]);
+  }, [audioUrl, initialDuration, isMuted, resetPlayer]);
 
   const effectiveDuration = duration > 0 ? duration : (initialDuration > 0 ? initialDuration : (currentTime > 0 ? currentTime : 0));
   const percent = effectiveDuration > 0 ? Math.min(100, Math.max(0, (currentTime / effectiveDuration) * 100)) : 0;
@@ -121,11 +146,10 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
       audio.volume = 1.0;
       audio.muted = isMuted;
 
-      // If at end or near end, rewind to start before playing
+      // Rewind to start if already at end
       const isAtEnd =
         audio.ended ||
-        (audio.duration && !isNaN(audio.duration) && audio.currentTime >= audio.duration - 0.15) ||
-        (effectiveDuration > 0 && currentTime >= effectiveDuration - 0.15);
+        (effectiveDuration > 0.5 && currentTime >= effectiveDuration - 0.25);
 
       if (isAtEnd) {
         audio.currentTime = 0;
@@ -141,6 +165,7 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
             setError(false);
             if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
               setDuration(audio.duration);
+              knownDurationRef.current = audio.duration;
             }
           })
           .catch((err) => {
@@ -199,15 +224,37 @@ export default function AudioPlayer({ src, title = 'Voice Message', initialDurat
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  if (error) {
+    return (
+      <div className={`flex items-center justify-between p-3 bg-red-50 dark:bg-rose-950/30 rounded-xl border border-red-200 dark:border-rose-900/50 text-red-700 dark:text-red-300 text-xs ${className}`}>
+        <div className="flex items-center gap-2">
+          <HiExclamationTriangle className="w-4 h-4 text-red-500 shrink-0" />
+          <span className="font-medium">Audio announcement unavailable or moved</span>
+        </div>
+        {audioUrl && (
+          <a
+            href={audioUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-red-300 dark:border-rose-800 rounded font-bold text-[11px] hover:bg-red-50 transition"
+          >
+            Direct Link
+          </a>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/90 rounded-xl border border-gray-200 dark:border-slate-700 w-full shadow-2xs ${className}`}>
+      {/* Standard HTML5 Audio element without crossOrigin restriction */}
       <audio
         key={audioUrl}
         ref={audioRef}
         src={audioUrl}
         preload="auto"
         playsInline
-        crossOrigin="anonymous"
       />
 
       {/* Play/Pause Button */}

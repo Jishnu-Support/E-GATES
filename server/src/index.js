@@ -64,9 +64,19 @@ if (!fs.existsSync(uploadsPath)) {
 const staticOptions = {
   setHeaders: (res, filePath) => {
     res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     const normalized = filePath.replace(/\\/g, '/').toLowerCase();
-    if (normalized.includes('/audio/') && normalized.endsWith('.webm')) {
-      res.setHeader('Content-Type', 'audio/webm; codecs=opus');
+    if (normalized.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'audio/webm');
+    } else if (normalized.endsWith('.mp3')) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+    } else if (normalized.endsWith('.wav')) {
+      res.setHeader('Content-Type', 'audio/wav');
+    } else if (normalized.endsWith('.ogg')) {
+      res.setHeader('Content-Type', 'audio/ogg');
+    } else if (normalized.endsWith('.m4a')) {
+      res.setHeader('Content-Type', 'audio/mp4');
     }
   },
 };
