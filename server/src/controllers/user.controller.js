@@ -2150,6 +2150,29 @@ const userController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  /**
+   * Reset database (Wipe all data except Super Admin credentials)
+   * Super Admin only
+   */
+  async resetDatabase(req, res, next) {
+    try {
+      if (req.user.role !== 'super_admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden. Super Admin access required.' });
+      }
+
+      const { cleanDataKeepSuperAdmin } = require('../../scripts/reset_data_keep_superadmin');
+      const result = await cleanDataKeepSuperAdmin();
+
+      res.json({
+        success: true,
+        message: 'All database data wiped successfully, keeping only Super Admin credentials.',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

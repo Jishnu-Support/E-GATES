@@ -67,6 +67,18 @@ router.post(
 );
 
 /**
+ * @route   POST /api/v1/users/reset-database
+ * @desc    Wipe all database records keeping only Super Admin credentials
+ * @access  Private (Super Admin only)
+ */
+router.post(
+  '/reset-database',
+  authenticate,
+  authorize('super_admin'),
+  userController.resetDatabase
+);
+
+/**
  * @route   POST /api/v1/users/create-admin
  * @desc    Create an association admin
  * @access  Private (Super Admin, Main Association Admin)

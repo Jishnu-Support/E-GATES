@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "db:reset": "node scripts/reset_data_keep_superadmin.js"
   },
   "dependencies": {
     "axios": "^1.7.7",

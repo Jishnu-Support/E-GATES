@@ -53,6 +53,25 @@ export default function SuperAdminDashboard() {
   const [deleteItem, setDeleteItem] = useState(null); // { type: 'association' | 'user', id, name }
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Reset Database Modal
+  const [isResetDbModalOpen, setIsResetDbModalOpen] = useState(false);
+  const [isResettingDb, setIsResettingDb] = useState(false);
+
+  const handleResetDatabase = async () => {
+    try {
+      setIsResettingDb(true);
+      const res = await api.post('/users/reset-database');
+      toast.success(res.data?.message || 'Database reset successfully! All data cleared except Super Admin.');
+      setIsResetDbModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error('Reset database error:', err);
+      toast.error(err.response?.data?.message || 'Failed to reset database');
+    } finally {
+      setIsResettingDb(false);
+    }
+  };
+
   // Fetch initial data
   const fetchData = async () => {
     try {
@@ -170,6 +189,16 @@ export default function SuperAdminDashboard() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsResetDbModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition cursor-pointer"
+            title="Wipe all database records keeping only Super Admin credentials"
+          >
+            <HiTrash className="w-4 h-4 text-rose-600" />
+            <span>Reset Database</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsSuperAdminModalOpen(true)}
@@ -725,6 +754,17 @@ export default function SuperAdminDashboard() {
         }
         message={`Are you sure you want to permanently delete "${deleteItem?.name}"? This action cannot be undone.`}
         confirmText={isDeleting ? 'Deleting...' : 'Delete Permanently'}
+        variant="danger"
+      />
+
+      {/* CONFIRM RESET DATABASE DIALOG */}
+      <ConfirmDialog
+        isOpen={isResetDbModalOpen}
+        onClose={() => setIsResetDbModalOpen(false)}
+        onConfirm={handleResetDatabase}
+        title="⚠️ Wipe All Database Data (Except Super Admin)"
+        message="Are you sure you want to delete all database records? This will permanently wipe all associations, layout admins, resident accounts, news notices, polls, voting records, complaints, documents, events, and SOS alerts. Only Super Admin login credentials will be preserved. This action cannot be undone."
+        confirmText={isResettingDb ? 'Wiping Database...' : 'Yes, Delete Everything Except Super Admin'}
         variant="danger"
       />
     </div>
