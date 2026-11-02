@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS associations (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  code VARCHAR(50) UNIQUE,
   city VARCHAR(255),
   address TEXT,
   logo VARCHAR(500),

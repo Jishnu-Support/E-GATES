@@ -1,16 +1,18 @@
 -- Seed Data for Layout Association Management System
 
 -- 1. Create Sample Association
-INSERT INTO associations (id, name, city, address, is_active)
+INSERT INTO associations (id, name, code, city, address, is_active)
 VALUES (
   1,
   'Green Valley Residents Welfare Association',
+  'GVR',
   'Chennai',
   '123 Anna Nagar East, Chennai, Tamil Nadu 600102',
   true
 )
 ON CONFLICT (id) DO UPDATE 
 SET name = EXCLUDED.name,
+    code = EXCLUDED.code,
     city = EXCLUDED.city,
     address = EXCLUDED.address,
     is_active = EXCLUDED.is_active;

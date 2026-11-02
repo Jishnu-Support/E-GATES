@@ -5,6 +5,7 @@ const path = require('path');
 const pool = require('../config/db');
 const emailService = require('../services/email.service');
 const smsService = require('../services/sms.service');
+const { generateAssociationCode } = require('../utils/generateAssociationCode');
 
 // Normalize any uploaded file path into a web accessible /uploads/... URL
 const normalizeFilePath = (file, defaultDir = 'documents') => {
@@ -351,12 +352,14 @@ const authController = {
 
       await client.query('BEGIN');
 
-      // 1. Insert new association (inactive pending Super Admin approval)
+      // 1. Insert new association with auto-generated association code (inactive pending Super Admin approval)
+      const generatedCode = await generateAssociationCode(association_name.trim(), client);
+
       const assocRes = await client.query(
-        `INSERT INTO associations (name, city, address, logo, is_active)
-         VALUES ($1, $2, $3, $4, false)
+        `INSERT INTO associations (name, code, city, address, logo, is_active)
+         VALUES ($1, $2, $3, $4, $5, false)
          RETURNING *`,
-        [association_name.trim(), association_city.trim(), association_address ? association_address.trim() : null, logo]
+        [association_name.trim(), generatedCode, association_city.trim(), association_address ? association_address.trim() : null, logo]
       );
       const newAssoc = assocRes.rows[0];
 
@@ -462,7 +465,7 @@ const authController = {
 
       // Find user by email or phone
       const userResult = await pool.query(
-        `SELECT u.*, a.name as association_name, a.is_active as association_active
+        `SELECT u.*, a.name as association_name, a.code as association_code, a.is_active as association_active
          FROM users u
          LEFT JOIN associations a ON u.association_id = a.id
          WHERE LOWER(u.email) = LOWER($1) OR u.phone = $1 OR LOWER(u.name) = LOWER($1)`,
@@ -516,6 +519,17 @@ const authController = {
         });
       }
 
+      // If member login provides association_code, verify matching layout
+      if (user.role === 'member' && req.body.association_code && req.body.association_code.trim()) {
+        const inputCode = req.body.association_code.trim().toUpperCase();
+        if (user.association_code && user.association_code.toUpperCase() !== inputCode) {
+          return res.status(401).json({
+            success: false,
+            message: `Your resident account belongs to "${user.association_name || 'another layout'}" (Code: ${user.association_code}), not "${inputCode}".`
+          });
+        }
+      }
+
       // Verify password
       const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
@@ -541,6 +555,8 @@ const authController = {
         is_main_admin: Boolean(user.is_main_admin),
         designation: userDesignation,
         association_id: user.association_id,
+        association_name: user.association_name,
+        association_code: user.association_code,
         name: user.name,
         email: user.email,
         member_code: user.member_code
@@ -584,6 +600,7 @@ const authController = {
             designation: userDesignation,
             association_id: user.association_id,
             association_name: user.association_name,
+            association_code: user.association_code,
             member_code: user.member_code,
             door_no: user.door_no,
             street: user.street,
@@ -621,9 +638,11 @@ const authController = {
 
       // Check DB for matching valid token
       const tokenQuery = `
-        SELECT rt.*, u.id as user_id, u.name, u.email, u.role, u.is_main_admin, u.association_id, u.member_code, u.status
+        SELECT rt.*, u.id as user_id, u.name, u.email, u.role, u.is_main_admin, u.association_id, u.member_code, u.status,
+               a.name as association_name, a.code as association_code
         FROM refresh_tokens rt
         JOIN users u ON rt.user_id = u.id
+        LEFT JOIN associations a ON u.association_id = a.id
         WHERE rt.token = $1 AND rt.expires_at > NOW()
       `;
       const tokenResult = await pool.query(tokenQuery, [token]);
@@ -660,6 +679,8 @@ const authController = {
           is_main_admin: Boolean(user.is_main_admin),
           designation: userDesignation,
           association_id: user.association_id,
+          association_name: user.association_name,
+          association_code: user.association_code,
           name: user.name,
           email: user.email,
           member_code: user.member_code

@@ -172,6 +172,11 @@ export default function Header({ onMenuToggle, associationName }) {
         >
           {displayedTitle}
         </h1>
+        {user?.association_code && user?.role !== 'super_admin' && (
+          <p className="text-[10px] font-mono text-primary-600 dark:text-primary-400 font-bold">
+            Code: {user.association_code}
+          </p>
+        )}
         {user?.door_no && (
           <p className="text-[10px] text-gray-500 dark:text-gray-400 hidden lg:block">
             Door #{user.door_no} • {user.layout_name || 'Resident'}

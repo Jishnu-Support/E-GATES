@@ -1,5 +1,6 @@
 const path = require('path');
 const pool = require('../config/db');
+const { generateAssociationCode } = require('../utils/generateAssociationCode');
 
 // Normalize any uploaded file path into a web accessible /uploads/... URL
 const normalizeFilePath = (file, defaultDir = 'logos') => {
@@ -47,12 +48,13 @@ const associationController = {
       }
 
       const logo = req.file ? normalizeFilePath(req.file, 'logos') : null;
+      const generatedCode = await generateAssociationCode(name.trim(), pool);
 
       const result = await pool.query(
-        `INSERT INTO associations (name, city, address, logo, is_active)
-         VALUES ($1, $2, $3, $4, true)
+        `INSERT INTO associations (name, code, city, address, logo, is_active)
+         VALUES ($1, $2, $3, $4, $5, true)
          RETURNING *`,
-        [name.trim(), city ? city.trim() : null, address ? address.trim() : null, logo]
+        [name.trim(), generatedCode, city ? city.trim() : null, address ? address.trim() : null, logo]
       );
 
       const association = result.rows[0];
@@ -95,12 +97,15 @@ const associationController = {
       for (const item of associations) {
         if (!item || !item.name || !item.name.trim()) continue;
 
+        const generatedCode = await generateAssociationCode(item.name.trim(), pool);
+
         const result = await pool.query(
-          `INSERT INTO associations (name, city, address, is_active)
-           VALUES ($1, $2, $3, true)
+          `INSERT INTO associations (name, code, city, address, is_active)
+           VALUES ($1, $2, $3, $4, true)
            RETURNING *`,
           [
             item.name.trim(),
+            generatedCode,
             item.city ? item.city.trim() : null,
             item.address ? item.address.trim() : null
           ]
@@ -140,7 +145,7 @@ const associationController = {
       const { search, is_active } = req.query;
 
       let queryText = `
-        SELECT a.id, a.name, a.city, a.address, a.logo, a.is_active, a.main_admin_id, a.created_at,
+        SELECT a.id, a.name, a.code, a.city, a.address, a.logo, a.is_active, a.main_admin_id, a.created_at,
                a.scrolling_announcement, a.is_scrolling_active,
                COUNT(DISTINCT u.id) FILTER (WHERE u.status = 'approved' AND u.role = 'member') as member_count,
                COUNT(DISTINCT adm.id) as admin_count,
@@ -162,16 +167,21 @@ const associationController = {
         conditions.push(`a.is_active = $${params.length}`);
       }
 
+      if (req.query.code) {
+        params.push(req.query.code.trim().toUpperCase());
+        conditions.push(`UPPER(a.code) = $${params.length}`);
+      }
+
       if (search) {
         params.push(`%${search.trim()}%`);
-        conditions.push(`(a.name ILIKE $${params.length} OR a.city ILIKE $${params.length})`);
+        conditions.push(`(a.name ILIKE $${params.length} OR a.city ILIKE $${params.length} OR a.code ILIKE $${params.length})`);
       }
 
       if (conditions.length > 0) {
         queryText += ` WHERE ${conditions.join(' AND ')}`;
       }
 
-      queryText += ' GROUP BY a.id, a.scrolling_announcement, a.is_scrolling_active, main_adm.name ORDER BY a.name ASC';
+      queryText += ' GROUP BY a.id, a.code, a.scrolling_announcement, a.is_scrolling_active, main_adm.name ORDER BY a.name ASC';
 
       const result = await pool.query(queryText, params);
 
@@ -221,6 +231,44 @@ const associationController = {
           member_count: memberCount,
           admins: adminResult.rows
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Get association by registration code
+   * Public endpoint used for member login and registration
+   */
+  async getByCode(req, res, next) {
+    try {
+      const code = (req.params.code || '').trim();
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          message: 'Association registration code is required'
+        });
+      }
+
+      const result = await pool.query(
+        `SELECT a.id, a.name, a.code, a.city, a.address, a.logo, a.is_active
+         FROM associations a
+         WHERE UPPER(a.code) = UPPER($1) AND a.is_active = true
+         LIMIT 1`,
+        [code]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: `No active association found for registration code "${code}"`
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result.rows[0]
       });
     } catch (error) {
       next(error);

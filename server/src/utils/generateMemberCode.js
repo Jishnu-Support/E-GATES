@@ -21,15 +21,19 @@ async function generateMemberCode(associationIdOrName = null, dbClient = default
     } else if (Number(associationIdOrName) > 0) {
       try {
         const { rows } = await dbClient.query(
-          'SELECT name FROM associations WHERE id = $1 LIMIT 1',
+          'SELECT name, code FROM associations WHERE id = $1 LIMIT 1',
           [Number(associationIdOrName)]
         );
-        if (rows.length > 0 && rows[0].name) {
-          const letters = rows[0].name.replace(/[^a-zA-Z]/g, '').toUpperCase();
-          if (letters.length >= 3) {
-            prefix = letters.slice(0, 3);
-          } else if (letters.length > 0) {
-            prefix = letters.padEnd(3, 'A');
+        if (rows.length > 0) {
+          if (rows[0].code) {
+            prefix = rows[0].code.toUpperCase();
+          } else if (rows[0].name) {
+            const letters = rows[0].name.replace(/[^a-zA-Z]/g, '').toUpperCase();
+            if (letters.length >= 3) {
+              prefix = letters.slice(0, 3);
+            } else if (letters.length > 0) {
+              prefix = letters.padEnd(3, 'A');
+            }
           }
         }
       } catch (e) {

@@ -87,6 +87,16 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/associations/code/:code
+ * @desc    Get association details by registration code
+ * @access  Public
+ */
+router.get(
+  '/code/:code',
+  associationController.getByCode
+);
+
+/**
  * @route   GET /api/v1/associations/:id
  * @desc    Get association details by ID
  * @access  Public / Authenticated

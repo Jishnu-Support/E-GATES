@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   HiEye,
@@ -16,6 +16,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import PoweredByLogo from '../../components/common/PoweredByLogo';
 import BrandingModal from '../../components/common/BrandingModal';
+import api from '../../services/api';
 
 export default function Login() {
   const { login } = useAuth();
@@ -38,6 +39,50 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [roleMismatch, setRoleMismatch] = useState(null);
+
+  // Member Registration Code state
+  const [memberAssocCode, setMemberAssocCode] = useState('');
+  const [memberAssocInfo, setMemberAssocInfo] = useState(null);
+  const [loadingAssocCode, setLoadingAssocCode] = useState(false);
+  const [assocCodeError, setAssocCodeError] = useState('');
+  const assocCodeTimerRef = useRef(null);
+
+  const handleMemberAssocCodeChange = (val) => {
+    const uppercaseVal = val.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    setMemberAssocCode(uppercaseVal);
+    setAssocCodeError('');
+
+    if (assocCodeTimerRef.current) {
+      clearTimeout(assocCodeTimerRef.current);
+    }
+
+    if (!uppercaseVal.trim()) {
+      setMemberAssocInfo(null);
+      setLoadingAssocCode(false);
+      return;
+    }
+
+    setLoadingAssocCode(true);
+    assocCodeTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/associations/code/${encodeURIComponent(uppercaseVal.trim())}`);
+        if (res.data?.data) {
+          setMemberAssocInfo(res.data.data);
+          setAssocCodeError('');
+        } else {
+          setMemberAssocInfo(null);
+          setAssocCodeError(`No layout association found for code "${uppercaseVal}"`);
+        }
+      } catch (err) {
+        setMemberAssocInfo(null);
+        setAssocCodeError(
+          err.response?.data?.message || `No association found for registration code "${uppercaseVal}"`
+        );
+      } finally {
+        setLoadingAssocCode(false);
+      }
+    }, 350);
+  };
 
   // Tab metadata for top slides: ONLY Admin and User / Member
   const tabs = [
@@ -88,12 +133,26 @@ export default function Login() {
     setPassword('');
     setErrorMessage('');
     setRoleMismatch(null);
+    setMemberAssocCode('');
+    setMemberAssocInfo(null);
+    setAssocCodeError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setRoleMismatch(null);
+
+    if (activeTab === 'member') {
+      if (!memberAssocCode.trim()) {
+        setErrorMessage('Please enter your Association Registration Code.');
+        return;
+      }
+      if (!memberAssocInfo) {
+        setErrorMessage('Please enter a valid Association Registration Code to continue.');
+        return;
+      }
+    }
 
     if (!identifier.trim() || !password) {
       setErrorMessage('Please enter your email or phone and password.');
@@ -106,6 +165,7 @@ export default function Login() {
       const credentials = {
         [isEmail ? 'email' : 'phone']: identifier.trim(),
         password,
+        ...(activeTab === 'member' ? { association_code: memberAssocCode.trim() } : {}),
       };
 
       const result = await login(credentials);
@@ -336,6 +396,60 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
+              {/* Member Association Registration Code Input */}
+              {activeTab === 'member' && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                      Association Registration Code *
+                    </label>
+                    {loadingAssocCode && (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        Fetching association...
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                      <HiBuildingOffice2 className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={memberAssocCode}
+                      onChange={(e) => handleMemberAssocCodeChange(e.target.value)}
+                      placeholder="Enter registration code (e.g. KCC)"
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold uppercase tracking-wider focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                    />
+                  </div>
+
+                  {/* Auto-fetched Association Display */}
+                  {memberAssocInfo && (
+                    <div className="mt-2 p-2.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/70 rounded-xl flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                      <HiCheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-bold">
+                          {memberAssocInfo.name}
+                        </span>
+                        {memberAssocInfo.city && (
+                          <span className="text-emerald-600 dark:text-emerald-400 ml-1">
+                            ({memberAssocInfo.city})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {assocCodeError && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <HiExclamationCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{assocCodeError}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Identifier Input */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">

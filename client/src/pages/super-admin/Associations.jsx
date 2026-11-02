@@ -743,6 +743,13 @@ export default function Associations() {
                 <h3 className="font-bold text-gray-900 text-base leading-snug line-clamp-1 mb-1">
                   {assoc.name}
                 </h3>
+                {assoc.code && (
+                  <div className="mb-1.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      Code: {assoc.code}
+                    </span>
+                  </div>
+                )}
                 <p className="text-xs font-semibold text-primary-700 mb-2">
                   📍 {assoc.city || 'Tamil Nadu'}
                 </p>

@@ -352,7 +352,17 @@ export default function AdminDashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {assocDisplayName}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          {(associationInfo?.code || user?.association_code) && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Association Code:
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-extrabold bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs tracking-wider">
+                {associationInfo?.code || user?.association_code}
+              </span>
+            </div>
+          )}
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {associationInfo?.city ? `${associationInfo.city} • ` : ''}
             {associationInfo?.address || 'Community Administration Portal'}
           </p>

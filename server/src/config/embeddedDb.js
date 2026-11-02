@@ -135,6 +135,9 @@ function ensureSchemaMigrations(db) {
     if (!assocCols.includes('is_scrolling_active')) {
       db.run("ALTER TABLE associations ADD COLUMN is_scrolling_active INTEGER DEFAULT 1;");
     }
+    if (!assocCols.includes('code')) {
+      db.run("ALTER TABLE associations ADD COLUMN code TEXT;");
+    }
   } catch (err) {
     console.error('[EmbeddedDB Migration Error]:', err.message);
   }
@@ -145,6 +148,7 @@ function initSchemaAndSeed(db) {
     CREATE TABLE IF NOT EXISTS associations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      code TEXT UNIQUE,
       city TEXT,
       address TEXT,
       logo TEXT,

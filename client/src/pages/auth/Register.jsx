@@ -51,6 +51,12 @@ export default function Register() {
   const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
   const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
+  // Member Registration Code auto-fetch state
+  const [memberAssocCodeInput, setMemberAssocCodeInput] = useState('');
+  const [memberFetchedAssoc, setMemberFetchedAssoc] = useState(null);
+  const [memberCodeFetchLoading, setMemberCodeFetchLoading] = useState(false);
+  const memberCodeTimerRef = useRef(null);
+
   // 1. Member Form State
   const [memberForm, setMemberForm] = useState({
     name: '',
@@ -285,10 +291,11 @@ export default function Register() {
               ...prev,
               association_id: prev.association_id || list[0].id,
             }));
-            setAdminForm((prev) => ({
-              ...prev,
-              association_id: prev.association_id || list[0].id,
-            }));
+            const initialAssoc = list[0];
+            setMemberFetchedAssoc((prev) => prev || initialAssoc);
+            if (initialAssoc.code) {
+              setMemberAssocCodeInput((prev) => prev || initialAssoc.code);
+            }
           }
         }
       } catch (err) {
@@ -303,6 +310,65 @@ export default function Register() {
       isMounted = false;
     };
   }, []);
+
+  const handleMemberAssocCodeChange = (val) => {
+    const uppercaseVal = val.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    setMemberAssocCodeInput(uppercaseVal);
+    clearFieldError('association_id');
+
+    if (memberCodeTimerRef.current) {
+      clearTimeout(memberCodeTimerRef.current);
+    }
+
+    if (!uppercaseVal.trim()) {
+      setMemberFetchedAssoc(null);
+      setMemberCodeFetchLoading(false);
+      return;
+    }
+
+    // Try finding in preloaded associations first
+    const localMatch = associations.find(
+      (a) => a.code && a.code.toUpperCase() === uppercaseVal.trim()
+    );
+    if (localMatch) {
+      setMemberFetchedAssoc(localMatch);
+      setMemberForm((prev) => ({ ...prev, association_id: localMatch.id }));
+      setMemberCodeFetchLoading(false);
+      return;
+    }
+
+    setMemberCodeFetchLoading(true);
+    memberCodeTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/associations/code/${encodeURIComponent(uppercaseVal.trim())}`);
+        if (res.data?.data) {
+          const assoc = res.data.data;
+          setMemberFetchedAssoc(assoc);
+          setMemberForm((prev) => ({ ...prev, association_id: assoc.id }));
+        } else {
+          setMemberFetchedAssoc(null);
+        }
+      } catch (err) {
+        setMemberFetchedAssoc(null);
+      } finally {
+        setMemberCodeFetchLoading(false);
+      }
+    }, 350);
+  };
+
+  const handleDropdownAssocChange = (assocId) => {
+    setMemberForm((prev) => ({ ...prev, association_id: assocId }));
+    clearFieldError('association_id');
+    const selected = associations.find((a) => String(a.id) === String(assocId));
+    if (selected) {
+      setMemberFetchedAssoc(selected);
+      if (selected.code) {
+        setMemberAssocCodeInput(selected.code);
+      }
+    } else {
+      setMemberFetchedAssoc(null);
+    }
+  };
 
   // Password strength helper
   const getPasswordStrength = (pwd) => {
@@ -1245,32 +1311,71 @@ export default function Register() {
                       1. Select Layout Association
                     </h3>
 
-                    <div data-field="association_id">
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Layout Association *
-                      </label>
-                      <select
-                        name="association_id"
-                        required
-                        value={memberForm.association_id}
-                        onChange={(e) => {
-                          setMemberForm({
-                            ...memberForm,
-                            association_id: e.target.value,
-                          });
-                          clearFieldError('association_id');
-                        }}
-                        className={getInputClass('association_id', 'focus:ring-emerald-500')}
-                      >
-                        <option value="">-- Choose Your Association --</option>
-                        {associations.map((assoc) => (
-                          <option key={assoc.id} value={assoc.id}>
-                            {assoc.name} {assoc.city ? `(${assoc.city})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      {renderFieldError('association_id')}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Code Input */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Association Registration Code
+                          </label>
+                          {memberCodeFetchLoading && (
+                            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                              <span className="w-2.5 h-2.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                              Fetching layout...
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={memberAssocCodeInput}
+                          onChange={(e) => handleMemberAssocCodeChange(e.target.value)}
+                          placeholder="e.g. KCC"
+                          className="w-full p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold uppercase tracking-wider focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                        />
+                        <p className="text-[11px] text-gray-500 mt-1">
+                          Enter your layout's registration code to automatically fetch the association.
+                        </p>
+                      </div>
+
+                      {/* Dropdown Select */}
+                      <div data-field="association_id">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Or Select Layout Association *
+                        </label>
+                        <select
+                          name="association_id"
+                          required
+                          value={memberForm.association_id}
+                          onChange={(e) => handleDropdownAssocChange(e.target.value)}
+                          className={getInputClass('association_id', 'focus:ring-emerald-500')}
+                        >
+                          <option value="">-- Choose Your Association --</option>
+                          {associations.map((assoc) => (
+                            <option key={assoc.id} value={assoc.id}>
+                              {assoc.name} {assoc.code ? `[Code: ${assoc.code}]` : ''} {assoc.city ? `(${assoc.city})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {renderFieldError('association_id')}
+                      </div>
                     </div>
+
+                    {/* Auto-fetched Association Display */}
+                    {memberFetchedAssoc && (
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                        <HiCheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold">
+                            Layout: {memberFetchedAssoc.name} {memberFetchedAssoc.city ? `(${memberFetchedAssoc.city})` : ''}
+                          </p>
+                          {memberFetchedAssoc.code && (
+                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              Registration Code: <span className="font-mono font-bold">{memberFetchedAssoc.code}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 2. Personal Details */}

@@ -409,6 +409,11 @@ export default function SuperAdminDashboard() {
                           </span>
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white">{assoc.name}</p>
+                            {assoc.code && (
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                                Code: {assoc.code}
+                              </span>
+                            )}
                             <p className="text-[10px] text-gray-400 line-clamp-1">{assoc.address}</p>
                           </div>
                         </div>
