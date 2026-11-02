@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   HiUser,
+  HiUserGroup,
   HiEnvelope,
   HiPhone,
   HiLockClosed,
