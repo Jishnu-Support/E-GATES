@@ -23,8 +23,13 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 3 Distinct Tabs: 'super_admin' | 'admin' | 'member'
-  const [activeTab, setActiveTab] = useState(location.state?.role || 'super_admin');
+  // 2 Distinct Tabs for Top Slides: 'admin' | 'member'
+  // Super admin login is accessed via the word/link below the sign in button.
+  const [activeTab, setActiveTab] = useState(
+    location.state?.role && ['super_admin', 'admin', 'member'].includes(location.state.role)
+      ? location.state.role
+      : 'admin'
+  );
   const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
@@ -34,19 +39,8 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [roleMismatch, setRoleMismatch] = useState(null);
 
-  // Tab metadata
+  // Tab metadata for top slides: ONLY Admin and User / Member
   const tabs = [
-    {
-      id: 'super_admin',
-      label: 'Super Admin',
-      badge: 'Platform Control',
-      icon: HiShieldCheck,
-      color: 'from-amber-500 to-orange-600',
-      activeBorder: 'border-amber-500 text-amber-600',
-      activeBg: 'bg-amber-500 text-white',
-      accentColor: 'text-amber-500',
-      description: 'System-wide oversight across all layout associations',
-    },
     {
       id: 'admin',
       label: 'Admin',
@@ -71,7 +65,22 @@ export default function Login() {
     },
   ];
 
-  const currentTabInfo = tabs.find((t) => t.id === activeTab) || tabs[0];
+  const superAdminTabInfo = {
+    id: 'super_admin',
+    label: 'Super Admin',
+    badge: 'Platform Control',
+    icon: HiShieldCheck,
+    color: 'from-amber-500 to-orange-600',
+    activeBorder: 'border-amber-500 text-amber-600',
+    activeBg: 'bg-amber-500 text-white',
+    accentColor: 'text-amber-500',
+    description: 'System-wide oversight across all layout associations',
+  };
+
+  const currentTabInfo =
+    activeTab === 'super_admin'
+      ? superAdminTabInfo
+      : tabs.find((t) => t.id === activeTab) || tabs[0];
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -121,7 +130,7 @@ export default function Login() {
 
       // Check for Role Tab Mismatch (e.g. resident trying to login on Super Admin tab)
       if (user.role !== activeTab) {
-        const correctTab = tabs.find((t) => t.id === user.role);
+        const correctTab = [...tabs, superAdminTabInfo].find((t) => t.id === user.role);
         setRoleMismatch({
           userRole: user.role,
           correctTabLabel: correctTab ? correctTab.label : user.role,
@@ -244,9 +253,9 @@ export default function Login() {
             </p>
           </div>
 
-          {/* 3 DISTINCT ROLE TABS */}
+          {/* 2 DISTINCT ROLE TABS (Super Admin moved below submit button) */}
           <div className="px-6 sm:px-8 pt-2">
-            <div className="grid grid-cols-3 gap-2 bg-gray-100/80 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700">
+            <div className="grid grid-cols-2 gap-2 bg-gray-100/80 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -255,7 +264,7 @@ export default function Login() {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab.id)}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all duration-200 ${
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                       isActive
                         ? `${tab.activeBg} shadow-md shadow-gray-400/20 scale-[1.02]`
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-700/60'
@@ -269,9 +278,14 @@ export default function Login() {
             </div>
 
             {/* Active Tab Subtitle Info Banner */}
-            <div className="mt-3 py-2 px-3.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 text-xs text-gray-600 dark:text-gray-300">
+            <div className={`mt-3 py-2 px-3.5 rounded-xl border text-xs transition-colors ${
+              activeTab === 'super_admin'
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+                : 'bg-gray-50 dark:bg-slate-800/80 border-gray-100 dark:border-slate-700 text-gray-600 dark:text-gray-300'
+            }`}>
               <span className="truncate">
-                📌 <span className="font-semibold">{currentTabInfo.label}:</span>{' '}
+                {activeTab === 'super_admin' ? '🛡️' : '📌'}{' '}
+                <span className="font-semibold">{currentTabInfo.label}:</span>{' '}
                 {currentTabInfo.description}
               </span>
             </div>
@@ -390,7 +404,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full mt-2 py-3.5 px-4 text-white font-bold text-sm rounded-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full mt-2 py-3.5 px-4 text-white font-bold text-sm rounded-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
                   activeTab === 'super_admin'
                     ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30'
                     : activeTab === 'admin'
@@ -407,6 +421,27 @@ export default function Login() {
                   `Sign In as ${currentTabInfo.label}`
                 )}
               </button>
+
+              {/* Super Admin Login as just a word below sign in button */}
+              <div className="pt-2.5 text-center">
+                {activeTab === 'super_admin' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange('admin')}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:underline transition cursor-pointer"
+                  >
+                    ← Back to Admin / Member Sign In
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange('super_admin')}
+                    className="text-xs font-semibold text-gray-500 hover:text-amber-600 dark:text-gray-400 dark:hover:text-amber-400 hover:underline transition cursor-pointer"
+                  >
+                    Super Admin Login
+                  </button>
+                )}
+              </div>
             </form>
 
             {/* Separate Registration Forms Gateway */}
@@ -414,13 +449,13 @@ export default function Login() {
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-3">
                 Need to register? Select a Registration Form:
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                   to="/register?type=assoc-admin"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
-                    🏛️ Admin + Association
+                  <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
+                    🏛️ Association Registration Form
                   </span>
                   <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
                     Main Admin & Layout
@@ -428,26 +463,14 @@ export default function Login() {
                 </Link>
 
                 <Link
-                  to="/register?type=admin"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/90 dark:hover:bg-blue-900/50 hover:border-blue-300 transition text-center group shadow-sm"
-                >
-                  <span className="text-xs font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1">
-                    🛡️ Admin
-                  </span>
-                  <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">
-                    Registration Form
-                  </span>
-                </Link>
-
-                <Link
                   to="/register?type=member"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                    👥 Member
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    👥 Member Registration Form
                   </span>
                   <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-                    Registration Form
+                    Resident Registration
                   </span>
                 </Link>
               </div>

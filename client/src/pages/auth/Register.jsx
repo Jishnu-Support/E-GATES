@@ -31,14 +31,11 @@ export default function Register() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Active registration form mode: 'member' | 'admin' | 'assoc-admin'
+  // Active registration form mode: 'member' | 'assoc-admin'
   const initialType = searchParams.get('type') || 'member';
-  const validModes = ['member', 'admin', 'assoc-admin', 'assoc_admin'];
   const normalizedInitial =
     initialType === 'assoc_admin' || initialType === 'assoc-admin'
       ? 'assoc-admin'
-      : initialType === 'admin'
-      ? 'admin'
       : 'member';
 
   const [activeForm, setActiveForm] = useState(normalizedInitial);
@@ -75,29 +72,7 @@ export default function Register() {
   const memberPhotoInputRef = useRef(null);
   const memberCameraInputRef = useRef(null);
 
-  // 2. Admin Form State (for existing association)
-  const [adminForm, setAdminForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    association_id: '',
-    door_no: '',
-    street: '',
-    layout_name: '',
-    taluk: '',
-    district: '',
-    state: 'Tamil Nadu',
-    password: '',
-    confirm_password: '',
-  });
-  const [adminEbProof, setAdminEbProof] = useState(null);
-  const [adminTaxProof, setAdminTaxProof] = useState(null);
-  const [adminProfilePhoto, setAdminProfilePhoto] = useState(null);
-  const [adminPhotoPreview, setAdminPhotoPreview] = useState(null);
-  const adminPhotoInputRef = useRef(null);
-  const adminCameraInputRef = useRef(null);
-
-  // 3. Association + Admin Form State (Combined new association creation)
+  // 2. Association + Admin Form State (Combined new association creation)
   const [assocAdminForm, setAssocAdminForm] = useState({
     association_name: '',
     association_city: '',
@@ -238,9 +213,6 @@ export default function Register() {
     if (cameraTarget === 'member') {
       setMemberProfilePhoto(capturedBlob);
       setMemberPhotoPreview(capturedPreview);
-    } else if (cameraTarget === 'admin') {
-      setAdminProfilePhoto(capturedBlob);
-      setAdminPhotoPreview(capturedPreview);
     } else if (cameraTarget === 'assoc-admin') {
       setAssocAdminProfilePhoto(capturedBlob);
       setAssocAdminPhotoPreview(capturedPreview);
@@ -253,8 +225,6 @@ export default function Register() {
     closeCameraModal();
     if (cameraTarget === 'member') {
       memberCameraInputRef.current?.click();
-    } else if (cameraTarget === 'admin') {
-      adminCameraInputRef.current?.click();
     } else if (cameraTarget === 'assoc-admin') {
       assocAdminCameraInputRef.current?.click();
     }
@@ -286,9 +256,7 @@ export default function Register() {
     const type = searchParams.get('type');
     if (type === 'assoc-admin' || type === 'assoc_admin') {
       setActiveForm('assoc-admin');
-    } else if (type === 'admin') {
-      setActiveForm('admin');
-    } else if (type === 'member') {
+    } else {
       setActiveForm('member');
     }
   }, [searchParams]);
@@ -449,57 +417,7 @@ export default function Register() {
     return errs;
   };
 
-  // 2. Validate Admin Form
-  const validateAdminForm = () => {
-    const errs = {};
-    if (!adminForm.association_id) {
-      errs.association_id = 'Please select the layout association to administer';
-    }
-    if (!adminProfilePhoto) {
-      errs.profile_photo = 'Profile photo is mandatory';
-    }
-    if (!adminForm.name || !adminForm.name.trim()) {
-      errs.name = 'Administrator full name is mandatory';
-    }
-    if (!adminForm.phone || !adminForm.phone.trim()) {
-      errs.phone = 'Mobile phone number is mandatory';
-    } else if (!/^[0-9]{10}$/.test(adminForm.phone.trim())) {
-      errs.phone = 'Please enter a valid 10-digit mobile phone number';
-    }
-    if (!adminForm.email || !adminForm.email.trim()) {
-      errs.email = 'Email address is mandatory';
-    } else if (!/\S+@\S+\.\S+/.test(adminForm.email.trim())) {
-      errs.email = 'Please enter a valid email address';
-    }
-    if (!adminForm.door_no || !adminForm.door_no.trim()) {
-      errs.door_no = 'Door / Office number is mandatory';
-    }
-    if (!adminForm.street || !adminForm.street.trim()) {
-      errs.street = 'Street / Road name is mandatory';
-    }
-    if (!adminEbProof) {
-      errs.eb_bill_proof = 'Electricity (EB) Bill / Residence proof is mandatory';
-    }
-    if (!adminTaxProof) {
-      errs.property_tax_receipt = 'Property Tax Receipt / Appointment Letter is mandatory';
-    }
-    if (!adminForm.password) {
-      errs.password = 'Password is mandatory';
-    } else if (adminForm.password.length < 6) {
-      errs.password = 'Password must be at least 6 characters long';
-    }
-    if (!adminForm.confirm_password) {
-      errs.confirm_password = 'Confirm password is mandatory';
-    } else if (adminForm.password !== adminForm.confirm_password) {
-      errs.confirm_password = 'Passwords do not match. Please re-enter';
-    }
-    if (!agreedToTerms) {
-      errs.agreedToTerms = 'You must read and accept the Terms and Conditions to proceed';
-    }
-    return errs;
-  };
-
-  // 3. Validate Association + Admin Form
+  // 2. Validate Association + Admin Form
   const validateAssocAdminForm = () => {
     const errs = {};
     if (!assocAdminForm.association_name || !assocAdminForm.association_name.trim()) {
@@ -606,61 +524,7 @@ export default function Register() {
     }
   };
 
-  // 2. Submit Admin Registration (Existing Association)
-  const handleSubmitAdmin = async (e) => {
-    e.preventDefault();
-    setErrorMessage('');
-    setSuccessData(null);
-
-    const errs = validateAdminForm();
-    if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs);
-      setErrorMessage('Please fill in all mandatory fields indicated with a red border below.');
-      scrollToFirstError(errs);
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const data = new FormData();
-      Object.entries(adminForm).forEach(([key, val]) => {
-        if (key !== 'confirm_password' && val !== null && val !== undefined) {
-          data.append(key, val);
-        }
-      });
-      data.append('role', 'admin');
-      if (adminEbProof instanceof File) {
-        data.append('eb_bill_proof', adminEbProof);
-      }
-      if (adminTaxProof instanceof File) {
-        data.append('property_tax_receipt', adminTaxProof);
-      }
-      if (adminProfilePhoto instanceof File) {
-        data.append('profile_photo', adminProfilePhoto);
-      }
-
-      await register(data);
-      setSuccessData({
-        title: 'Admin Registration Submitted!',
-        message:
-          'Your administrator registration application has been submitted successfully. It will be reviewed and approved by the Main Association Admin.',
-        type: 'admin',
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Administrator registration failed. Please check the fields and try again.';
-      setErrorMessage(msg);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // 3. Submit Association + Admin Combined Registration
+  // 2. Submit Association + Admin Combined Registration
   const handleSubmitAssocAdmin = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -717,7 +581,6 @@ export default function Register() {
   };
 
   const memberStrength = getPasswordStrength(memberForm.password);
-  const adminStrength = getPasswordStrength(adminForm.password);
   const assocAdminStrength = getPasswordStrength(assocAdminForm.password);
 
   return (
@@ -777,101 +640,29 @@ export default function Register() {
       {/* Main Registration Container */}
       <div className="w-full max-w-4xl mx-auto my-6">
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 p-5 sm:p-10 transition-colors">
-          {/* Header Title */}
-          <div className="text-center mb-6">
+          {/* Dedicated Header for Active Registration Form */}
+          <div className="text-center mb-8">
+            <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 shadow-inner ${
+              activeForm === 'assoc-admin'
+                ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400'
+                : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+            }`}>
+              {activeForm === 'assoc-admin' ? (
+                <HiBuildingOffice2 className="w-7 h-7" />
+              ) : (
+                <HiUserGroup className="w-7 h-7" />
+              )}
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Registration Portal
+              {activeForm === 'assoc-admin'
+                ? 'Association Registration Form'
+                : 'Member Registration Form'}
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              Select your registration form type below to complete your registration
+            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              {activeForm === 'assoc-admin'
+                ? 'Create a brand-new layout association and register its Main Association Admin'
+                : 'Register as a resident homeowner or tenant for your layout association'}
             </p>
-          </div>
-
-          {/* 3 Separate Form Selectors / Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-            {/* 1. Admin + Association Registration */}
-            <button
-              type="button"
-              onClick={() => handleTabChange('assoc-admin')}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
-                activeForm === 'assoc-admin'
-                  ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-500 shadow-md ring-2 ring-purple-500/20'
-                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xl">🏛️</span>
-                {activeForm === 'assoc-admin' && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-600 text-white px-2 py-0.5 rounded-full">
-                    Active
-                  </span>
-                )}
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                  Admin + Association
-                </h3>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
-                  Register new layout & Main Association Admin
-                </p>
-              </div>
-            </button>
-
-            {/* 2. Admin Registration */}
-            <button
-              type="button"
-              onClick={() => handleTabChange('admin')}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
-                activeForm === 'admin'
-                  ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 shadow-md ring-2 ring-blue-500/20'
-                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xl">🛡️</span>
-                {activeForm === 'admin' && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                    Active
-                  </span>
-                )}
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                  Admin Registration
-                </h3>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
-                  Register as administrator for an existing layout
-                </p>
-              </div>
-            </button>
-
-            {/* 3. Member Registration */}
-            <button
-              type="button"
-              onClick={() => handleTabChange('member')}
-              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between ${
-                activeForm === 'member'
-                  ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
-                  : 'bg-gray-50/70 dark:bg-slate-800/60 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xl">👥</span>
-                {activeForm === 'member' && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full">
-                    Active
-                  </span>
-                )}
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                  Member Registration
-                </h3>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
-                  Register as resident member for an existing layout
-                </p>
-              </div>
-            </button>
           </div>
 
           {/* Success Message Banner */}
@@ -911,14 +702,14 @@ export default function Register() {
               )}
 
               {/* ============================================================== */}
-              {/* FORM 1: ADMIN + ASSOCIATION REGISTRATION FORM */}
+              {/* FORM 1: ASSOCIATION REGISTRATION FORM */}
               {/* ============================================================== */}
               {activeForm === 'assoc-admin' && (
                 <form onSubmit={handleSubmitAssocAdmin} noValidate autoComplete="off" className="space-y-8">
                   <div className="bg-purple-50/40 p-4 rounded-2xl border border-purple-100 flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-purple-900 flex items-center gap-2">
-                        <span>🏛️</span> Admin + Association Registration Form
+                        <span>🏛️</span> Association Registration Form
                       </h2>
                       <p className="text-xs text-purple-700 mt-0.5">
                         Create a brand-new layout association and register its Main Association Admin
@@ -1431,462 +1222,6 @@ export default function Register() {
                 </form>
               )}
 
-              {/* ============================================================== */}
-              {/* FORM 2: ADMIN REGISTRATION FORM (Existing Layout) */}
-              {/* ============================================================== */}
-              {activeForm === 'admin' && (
-                <form onSubmit={handleSubmitAdmin} noValidate autoComplete="off" className="space-y-8">
-                  <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-base font-bold text-blue-900 flex items-center gap-2">
-                        <span>🛡️</span> Admin Registration Form
-                      </h2>
-                      <p className="text-xs text-blue-700 mt-0.5">
-                        Register as an administrator for an existing layout association
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 1. Layout Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                      <HiBuildingOffice2 className="w-4 h-4 text-blue-600" />
-                      1. Select Layout Association
-                    </h3>
-
-                    <div data-field="association_id">
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Layout Association *
-                      </label>
-                      <select
-                        name="association_id"
-                        required
-                        value={adminForm.association_id}
-                        onChange={(e) => {
-                          setAdminForm({
-                            ...adminForm,
-                            association_id: e.target.value,
-                          });
-                          clearFieldError('association_id');
-                        }}
-                        className={getInputClass('association_id', 'focus:ring-blue-500')}
-                      >
-                        <option value="">-- Choose Existing Association --</option>
-                        {associations.map((assoc) => (
-                          <option key={assoc.id} value={assoc.id}>
-                            {assoc.name} {assoc.city ? `(${assoc.city})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      {renderFieldError('association_id')}
-                    </div>
-                  </div>
-
-                  {/* 2. Administrator Details */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                      <HiUser className="w-4 h-4 text-blue-600" />
-                      2. Administrator Personal Details
-                    </h3>
-
-                    {/* Profile Photo Upload */}
-                    <div
-                      data-field="profile_photo"
-                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row items-center gap-4 ${
-                        fieldErrors.profile_photo
-                          ? 'bg-red-50/60 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
-                          : 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/40'
-                      }`}
-                    >
-                      <div
-                        onClick={() => adminPhotoPreview && setViewPhotoModal({ url: adminPhotoPreview, title: 'Admin Profile Photo' })}
-                        className={`w-20 h-20 sm:w-24 sm:h-24 max-w-[96px] max-h-[96px] min-w-[80px] min-h-[80px] rounded-2xl overflow-hidden bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xl ring-2 ${
-                          fieldErrors.profile_photo
-                            ? 'ring-red-500'
-                            : 'ring-blue-200 dark:ring-blue-800/70'
-                        } flex-shrink-0 shadow-xs relative group ${
-                          adminPhotoPreview ? 'cursor-pointer hover:ring-blue-400' : ''
-                        }`}
-                        title={adminPhotoPreview ? 'Click to view full photo' : ''}
-                      >
-                        {adminPhotoPreview ? (
-                          <>
-                            <img
-                              src={adminPhotoPreview}
-                              alt="Profile Preview"
-                              className="w-full h-full object-cover object-center"
-                            />
-                            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                              <HiEye className="w-5 h-5 text-white drop-shadow-sm" />
-                            </div>
-                          </>
-                        ) : (
-                          <HiCamera className="w-8 h-8 text-blue-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 text-center sm:text-left">
-                        <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                          Profile Photo * (Mandatory)
-                        </label>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
-                          Upload portrait profile photo for your administrator account (PNG, JPG, Max 5MB).
-                        </p>
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => adminPhotoInputRef.current?.click()}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
-                          >
-                            <HiPhoto className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            <span>Choose from Files</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openCameraModal('admin')}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-xs"
-                          >
-                            <HiCamera className="w-4 h-4" />
-                            <span>Click Photo</span>
-                          </button>
-
-                          {adminPhotoPreview && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => setViewPhotoModal({ url: adminPhotoPreview, title: 'Admin Profile Photo' })}
-                                className="inline-flex items-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-semibold rounded-xl transition shadow-xs"
-                              >
-                                <HiEye className="w-3.5 h-3.5" />
-                                <span>View</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAdminProfilePhoto(null);
-                                  setAdminPhotoPreview(null);
-                                  if (adminPhotoInputRef.current) adminPhotoInputRef.current.value = '';
-                                  if (adminCameraInputRef.current) adminCameraInputRef.current.value = '';
-                                }}
-                                className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold px-2 py-1"
-                              >
-                                Remove Photo
-                              </button>
-                            </>
-                          )}
-
-                          <input
-                            ref={adminPhotoInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/jpg,image/webp"
-                            onChange={(e) =>
-                              handlePhotoSelect(
-                                e.target.files?.[0],
-                                setAdminProfilePhoto,
-                                setAdminPhotoPreview
-                              )
-                            }
-                            className="hidden"
-                          />
-                          <input
-                            ref={adminCameraInputRef}
-                            type="file"
-                            accept="image/*"
-                            capture="user"
-                            onChange={(e) =>
-                              handlePhotoSelect(
-                                e.target.files?.[0],
-                                setAdminProfilePhoto,
-                                setAdminPhotoPreview
-                              )
-                            }
-                            className="hidden"
-                          />
-                        </div>
-                        {renderFieldError('profile_photo')}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div data-field="name">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={adminForm.name}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, name: e.target.value });
-                            clearFieldError('name');
-                          }}
-                          placeholder="e.g. S. Muralidharan"
-                          className={getInputClass('name', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('name')}
-                      </div>
-
-                      <div data-field="phone">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Mobile Phone *
-                        </label>
-                        <input
-                          type="tel"
-                          required
-                          pattern="[0-9]{10}"
-                          value={adminForm.phone}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, phone: e.target.value });
-                            clearFieldError('phone');
-                          }}
-                          placeholder="10-digit mobile"
-                          className={getInputClass('phone', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('phone')}
-                      </div>
-
-                      <div data-field="email">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Email Address *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={adminForm.email}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, email: e.target.value });
-                            clearFieldError('email');
-                          }}
-                          placeholder="admin@layout.com"
-                          className={getInputClass('email', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('email')}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Address in Layout */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                      <HiHome className="w-4 h-4 text-blue-600" />
-                      3. Layout Address
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div data-field="door_no">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Door / Plot No *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={adminForm.door_no}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, door_no: e.target.value });
-                            clearFieldError('door_no');
-                          }}
-                          placeholder="e.g. Plot 15 / 2A"
-                          className={getInputClass('door_no', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('door_no')}
-                      </div>
-
-                      <div data-field="street">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Street / Cross *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={adminForm.street}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, street: e.target.value });
-                            clearFieldError('street');
-                          }}
-                          placeholder="e.g. 1st Main Road"
-                          className={getInputClass('street', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('street')}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Taluk / District
-                        </label>
-                        <input
-                          type="text"
-                          value={adminForm.district}
-                          onChange={(e) =>
-                            setAdminForm({ ...adminForm, district: e.target.value })
-                          }
-                          placeholder="e.g. Chengalpattu"
-                          className="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-900 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Verification Proofs */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                        <HiMapPin className="w-4 h-4 text-blue-600" />
-                        4. Verification Proof Documents * (Mandatory)
-                      </h3>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                        Both Electricity Bill (EB) / Residence Proof and Property Tax Receipt / Appointment Letter are mandatory for verification.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div data-field="eb_bill_proof">
-                        <FileUpload
-                          label="Electricity Bill (EB) / Residence Proof *"
-                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
-                          value={adminEbProof}
-                          error={getFieldError('eb_bill_proof')}
-                          onChange={(file) => {
-                            setAdminEbProof(file);
-                            if (file) clearFieldError('eb_bill_proof');
-                          }}
-                        />
-                      </div>
-
-                      <div data-field="property_tax_receipt">
-                        <FileUpload
-                          label="Property Tax Receipt / Appointment Letter *"
-                          helperText="Upload file (PDF, PNG, JPG - Max 5 MB) (Mandatory)"
-                          value={adminTaxProof}
-                          error={getFieldError('property_tax_receipt')}
-                          onChange={(file) => {
-                            setAdminTaxProof(file);
-                            if (file) clearFieldError('property_tax_receipt');
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 5. Password */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-2 border-b pb-2">
-                      <HiLockClosed className="w-4 h-4 text-blue-600" />
-                      5. Administrator Security Password
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div data-field="password">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Password *
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          autoComplete="new-password"
-                          value={adminForm.password}
-                          onChange={(e) => {
-                            setAdminForm({ ...adminForm, password: e.target.value });
-                            clearFieldError('password');
-                          }}
-                          placeholder="Min 6 characters"
-                          className={getInputClass('password', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('password')}
-                        {adminForm.password && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between text-[11px] mb-1">
-                              <span className="text-gray-500">Strength:</span>
-                              <span className="font-semibold text-gray-700">
-                                {adminStrength.label}
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${adminStrength.color} transition-all duration-300`}
-                                style={{ width: `${adminStrength.score}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div data-field="confirm_password">
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Confirm Password *
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          autoComplete="new-password"
-                          value={adminForm.confirm_password}
-                          onChange={(e) => {
-                            setAdminForm({
-                              ...adminForm,
-                              confirm_password: e.target.value,
-                            });
-                            clearFieldError('confirm_password');
-                          }}
-                          placeholder="Re-type password"
-                          className={getInputClass('confirm_password', 'focus:ring-blue-500')}
-                        />
-                        {renderFieldError('confirm_password')}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Terms and Conditions Agreement */}
-                  <div
-                    data-field="agreedToTerms"
-                    className={`rounded-2xl p-4 transition ${
-                      fieldErrors.agreedToTerms
-                        ? 'bg-red-50/70 dark:bg-red-950/30 border-2 border-red-500 ring-2 ring-red-500/20'
-                        : 'bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40'
-                    }`}
-                  >
-                    <label className="flex items-start gap-3 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={agreedToTerms}
-                        onChange={(e) => {
-                          setAgreedToTerms(e.target.checked);
-                          if (e.target.checked) clearFieldError('agreedToTerms');
-                        }}
-                        className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                      />
-                      <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                        I agree to the{' '}
-                        <button
-                          type="button"
-                          onClick={() => setTermsModalOpen(true)}
-                          className="font-bold text-blue-600 hover:text-blue-700 underline underline-offset-2"
-                        >
-                          EGATES Terms and Conditions
-                        </button>{' '}
-                        and acknowledge the Community Privacy and Verification Guidelines. *
-                      </span>
-                    </label>
-                    {renderFieldError('agreedToTerms')}
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      <span>
-                        {isSubmitting
-                          ? 'Submitting Admin Registration...'
-                          : 'Submit Admin Registration'}
-                      </span>
-                      <HiArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* ============================================================== */}
               {/* FORM 3: MEMBER REGISTRATION FORM (Resident Member) */}
               {/* ============================================================== */}
               {activeForm === 'member' && (
