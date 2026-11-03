@@ -423,6 +423,36 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Quick Banner for Local Market & Shops */}
+      <div
+        onClick={() => navigate('/admin/market')}
+        className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-emerald-500/10 border border-amber-300/40 dark:border-amber-800/40 hover:border-amber-400 dark:hover:border-amber-700 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition">
+            🏪
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-900">
+                LOCAL SHOPS
+              </span>
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                Layout Association Marketplace & Local Vendors
+              </h3>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Browse approved merchant shops, groceries, dairy, and local vendor listings catering to layout residents.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition self-end sm:self-center">
+          <span>View Market & Shops</span>
+          <span>&rarr;</span>
+        </div>
+      </div>
+
       {/* =========================================================================
           50 / 50 SPLIT:
           LEFT HALF: DAILY NEWS AND NOTICE BOARD

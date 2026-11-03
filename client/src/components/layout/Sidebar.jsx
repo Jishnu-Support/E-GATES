@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_event_captures') || 'Event Captures', path: '/super-admin/event-captures', icon: HiFilm },
     { name: t('nav_voting'), path: '/super-admin/polls', icon: HiChartBarSquare },
     { name: t('nav_sos_reports'), path: '/super-admin/sos-reports', icon: HiExclamationCircle },
+    { name: 'Local Market & Shops', path: '/super-admin/market', icon: HiBuildingStorefront },
     { name: t('nav_audit_log'), path: '/super-admin/audit-log', icon: HiClipboardDocumentList },
     { name: t('nav_profile') || 'My Profile', path: '/super-admin/profile', icon: HiUserCircle },
   ];
@@ -60,6 +61,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_events'), path: '/admin/events', icon: HiCalendarDays },
     { name: t('nav_event_captures') || 'Event Captures', path: '/admin/event-captures', icon: HiFilm },
     { name: t('nav_documents') || 'Community Documents', path: '/admin/documents', icon: HiDocumentDuplicate },
+    { name: 'Local Market & Shops', path: '/admin/market', icon: HiBuildingStorefront },
     { name: t('nav_profile'), path: '/admin/profile', icon: HiUserCircle },
   ];
 

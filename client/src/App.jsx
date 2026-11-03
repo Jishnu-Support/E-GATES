@@ -132,6 +132,8 @@ export default function App() {
           <Route path="event-captures" element={<EventCaptures />} />
           <Route path="polls" element={<PollResults />} />
           <Route path="sos-reports" element={<SOSReports />} />
+          <Route path="market" element={<Marketplace />} />
+          <Route path="shops" element={<Marketplace />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
@@ -162,6 +164,8 @@ export default function App() {
           <Route path="events" element={<Events />} />
           <Route path="event-captures" element={<EventCaptures />} />
           <Route path="documents" element={<Documents />} />
+          <Route path="market" element={<Marketplace />} />
+          <Route path="shops" element={<Marketplace />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
