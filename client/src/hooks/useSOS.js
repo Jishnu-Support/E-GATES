@@ -3,6 +3,8 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 export const useSOS = () => {
+  const [isHolding, setIsHolding] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0); // 0 to 100
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [selectedType, setSelectedType] = useState('Medical Emergency');
   const [showCancel, setShowCancel] = useState(false);
@@ -11,9 +13,61 @@ export const useSOS = () => {
   const [isTriggered, setIsTriggered] = useState(false);
   const [lastAlert, setLastAlert] = useState(null);
 
+  const holdIntervalRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+  const holdStartTimeRef = useRef(null);
+  const HOLD_DURATION_MS = 2500;
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
+  }, []);
+
+  const startHold = useCallback(() => {
+    if (showCancel || showTypeSelector || isSending) return;
+
+    setIsHolding(true);
+    setHoldProgress(0);
+    holdStartTimeRef.current = Date.now();
+
+    holdIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - holdStartTimeRef.current;
+      const progress = Math.min(100, Math.round((elapsed / HOLD_DURATION_MS) * 100));
+      setHoldProgress(progress);
+
+      if (elapsed >= HOLD_DURATION_MS) {
+        clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = null;
+        setIsHolding(false);
+        setHoldProgress(100);
+
+        // Haptic feedback if supported on mobile
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+
+        // Open emergency type selector modal
+        setShowTypeSelector(true);
+      }
+    }, 40);
+  }, [showCancel, showTypeSelector, isSending]);
+
+  const releaseHold = useCallback(() => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setIsHolding(false);
+    setHoldProgress(0);
+  }, []);
+
   const getCoordinates = () => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
+        console.warn('Geolocation is not supported by this browser.');
         resolve({ latitude: null, longitude: null });
         return;
       }
@@ -26,7 +80,7 @@ export const useSOS = () => {
           });
         },
         (error) => {
-          // If high accuracy fails or times out, try standard network location
+          console.warn('High accuracy geolocation timed out/failed, trying network:', error.message);
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               resolve({
@@ -34,34 +88,28 @@ export const useSOS = () => {
                 longitude: pos.coords.longitude,
               });
             },
-            () => {
-              resolve({ latitude: null, longitude: null });
-            },
-            { enableHighAccuracy: false, timeout: 3500, maximumAge: 300000 }
+            () => resolve({ latitude: null, longitude: null }),
+            { enableHighAccuracy: false, timeout: 3000, maximumAge: 300000 }
           );
         },
         {
           enableHighAccuracy: true,
-          timeout: 2500,
-          maximumAge: 300000,
+          timeout: 4000,
+          maximumAge: 60000,
         }
       );
     });
   };
 
-  const dispatchSOS = useCallback(async (emergencyType, customNotes = '', explicitCoords = null) => {
+  const dispatchSOS = useCallback(async (emergencyType, customNotes = '') => {
     setIsSending(true);
     try {
-      let coords = explicitCoords;
-      if (!coords || !coords.latitude || !coords.longitude) {
-        coords = await getCoordinates();
-      }
-
+      const coords = await getCoordinates();
       const payload = {
-        emergency_type: emergencyType || 'Medical Emergency',
+        emergency_type: emergencyType || 'Other Emergency',
         notes: customNotes || '',
-        latitude: coords?.latitude || null,
-        longitude: coords?.longitude || null,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       };
 
       const response = await api.post('/sos/trigger', payload);
@@ -71,10 +119,10 @@ export const useSOS = () => {
       setShowCancel(false);
       setShowTypeSelector(false);
 
-      toast.success(`Emergency SOS: (${emergencyType}) Sent Successfully!`, {
-        duration: 6000,
+      toast.error(`EMERGENCY SOS DISTRESS DISPATCHED (${emergencyType})!`, {
+        duration: 7000,
         style: {
-          background: '#059669',
+          background: '#dc2626',
           color: '#ffffff',
           fontWeight: 'bold',
         },
@@ -92,24 +140,55 @@ export const useSOS = () => {
     }
   }, []);
 
-  const triggerSOS = useCallback((emergencyType, customNotes = '', explicitCoords = null) => {
-    return dispatchSOS(emergencyType, customNotes, explicitCoords);
+  // When type is selected, start 5 second countdown before final dispatch
+  const selectTypeAndStartCountdown = useCallback((type) => {
+    setSelectedType(type);
+    setShowTypeSelector(false);
+    setShowCancel(true);
+    setCancelCountdown(5);
+
+    let secondsLeft = 5;
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+
+    countdownIntervalRef.current = setInterval(() => {
+      secondsLeft -= 1;
+      setCancelCountdown(secondsLeft);
+
+      if (secondsLeft <= 0) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+        dispatchSOS(type);
+      }
+    }, 1000);
   }, [dispatchSOS]);
 
   const cancelSOS = useCallback(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     setShowCancel(false);
     setShowTypeSelector(false);
-    toast('Emergency SOS dialog closed', { icon: '🛑' });
+    setIsHolding(false);
+    setHoldProgress(0);
+    setCancelCountdown(5);
+    toast('Emergency SOS cancelled', { icon: '🛑' });
   }, []);
 
   const resetSOS = useCallback(() => {
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
     setShowCancel(false);
     setShowTypeSelector(false);
+    setIsHolding(false);
+    setHoldProgress(0);
     setIsTriggered(false);
     setIsSending(false);
   }, []);
 
   return {
+    isHolding,
+    holdProgress,
     showTypeSelector,
     setShowTypeSelector,
     selectedType,
@@ -119,8 +198,10 @@ export const useSOS = () => {
     isSending,
     isTriggered,
     lastAlert,
-    dispatchSOS,
-    triggerSOS,
+    startHold,
+    releaseHold,
+    selectTypeAndStartCountdown,
+    triggerSOS: dispatchSOS,
     cancelSOS,
     resetSOS,
     getCoordinates,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   HiExclamationTriangle,
   HiPhone,
@@ -7,16 +7,13 @@ import {
   HiHeart,
   HiShieldExclamation,
   HiMapPin,
-  HiCheckCircle,
+  HiHome,
   HiClock,
-  HiArrowTopRightOnSquare,
-  HiChatBubbleOvalLeftEllipsis,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSOS } from '../../hooks/useSOS';
 import Modal from '../common/Modal';
-import api from '../../services/api';
 
 export default function FloatingSOS() {
   const { user } = useAuth();
@@ -29,24 +26,11 @@ export default function FloatingSOS() {
     isSending,
     isTriggered,
     lastAlert,
+    selectTypeAndStartCountdown,
     triggerSOS,
     cancelSOS,
     resetSOS,
   } = useSOS();
-
-  const [emergencyContacts, setEmergencyContacts] = useState([]);
-
-  // Fetch configured SOS contacts on mount or when alert triggers
-  useEffect(() => {
-    if (user?.role === 'member') {
-      api.get('/sos/contacts')
-        .then((res) => {
-          const list = res.data?.data || res.data || [];
-          if (Array.isArray(list)) setEmergencyContacts(list);
-        })
-        .catch((err) => console.warn('Could not load SOS contacts for floating widget:', err));
-    }
-  }, [user?.role, isTriggered]);
 
   // Floating SOS button is only displayed for resident members
   if (user?.role !== 'member') {
@@ -56,31 +40,31 @@ export default function FloatingSOS() {
   const emergencyTypes = [
     {
       key: 'Medical Emergency',
-      label: 'Medical Emergency',
+      label: t('sos_type_medical') || 'Medical Emergency',
       icon: HiHeart,
       color: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 border-rose-200 dark:border-rose-800',
     },
     {
-      key: 'Fire Outbreak',
-      label: 'Fire Outbreak',
+      key: 'Fire Incident',
+      label: t('sos_type_fire') || 'Fire Incident',
       icon: HiFire,
       color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800',
     },
     {
       key: 'Theft / Intruder',
-      label: 'Theft / Intruder',
+      label: t('sos_type_theft') || 'Theft / Intruder',
       icon: HiShieldExclamation,
       color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800',
     },
     {
       key: 'Women Safety',
-      label: 'Women Safety',
+      label: t('sos_type_women') || 'Women Safety',
       icon: HiShieldCheck,
       color: 'text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 hover:bg-pink-100 dark:hover:bg-pink-900/50 border-pink-200 dark:border-pink-800',
     },
     {
       key: 'Other Emergency',
-      label: 'Other Emergency',
+      label: t('sos_type_other') || 'General Emergency',
       icon: HiExclamationTriangle,
       color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200 dark:border-purple-800',
     },
@@ -90,33 +74,17 @@ export default function FloatingSOS() {
   const compileAddress = () => {
     if (lastAlert?.resident_address) return lastAlert.resident_address;
     const parts = [];
-    if (user?.door_no) parts.push(`Door/Flat: ${user.door_no}`);
-    if (user?.street) parts.push(`Street: ${user.street}`);
-    if (user?.layout_name) parts.push(`Layout: ${user.layout_name}`);
-    if (user?.taluk) parts.push(`Taluk: ${user.taluk}`);
-    if (user?.district) parts.push(`District: ${user.district}`);
-    if (user?.state) parts.push(`State: ${user.state}`);
-    return parts.length > 0 ? parts.join(', ') : 'Registered Association Residence';
+    if (user?.door_no) parts.push(`Door: ${user.door_no}`);
+    if (user?.street) parts.push(user.street);
+    if (user?.layout_name) parts.push(user.layout_name);
+    return parts.length > 0 ? parts.join(', ') : 'Registered Layout Residence';
   };
 
   const residentAddress = compileAddress();
-  const problemName = lastAlert?.problem || lastAlert?.emergency_type || 'Emergency Distress';
-  const displayedContacts = (lastAlert?.contacts && lastAlert.contacts.length > 0)
-    ? lastAlert.contacts
-    : emergencyContacts;
-
-  const constructDistressText = () => {
-    return `🚨 EMERGENCY SOS DISTRESS ALERT!\n` +
-      `⚠️ Problem: ${problemName}\n` +
-      `👤 Resident: ${user?.name || 'Resident'} (Phone: ${user?.phone || 'N/A'})\n` +
-      `📍 Address: ${residentAddress}\n` +
-      (lastAlert?.location_link ? `🗺️ Map: ${lastAlert.location_link}\n` : '') +
-      `Please respond and send emergency help immediately!`;
-  };
 
   return (
     <>
-      {/* Floating SOS Action Button (Classic round red pulsing button) */}
+      {/* Floating SOS Action Button (Immediate Reaction on Click) */}
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center">
         <div className="relative group">
           <button
@@ -151,18 +119,18 @@ export default function FloatingSOS() {
       <Modal
         isOpen={showTypeSelector}
         onClose={() => setShowTypeSelector(false)}
-        title="Select Emergency Type"
+        title={t('sos_select_type') || '🚨 Emergency SOS Dispatch'}
         size="md"
       >
-        <div className="space-y-3.5 py-1">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        <div className="space-y-3.5 py-2">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
             Click any situation below to immediately dispatch emergency distress to association administrators and neighbors:
           </p>
 
           {/* Primary Top Immediate SOS Button */}
           <button
             type="button"
-            onClick={() => triggerSOS('Immediate Emergency Distress')}
+            onClick={() => triggerSOS('Immediate Distress')}
             disabled={isSending}
             className="w-full p-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95 cursor-pointer disabled:opacity-50"
           >
@@ -178,7 +146,7 @@ export default function FloatingSOS() {
                 <button
                   key={type.key}
                   type="button"
-                  onClick={() => triggerSOS(type.key)}
+                  onClick={() => selectTypeAndStartCountdown(type.key)}
                   disabled={isSending}
                   className={`flex items-center gap-3 p-3.5 rounded-xl border text-left font-semibold text-xs sm:text-sm transition hover:scale-[1.02] shadow-sm cursor-pointer active:scale-95 disabled:opacity-50 ${type.color}`}
                 >
@@ -232,7 +200,7 @@ export default function FloatingSOS() {
             </h3>
 
             <p className="text-base text-gray-700 dark:text-gray-300 font-medium mb-6">
-              {t('sos_countdown_text', { seconds: cancelCountdown })}
+              {t('sos_countdown_text', { seconds: cancelCountdown }) || `Dispatching SOS alert in ${cancelCountdown} seconds...`}
             </p>
 
             <div className="w-24 h-24 rounded-full border-4 border-red-600 flex items-center justify-center mx-auto mb-6 text-4xl font-extrabold text-red-600 dark:text-red-400 font-mono">
@@ -245,193 +213,88 @@ export default function FloatingSOS() {
                 onClick={cancelSOS}
                 className="w-full py-3.5 px-6 bg-gray-900 hover:bg-black text-white font-bold text-base rounded-xl transition shadow-lg cursor-pointer"
               >
-                {t('sos_cancel_button')} (False Alarm)
+                {t('sos_cancel_button') || 'Cancel (False Alarm)'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Dispatched Confirmation Modal with Problem, Address, and SOS Contacts */}
+      {/* Dispatched Confirmation Modal */}
       {isTriggered && (
         <Modal
           isOpen={isTriggered}
           onClose={resetSOS}
-          title="🚨 Emergency SOS Distress Dispatched"
-          size="lg"
+          title="🚨 SOS Distress Signal Active"
+          size="md"
         >
-          <div className="py-2 space-y-4">
-            {/* Header banner */}
-            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3">
-              <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 font-bold text-lg shadow-sm">
-                ✓
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
-                  Distress Alert Dispatched Automatically!
-                </h4>
-                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
-                  Your emergency situation, resident profile, and full address have been transmitted to all association responders and emergency contacts.
-                </p>
-              </div>
+          <div className="text-center py-4 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-3xl font-bold">
+              ✓
             </div>
 
-            {/* Problem & Resident Address Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              {/* Problem Details */}
-              <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl space-y-1.5">
-                <span className="font-bold text-red-800 dark:text-red-300 uppercase tracking-wider block text-[10px]">
-                  Emergency Problem
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-black text-red-700 dark:text-red-400">
-                    {problemName}
-                  </span>
-                </div>
-                <div className="text-[11px] text-gray-600 dark:text-gray-400 flex items-center gap-1 pt-1">
-                  <HiClock className="w-3.5 h-3.5 text-gray-400" />
-                  <span>Time: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              </div>
+            <h4 className="text-xl font-bold text-gray-900 dark:text-white">
+              {t('sos_alert_sent') || 'SOS Alert Sent Successfully!'}
+            </h4>
 
-              {/* Address Details */}
-              <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl space-y-1.5">
-                <span className="font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider block text-[10px]">
-                  Dispatched Resident Address
-                </span>
-                <p className="font-semibold text-gray-900 dark:text-white leading-relaxed">
-                  {residentAddress}
-                </p>
-                {lastAlert?.location_link && (
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-sm mx-auto">
+              Association emergency responders, neighbors, and security have received your emergency alert with live GPS coordinates.
+            </p>
+
+            {lastAlert && (
+              <div className="bg-gray-50 dark:bg-slate-800 p-3.5 rounded-2xl text-xs text-gray-600 dark:text-gray-300 font-mono text-left border border-gray-200 dark:border-slate-700 space-y-1">
+                <p><strong>Alert ID:</strong> #{lastAlert.id || 'N/A'}</p>
+                <p><strong>Emergency:</strong> {lastAlert.emergency_type || 'General Distress'}</p>
+                <p><strong>Resident:</strong> {user?.name || 'Resident'} (Door: {user?.door_no || 'N/A'})</p>
+                {residentAddress && <p><strong>Address:</strong> {residentAddress}</p>}
+                {lastAlert.latitude && (
+                  <p><strong>GPS:</strong> {lastAlert.latitude.toFixed(5)}, {lastAlert.longitude.toFixed(5)}</p>
+                )}
+                {lastAlert.location_link && (
                   <a
                     href={lastAlert.location_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 dark:text-cyan-400 hover:underline pt-0.5"
+                    className="inline-flex items-center gap-1 text-primary-600 dark:text-cyan-400 font-bold hover:underline pt-1"
                   >
-                    <HiMapPin className="w-3.5 h-3.5 text-primary-600 dark:text-cyan-400" />
-                    <span>View Live GPS Location</span>
-                    <HiArrowTopRightOnSquare className="w-3 h-3" />
+                    <HiMapPin className="w-4 h-4" />
+                    <span>View Live Map Location ↗</span>
                   </a>
                 )}
               </div>
-            </div>
+            )}
 
-            {/* SOS Contacts Notified Section */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
-                  Emergency Contacts Notified ({displayedContacts.length})
-                </span>
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <HiCheckCircle className="w-3.5 h-3.5" />
-                  <span>SMS Dispatched</span>
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {displayedContacts.map((contact, idx) => {
-                  const cleanedPhone = (contact.phone || '').replace(/\D/g, '').slice(-10);
-                  const waUrl = `https://wa.me/91${cleanedPhone}?text=${encodeURIComponent(constructDistressText())}`;
-
-                  return (
-                    <div
-                      key={contact.id || idx}
-                      className="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-xs flex flex-col justify-between hover:border-gray-300 dark:hover:border-slate-700 transition"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                            contact.contact_type === 'family'
-                              ? 'text-rose-700 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                              : 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-950/60'
-                          }`}>
-                            {contact.contact_type === 'member'
-                              ? `Community Member`
-                              : contact.contact_type === 'police'
-                              ? 'Police Department'
-                              : '❤️ Your Family Contact'}
-                          </span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
-                            <HiCheckCircle className="w-3 h-3" />
-                            Sent
-                          </span>
-                        </div>
-
-                        <h5 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm mt-1">
-                          {contact.name || 'Emergency Responder'}
-                        </h5>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                          {contact.designation || 'Emergency Contact'}
-                        </p>
-                        <p className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300 mt-0.5">
-                          📞 {contact.phone}
-                        </p>
-                      </div>
-
-                      {/* Immediate Call & WhatsApp Buttons */}
-                      <div className="grid grid-cols-2 gap-1.5 pt-2 mt-2 border-t border-gray-100 dark:border-slate-800">
-                        <a
-                          href={`tel:${contact.phone}`}
-                          className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 rounded-lg text-xs font-bold transition"
-                          title="Call Contact"
-                        >
-                          <HiPhone className="w-3.5 h-3.5" />
-                          <span>Call</span>
-                        </a>
-
-                        <a
-                          href={waUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 rounded-lg text-xs font-bold transition"
-                          title="Send SOS message on WhatsApp"
-                        >
-                          <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                          <span>WhatsApp</span>
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Direct Emergency Call Bar */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <a
                 href="tel:100"
-                className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
               >
                 <HiPhone className="w-4 h-4" />
                 <span>Call Police (100)</span>
               </a>
               <a
                 href="tel:112"
-                className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
               >
                 <HiPhone className="w-4 h-4" />
                 <span>Helpline (112)</span>
               </a>
               <a
                 href="tel:108"
-                className="flex-1 py-2.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                className="flex-1 py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
               >
                 <HiPhone className="w-4 h-4" />
                 <span>Ambulance (108)</span>
               </a>
             </div>
 
-            {/* Dismiss */}
-            <div className="text-center pt-1">
-              <button
-                type="button"
-                onClick={resetSOS}
-                className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white underline font-medium cursor-pointer"
-              >
-                Dismiss alert view
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={resetSOS}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white underline font-semibold cursor-pointer"
+            >
+              Dismiss alert view
+            </button>
           </div>
         </Modal>
       )}
