@@ -33,7 +33,7 @@ import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 import AudioPlayer from '../../components/common/AudioPlayer';
-import AdBannerCarousel from '../../components/common/AdBannerCarousel';
+import AdSideView from '../../components/common/AdSideView';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -410,11 +410,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Sponsored Partner & Layout Advertisements Carousel */}
-      <AdBannerCarousel panel="admin" associationId={user?.association_id} />
-
-      {/* Top Stats Cards Row (5 Cards - Maintenance removed) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      {/* Main Content + Right-Side View Sponsored Ads Rail (Desktop Sticky, Mobile Drawer) */}
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* Left Primary Admin Dashboard Column */}
+        <div className="flex-1 min-w-0 space-y-6 w-full">
+          {/* Top Stats Cards Row (5 Cards - Maintenance removed) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <StatsCard
           title="Active Members"
           value={stats.totalMembers}
@@ -903,6 +904,11 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      </div>
+      </div>
+
+      {/* Dedicated Right-Side Sponsored Ads Rail (Desktop Sticky, Mobile Drawer) */}
+      <AdSideView panel="admin" associationId={user?.association_id} />
       </div>
 
       {/* =========================================================================

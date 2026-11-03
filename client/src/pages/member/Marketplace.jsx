@@ -23,7 +23,7 @@ import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import Modal from '../../components/common/Modal';
 import toast from 'react-hot-toast';
-import AdBannerCarousel from '../../components/common/AdBannerCarousel';
+import AdSideView from '../../components/common/AdSideView';
 
 export default function Marketplace() {
   const { user } = useAuth();
@@ -311,8 +311,10 @@ Please confirm availability and approximate delivery time. Thank you!`;
         </div>
       </div>
 
-      {/* Sponsored Partner & Vendor Advertisement Banners */}
-      <AdBannerCarousel panel={user?.role === 'admin' ? 'admin' : 'member'} associationId={user?.association_id} />
+      {/* Main Marketplace Content + Right-Side View Sponsored Ads Rail (Desktop Sticky, Mobile Drawer) */}
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* Left Marketplace Products Column */}
+        <div className="flex-1 min-w-0 space-y-6 w-full">
 
       {/* SEARCH & FILTERS */}
       <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
@@ -596,6 +598,11 @@ Please confirm availability and approximate delivery time. Thank you!`;
           })}
         </div>
       )}
+      </div>
+
+      {/* Dedicated Right-Side Sponsored Ads Rail (Desktop Sticky, Mobile Drawer) */}
+      <AdSideView panel={user?.role === 'admin' ? 'admin' : 'member'} associationId={user?.association_id} />
+      </div>
 
       {/* FLOATING ORDER SUMMARY BAR (WHEN PRODUCTS ARE SELECTED) */}
       {totalProductCount > 0 && (
