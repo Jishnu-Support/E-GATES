@@ -153,21 +153,50 @@ export default function Properties() {
     fetchProperties();
   };
 
-  // Image Selection Handler
+  // Image Selection Handler (reads Base64 data URLs for reliable cross-browser preview)
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (!rawFiles.length) return;
 
-    if (selectedImages.length + files.length > 8) {
-      toast.error('You can upload up to 8 photos maximum');
+    // Filter valid image types
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const validFiles = rawFiles.filter(
+      (f) => validImageTypes.includes(f.type) || f.type.startsWith('image/')
+    );
+
+    if (validFiles.length < rawFiles.length) {
+      toast.error('Only image files (JPG, PNG, WEBP) are supported for property photos');
+    }
+
+    if (!validFiles.length) {
+      if (e.target) e.target.value = '';
       return;
     }
 
-    const newFiles = [...selectedImages, ...files];
+    if (selectedImages.length + validFiles.length > 8) {
+      toast.error('You can upload up to 8 photos maximum');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    const newFiles = [...selectedImages, ...validFiles];
     setSelectedImages(newFiles);
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    // Read files as base64 data URLs for guaranteed reliable rendering
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setImagePreviews((prev) => [...prev, reader.result]);
+        }
+      };
+      reader.onerror = () => {
+        console.warn('FileReader error for photo:', file.name);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (e.target) e.target.value = '';
   };
 
   const removeSelectedImage = (index) => {
@@ -1169,14 +1198,22 @@ export default function Properties() {
               </button>
 
               {imagePreviews.map((preview, idx) => (
-                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-300 dark:border-slate-700 group">
-                  <img src={preview} alt="Upload preview" className="w-full h-full object-cover" />
+                <div
+                  key={idx}
+                  className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-300 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 flex items-center justify-center group flex-shrink-0"
+                >
+                  <img
+                    src={preview}
+                    alt="Property Photo"
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => removeSelectedImage(idx)}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-rose-600 text-white opacity-90 hover:opacity-100 transition cursor-pointer"
+                    className="absolute top-1 right-1 p-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition cursor-pointer"
+                    title="Remove photo"
                   >
-                    <HiXMark className="w-3 h-3" />
+                    <HiXMark className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
