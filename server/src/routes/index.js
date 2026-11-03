@@ -83,4 +83,8 @@ router.use('/event-captures', eventCaptureRoutes);
 const productRoutes = safeLoadRoute(['product.routes.js', 'products.routes.js', 'products.js', 'product.js'], 'Products');
 router.use('/products', productRoutes);
 
+// 15. Property Listings (House for Sale / Rent) routes
+const propertyRoutes = safeLoadRoute(['property.routes.js', 'properties.routes.js', 'property.js'], 'Properties');
+router.use('/properties', propertyRoutes);
+
 module.exports = router;

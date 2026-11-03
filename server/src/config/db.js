@@ -95,6 +95,42 @@ async function initPostgresSchemaAndSeed() {
       CREATE INDEX IF NOT EXISTS idx_products_vendor ON products(vendor_id);
       CREATE INDEX IF NOT EXISTS idx_products_assoc ON products(association_id);
       CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+
+      CREATE TABLE IF NOT EXISTS property_listings (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+        listing_type VARCHAR(20) NOT NULL CHECK (listing_type IN ('sale', 'rent', 'lease')),
+        property_type VARCHAR(50) NOT NULL DEFAULT 'Independent House',
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(12, 2) NOT NULL,
+        price_negotiable BOOLEAN DEFAULT true,
+        maintenance_charges DECIMAL(10, 2) DEFAULT 0,
+        bhk VARCHAR(20),
+        bathrooms INTEGER DEFAULT 1,
+        built_up_sqft INTEGER,
+        plot_sqft INTEGER,
+        facing VARCHAR(30),
+        door_number VARCHAR(100),
+        location_address TEXT,
+        city VARCHAR(100),
+        contact_person VARCHAR(150) NOT NULL,
+        contact_phone VARCHAR(20) NOT NULL,
+        contact_email VARCHAR(255),
+        images TEXT DEFAULT '[]',
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'sold', 'rented')),
+        rejection_reason TEXT,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        is_featured BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_property_user ON property_listings(user_id);
+      CREATE INDEX IF NOT EXISTS idx_property_assoc ON property_listings(association_id);
+      CREATE INDEX IF NOT EXISTS idx_property_status ON property_listings(status);
+      CREATE INDEX IF NOT EXISTS idx_property_listing_type ON property_listings(listing_type);
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration

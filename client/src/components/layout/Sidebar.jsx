@@ -22,6 +22,7 @@ import {
   HiArrowRightOnRectangle,
   HiBuildingStorefront,
   HiShoppingBag,
+  HiHome,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -43,6 +44,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_voting'), path: '/super-admin/polls', icon: HiChartBarSquare },
     { name: t('nav_sos_reports'), path: '/super-admin/sos-reports', icon: HiExclamationCircle },
     { name: 'Local Market & Shops', path: '/super-admin/market', icon: HiBuildingStorefront },
+    { name: 'Properties (Sale / Rent)', path: '/super-admin/properties', icon: HiHome },
     { name: t('nav_audit_log'), path: '/super-admin/audit-log', icon: HiClipboardDocumentList },
     { name: t('nav_profile') || 'My Profile', path: '/super-admin/profile', icon: HiUserCircle },
   ];
@@ -62,6 +64,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_event_captures') || 'Event Captures', path: '/admin/event-captures', icon: HiFilm },
     { name: t('nav_documents') || 'Community Documents', path: '/admin/documents', icon: HiDocumentDuplicate },
     { name: 'Local Market & Shops', path: '/admin/market', icon: HiBuildingStorefront },
+    { name: 'Properties (Sale / Rent)', path: '/admin/properties', icon: HiHome },
     { name: t('nav_profile'), path: '/admin/profile', icon: HiUserCircle },
   ];
 
@@ -72,6 +75,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_event_captures') || 'Event Captures', path: '/member/event-captures', icon: HiFilm },
     { name: t('nav_news'), path: '/member/news', icon: HiMegaphone },
     { name: 'Local Market & Shops', path: '/member/market', icon: HiBuildingStorefront },
+    { name: 'House for Sale & Rent', path: '/member/properties', icon: HiHome },
     { name: t('nav_voting'), path: '/member/voting', icon: HiChartBarSquare },
     { name: t('nav_complaints'), path: '/member/complaints', icon: HiChatBubbleLeftRight },
     { name: t('nav_profile'), path: '/member/profile', icon: HiUserCircle },

@@ -46,6 +46,7 @@ const VotingPage = lazy(() => import('./pages/member/VotingPage'));
 const MemberComplaints = lazy(() => import('./pages/member/Complaints'));
 const Profile = lazy(() => import('./pages/member/Profile'));
 const Marketplace = lazy(() => import('./pages/member/Marketplace'));
+const Properties = lazy(() => import('./pages/member/Properties'));
 
 // Vendor Pages
 const VendorDashboard = lazy(() => import('./pages/vendor/VendorDashboard'));
@@ -134,6 +135,7 @@ export default function App() {
           <Route path="sos-reports" element={<SOSReports />} />
           <Route path="market" element={<Marketplace />} />
           <Route path="shops" element={<Marketplace />} />
+          <Route path="properties" element={<Properties />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
@@ -166,6 +168,7 @@ export default function App() {
           <Route path="documents" element={<Documents />} />
           <Route path="market" element={<Marketplace />} />
           <Route path="shops" element={<Marketplace />} />
+          <Route path="properties" element={<Properties />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
@@ -191,6 +194,7 @@ export default function App() {
           <Route path="complaints" element={<MemberComplaints />} />
           <Route path="market" element={<Marketplace />} />
           <Route path="shops" element={<Marketplace />} />
+          <Route path="properties" element={<Properties />} />
           <Route path="profile" element={<Profile />} />
           <Route path="maintenance" element={<Navigate to="/member/dashboard" replace />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />

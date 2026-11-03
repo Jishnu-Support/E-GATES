@@ -37,6 +37,15 @@ export default function PendingApprovals() {
   const [deleteUser, setDeleteUser] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Section: 'registrations' | 'properties'
+  const [activeSection, setActiveSection] = useState('registrations');
+  const [pendingProperties, setPendingProperties] = useState([]);
+  const [loadingProps, setLoadingProps] = useState(false);
+  const [rejectProperty, setRejectProperty] = useState(null);
+  const [propRejectReason, setPropRejectReason] = useState('');
+  const [isRejectingProp, setIsRejectingProp] = useState(false);
+  const [previewProperty, setPreviewProperty] = useState(null);
+
   const fetchPending = async () => {
     try {
       setLoading(true);
@@ -50,9 +59,54 @@ export default function PendingApprovals() {
     }
   };
 
+  const fetchPendingProperties = async () => {
+    if (currentUser?.role !== 'super_admin') return;
+    try {
+      setLoadingProps(true);
+      const res = await api.get('/properties/pending');
+      setPendingProperties(res.data?.data || []);
+    } catch (err) {
+      console.warn('Error fetching pending properties:', err);
+    } finally {
+      setLoadingProps(false);
+    }
+  };
+
   useEffect(() => {
     fetchPending();
-  }, []);
+    if (currentUser?.role === 'super_admin') {
+      fetchPendingProperties();
+    }
+  }, [currentUser]);
+
+  const handleApproveProperty = async (id, title) => {
+    try {
+      await api.put(`/properties/${id}/approve`);
+      toast.success(`Property "${title}" approved! It is now live across all layout associations.`);
+      fetchPendingProperties();
+      if (previewProperty?.id === id) setPreviewProperty(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to approve property listing');
+    }
+  };
+
+  const handleRejectPropertySubmit = async (e) => {
+    e.preventDefault();
+    if (!rejectProperty) return;
+    try {
+      setIsRejectingProp(true);
+      await api.put(`/properties/${rejectProperty.id}/reject`, { reason: propRejectReason });
+      toast.success(`Property listing "${rejectProperty.title}" rejected`);
+      setRejectProperty(null);
+      setPropRejectReason('');
+      fetchPendingProperties();
+      if (previewProperty?.id === rejectProperty.id) setPreviewProperty(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reject property');
+    } finally {
+      setIsRejectingProp(false);
+    }
+  };
 
   const handleApprove = async (id, name, userObj) => {
     try {
@@ -148,7 +202,47 @@ export default function PendingApprovals() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Super Admin Section Switcher Tabs */}
+      {currentUser?.role === 'super_admin' && (
+        <div className="flex items-center gap-2 p-1.5 bg-gray-100 dark:bg-slate-800 rounded-2xl w-fit border border-gray-200 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={() => setActiveSection('registrations')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 ${
+              activeSection === 'registrations'
+                ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <span>👥 Registrations (Admins & Vendors)</span>
+            {data.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">
+                {data.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('properties')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 ${
+              activeSection === 'properties'
+                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <span>🏠 House / Property Listings (Sale & Rent)</span>
+            {pendingProperties.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                {pendingProperties.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* SECTION 1: USER / VENDOR / ADMIN REGISTRATIONS TABLE */}
+      {activeSection === 'registrations' && (
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           {data.length === 0 ? (
@@ -342,6 +436,194 @@ export default function PendingApprovals() {
           )}
         </div>
       </div>
+      )}
+
+      {/* SECTION 2: PENDING HOUSE / PROPERTY LISTINGS (FOR SALE & RENT) */}
+      {activeSection === 'properties' && (
+        <div className="space-y-4">
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-300">
+            <div className="flex items-center gap-2.5">
+              <HiShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <span>
+                <strong>Super Admin Property Oversight:</strong> Review house sale and rental listings submitted by homeowners. Once you click <strong>Approve</strong>, the property is broadcasted live to all layout associations across the entire platform.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={fetchPendingProperties}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer flex-shrink-0"
+            >
+              <HiArrowPath className={`w-3.5 h-3.5 ${loadingProps ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+            <div className="overflow-x-auto">
+              {pendingProperties.length === 0 ? (
+                <div className="p-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                  {loadingProps
+                    ? 'Loading pending property listings...'
+                    : 'No pending property listings awaiting approval. All house sale/rent posts have been reviewed.'}
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-gray-50/80 dark:bg-slate-800/60 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-[11px] font-bold border-b border-gray-100 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">Property & Type</th>
+                      <th className="py-3 px-4">Layout Association</th>
+                      <th className="py-3 px-4">Expected Price / Rent</th>
+                      <th className="py-3 px-4">Specifications</th>
+                      <th className="py-3 px-4">Owner Contact</th>
+                      <th className="py-3 px-4 text-center">Photos</th>
+                      <th className="py-3 px-4 text-right">Verification Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                    {pendingProperties.map((prop) => {
+                      const photos = Array.isArray(prop.images) ? prop.images : [];
+                      const firstPhoto = photos[0] ? getFileUrl(photos[0]) : null;
+
+                      return (
+                        <tr
+                          key={prop.id}
+                          className="hover:bg-amber-50/30 dark:hover:bg-slate-800/40 transition group"
+                        >
+                          <td className="py-3.5 px-4 font-bold text-gray-900 dark:text-white">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0 border border-gray-200 dark:border-slate-700">
+                                {firstPhoto ? (
+                                  <img src={firstPhoto} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                    🏠
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase mb-0.5 ${
+                                    prop.listing_type === 'sale'
+                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                  }`}
+                                >
+                                  {prop.listing_type === 'sale' ? '🏠 For Sale' : '🔑 For Rent'}
+                                </span>
+                                <h4 className="text-xs font-black truncate max-w-[200px] text-gray-900 dark:text-white">
+                                  {prop.title}
+                                </h4>
+                                <span className="text-[10px] text-gray-400 block">
+                                  {prop.property_type || 'Independent House'}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 font-medium text-gray-700 dark:text-gray-300">
+                            <p className="font-bold text-gray-900 dark:text-white">
+                              📍 {prop.association_name || 'General Community'}
+                            </p>
+                            {prop.city && <p className="text-[10px] text-gray-400">{prop.city}</p>}
+                            {prop.door_number && (
+                              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                Door: {prop.door_number}
+                              </p>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                            ₹{parseFloat(prop.price).toLocaleString('en-IN')}
+                            {prop.listing_type === 'rent' && (
+                              <span className="text-[10px] font-normal text-gray-400 ml-1">/ month</span>
+                            )}
+                            {prop.price_negotiable && (
+                              <span className="block text-[10px] font-bold text-amber-500 uppercase">
+                                Negotiable
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-gray-600 dark:text-gray-300">
+                            <p className="font-bold text-xs">{prop.bhk || 'N/A'}</p>
+                            {prop.built_up_sqft && (
+                              <p className="text-[10px] text-gray-400">📐 {prop.built_up_sqft} sqft</p>
+                            )}
+                            {prop.facing && (
+                              <p className="text-[10px] text-gray-400">🧭 {prop.facing} Facing</p>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-gray-600 dark:text-gray-300 font-mono">
+                            <p className="font-bold text-gray-900 dark:text-white font-sans text-xs">
+                              {prop.contact_person || prop.owner_name}
+                            </p>
+                            <p className="text-xs">{prop.contact_phone || 'N/A'}</p>
+                            {prop.contact_email && (
+                              <p className="text-[10px] text-gray-400 font-sans">{prop.contact_email}</p>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center">
+                            {photos.length > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewProperty(prop)}
+                                className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                              >
+                                📷 {photos.length} Photos
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px]">None</span>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Quick View */}
+                              <button
+                                type="button"
+                                onClick={() => setPreviewProperty(prop)}
+                                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+                                title="View Details"
+                              >
+                                <HiEye className="w-4 h-4" />
+                              </button>
+
+                              {/* Approve Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleApproveProperty(prop.id, prop.title)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <HiCheckCircle className="w-3.5 h-3.5" />
+                                <span>Approve</span>
+                              </button>
+
+                              {/* Reject Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRejectProperty(prop);
+                                  setPropRejectReason('');
+                                }}
+                                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <HiXCircle className="w-3.5 h-3.5" />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PROOF PREVIEW MODAL */}
       <Modal
@@ -444,6 +726,118 @@ export default function PendingApprovals() {
         confirmText={isDeleting ? 'Deleting...' : 'Delete Permanently'}
         variant="danger"
       />
+
+      {/* REJECT PROPERTY MODAL */}
+      <Modal
+        isOpen={Boolean(rejectProperty)}
+        onClose={() => setRejectProperty(null)}
+        title={`Reject Property Listing: ${rejectProperty?.title}`}
+        size="md"
+      >
+        <form onSubmit={handleRejectPropertySubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Reason for Rejection *
+            </label>
+            <textarea
+              required
+              rows={4}
+              value={propRejectReason}
+              onChange={(e) => setPropRejectReason(e.target.value)}
+              placeholder="e.g. Please upload actual photos of the house and specify door number clearly."
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setRejectProperty(null)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isRejectingProp}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+            >
+              {isRejectingProp ? 'Rejecting...' : 'Confirm Rejection'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* PREVIEW PROPERTY MODAL */}
+      {previewProperty && (
+        <Modal
+          isOpen={Boolean(previewProperty)}
+          onClose={() => setPreviewProperty(null)}
+          title={`Property: ${previewProperty.title}`}
+          size="lg"
+        >
+          <div className="space-y-4">
+            {/* Photos */}
+            {(() => {
+              const photos = Array.isArray(previewProperty.images) ? previewProperty.images : [];
+              if (photos.length === 0) return null;
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-1 bg-gray-50 dark:bg-slate-800 rounded-xl">
+                  {photos.map((p, i) => (
+                    <img
+                      key={i}
+                      src={getFileUrl(p)}
+                      alt={`Photo ${i + 1}`}
+                      className="w-full h-28 object-cover rounded-lg border border-gray-200 dark:border-slate-700"
+                    />
+                  ))}
+                </div>
+              );
+            })()}
+
+            <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                  ₹{parseFloat(previewProperty.price).toLocaleString('en-IN')}{' '}
+                  {previewProperty.listing_type === 'rent' ? '/ month' : ''}
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700">
+                  {previewProperty.listing_type === 'sale' ? 'FOR SALE' : 'FOR RENT'} • {previewProperty.bhk}
+                </span>
+              </div>
+              <p className="text-gray-700 dark:text-gray-300 font-medium">
+                📍 {previewProperty.association_name} ({previewProperty.city})
+                {previewProperty.door_number ? ` • Door: ${previewProperty.door_number}` : ''}
+              </p>
+              {previewProperty.description && (
+                <p className="text-gray-600 dark:text-gray-400 pt-1 text-[11px] whitespace-pre-line">
+                  {previewProperty.description}
+                </p>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleApproveProperty(previewProperty.id, previewProperty.title)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
+              >
+                Approve & Broadcast to All Associations
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectProperty(previewProperty);
+                  setPreviewProperty(null);
+                }}
+                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-bold text-xs rounded-xl transition"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

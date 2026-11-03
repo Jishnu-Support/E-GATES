@@ -122,6 +122,42 @@ function ensureSchemaMigrations(db) {
       CREATE INDEX IF NOT EXISTS idx_products_vendor ON products(vendor_id);
       CREATE INDEX IF NOT EXISTS idx_products_assoc ON products(association_id);
       CREATE INDEX IF NOT EXISTS idx_products_cat ON products(category);
+
+      CREATE TABLE IF NOT EXISTS property_listings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+        listing_type TEXT NOT NULL CHECK (listing_type IN ('sale', 'rent', 'lease')),
+        property_type TEXT NOT NULL DEFAULT 'Independent House',
+        title TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        price_negotiable INTEGER DEFAULT 1,
+        maintenance_charges REAL DEFAULT 0,
+        bhk TEXT,
+        bathrooms INTEGER DEFAULT 1,
+        built_up_sqft INTEGER,
+        plot_sqft INTEGER,
+        facing TEXT,
+        door_number TEXT,
+        location_address TEXT,
+        city TEXT,
+        contact_person TEXT NOT NULL,
+        contact_phone TEXT NOT NULL,
+        contact_email TEXT,
+        images TEXT DEFAULT '[]',
+        status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'sold', 'rented')),
+        rejection_reason TEXT,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TEXT,
+        is_featured INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_property_user ON property_listings(user_id);
+      CREATE INDEX IF NOT EXISTS idx_property_assoc ON property_listings(association_id);
+      CREATE INDEX IF NOT EXISTS idx_property_status ON property_listings(status);
+      CREATE INDEX IF NOT EXISTS idx_property_type ON property_listings(listing_type);
     `);
 
     // 2. Ensure missing columns on users and vendor migration
@@ -468,6 +504,42 @@ function initSchemaAndSeed(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS property_listings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+      listing_type TEXT NOT NULL CHECK (listing_type IN ('sale', 'rent', 'lease')),
+      property_type TEXT NOT NULL DEFAULT 'Independent House',
+      title TEXT NOT NULL,
+      description TEXT,
+      price REAL NOT NULL,
+      price_negotiable INTEGER DEFAULT 1,
+      maintenance_charges REAL DEFAULT 0,
+      bhk TEXT,
+      bathrooms INTEGER DEFAULT 1,
+      built_up_sqft INTEGER,
+      plot_sqft INTEGER,
+      facing TEXT,
+      door_number TEXT,
+      location_address TEXT,
+      city TEXT,
+      contact_person TEXT NOT NULL,
+      contact_phone TEXT NOT NULL,
+      contact_email TEXT,
+      images TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'sold', 'rented')),
+      rejection_reason TEXT,
+      reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_at TEXT,
+      is_featured INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_property_user ON property_listings(user_id);
+    CREATE INDEX IF NOT EXISTS idx_property_assoc ON property_listings(association_id);
+    CREATE INDEX IF NOT EXISTS idx_property_status ON property_listings(status);
+    CREATE INDEX IF NOT EXISTS idx_property_type ON property_listings(listing_type);
 
     CREATE TABLE IF NOT EXISTS audit_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
