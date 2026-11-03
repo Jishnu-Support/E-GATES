@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   HiSparkles,
-  HiChevronLeft,
-  HiChevronRight,
   HiArrowTopRightOnSquare,
   HiPhone,
   HiBuildingStorefront,
-  HiShieldCheck,
   HiCheckBadge,
   HiTag,
   HiMegaphone,
@@ -17,7 +14,7 @@ import {
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
-// Fallback showcase ads
+// Fallback showcase ads if database is empty
 const DEFAULT_SHOWCASE_ADS = [
   {
     id: 'showcase-1',
@@ -34,7 +31,7 @@ const DEFAULT_SHOWCASE_ADS = [
   },
   {
     id: 'showcase-2',
-    title: 'Smart RFID Boom Barriers & Gates',
+    title: 'Smart RFID Boom Barriers & Automated Gates',
     tagline: 'Automated resident vehicle entry, visitor QR passes & 24/7 maintenance.',
     description: 'Contactless layout gate automation by Jishnu Infotech.',
     banner_image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=800&q=80',
@@ -65,16 +62,10 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
   const navigate = useNavigate();
 
   const [ads, setAds] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-  const [progress, setProgress] = useState(0);
 
-  // Mobile Right Side Drawer State
+  // Mobile Right Side Slide Drawer State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
-  const SLIDE_DURATION = 6000;
-  const PROGRESS_INTERVAL = 50;
 
   useEffect(() => {
     let isMounted = true;
@@ -91,12 +82,13 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
           setAds(fetched.length > 0 ? fetched : DEFAULT_SHOWCASE_ADS);
         }
       } catch (err) {
-        console.warn('Failed to load advertisements:', err);
+        console.warn('Failed to load advertisements for side rail:', err);
         if (isMounted) setAds(DEFAULT_SHOWCASE_ADS);
       } finally {
         if (isMounted) setLoading(false);
       }
     };
+
     fetchAds();
     return () => {
       isMounted = false;
@@ -104,33 +96,6 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
   }, [panel, associationId]);
 
   const activeAds = ads.length > 0 ? ads : DEFAULT_SHOWCASE_ADS;
-
-  // Auto rotation timer
-  useEffect(() => {
-    if (activeAds.length <= 1 || isHovered) return;
-
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          setCurrentIndex((idx) => (idx + 1) % activeAds.length);
-          return 0;
-        }
-        return prev + (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
-      });
-    }, PROGRESS_INTERVAL);
-
-    return () => clearInterval(timer);
-  }, [activeAds.length, isHovered]);
-
-  const nextSlide = () => {
-    setProgress(0);
-    setCurrentIndex((prev) => (prev + 1) % activeAds.length);
-  };
-
-  const prevSlide = () => {
-    setProgress(0);
-    setCurrentIndex((prev) => (prev - 1 + activeAds.length) % activeAds.length);
-  };
 
   const handleAdClick = (ad) => {
     if (!ad) return;
@@ -156,191 +121,157 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
     }
   };
 
-  const currentAd = activeAds[currentIndex] || activeAds[0];
-  const bannerUrl = currentAd?.banner_image
-    ? currentAd.banner_image.startsWith('http')
-      ? currentAd.banner_image
-      : getFileUrl(currentAd.banner_image)
-    : null;
-
   return (
     <>
       {/* ======================================================== */}
-      {/* 1. RIGHT SIDEBAR DESKTOP VIEW & IN-FLOW RESPONSIVE CARD */}
+      {/* 1. RIGHT-SIDE SPONSORED ADS RAIL (DESKTOP STICKY STACK)   */}
       {/* ======================================================== */}
       <aside
-        className={`w-full xl:w-80 2xl:w-84 xl:flex-shrink-0 sticky top-20 self-start space-y-3 select-none ${className}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className={`w-full xl:w-80 2xl:w-84 xl:flex-shrink-0 sticky top-20 self-start space-y-4 select-none ${className}`}
       >
-        {/* Main Side View Sponsored Container */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-gray-200/90 dark:border-slate-800 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
-          {/* Header Row */}
-          <div className="px-3.5 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-gray-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-bold shadow-xs">
-                📢
-              </span>
-              <div>
-                <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1">
-                  <span>Sponsored</span>
-                  <HiSparkles className="w-3 h-3 text-amber-500 animate-pulse" />
-                </span>
-              </div>
+        {/* Rail Top Header */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-3 shadow-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold shadow-xs">
+              📢
+            </span>
+            <div>
+              <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <span>Sponsored Offers</span>
+                <HiSparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              </h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                Verified community layout partners
+              </p>
             </div>
+          </div>
 
-            {/* Slide Index Badge & Arrows */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-mono font-extrabold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                {currentIndex + 1}/{activeAds.length}
-              </span>
+          <span className="text-[10px] font-mono font-black text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/60 px-2 py-0.5 rounded-full">
+            {activeAds.length} Ads
+          </span>
+        </div>
 
-              {activeAds.length > 1 && (
-                <div className="flex items-center gap-0.5">
+        {/* STACKED ADS FEED: FIRST AD, ANOTHER AD BELOW IT, ETC. */}
+        <div className="space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-0.5 no-scrollbar">
+          {activeAds.map((ad, idx) => {
+            const bannerUrl = ad.banner_image
+              ? ad.banner_image.startsWith('http')
+                ? ad.banner_image
+                : getFileUrl(ad.banner_image)
+              : null;
+
+            return (
+              <div
+                key={ad.id || idx}
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/90 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group"
+              >
+                {/* Ad Card Top Header */}
+                <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-1 font-bold text-gray-800 dark:text-gray-200 truncate">
+                    <HiBuildingStorefront className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                    <span className="truncate">{ad.shop_name || 'Verified Partner'}</span>
+                    <HiCheckBadge className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" title="Verified Merchant" />
+                  </div>
+
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
+                    #{idx + 1}
+                  </span>
+                </div>
+
+                {/* Ad Banner Image */}
+                <div
+                  className="relative w-full h-40 sm:h-44 cursor-pointer overflow-hidden bg-slate-950"
+                  onClick={() => handleAdClick(ad)}
+                >
+                  {bannerUrl ? (
+                    <img
+                      src={bannerUrl}
+                      alt={ad.title}
+                      className="w-full h-full object-cover transform scale-100 group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-amber-400 text-3xl font-black">
+                      🛍️
+                    </div>
+                  )}
+
+                  {/* Gradient Overlay for Text Visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+                  {/* Badge in Top-Left */}
+                  {ad.badge && (
+                    <div className="absolute top-2 left-2">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md">
+                        <HiTag className="w-3 h-3" />
+                        <span>{ad.badge}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Title Overlay in Image Bottom */}
+                  <div className="absolute bottom-2 left-2.5 right-2.5 text-white">
+                    <h4 className="text-xs sm:text-sm font-black leading-tight line-clamp-2 drop-shadow-md">
+                      {ad.title}
+                    </h4>
+                  </div>
+                </div>
+
+                {/* Card Content & Action Button */}
+                <div className="p-3 space-y-2.5">
+                  {ad.tagline && (
+                    <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+                      {ad.tagline}
+                    </p>
+                  )}
+
+                  {/* 1-Tap Action CTA */}
                   <button
                     type="button"
-                    onClick={prevSlide}
-                    className="p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                    title="Previous advertisement"
+                    onClick={() => handleAdClick(ad)}
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 active:scale-[0.98] text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer touch-manipulation"
                   >
-                    <HiChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={nextSlide}
-                    className="p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                    title="Next advertisement"
-                  >
-                    <HiChevronRight className="w-3.5 h-3.5" />
+                    {ad.action_type === 'whatsapp' ? (
+                      <>
+                        <HiChatBubbleOvalLeftEllipsis className="w-4 h-4 text-emerald-200" />
+                        <span>{ad.action_text || 'Order on WhatsApp'}</span>
+                      </>
+                    ) : ad.action_type === 'call' ? (
+                      <>
+                        <HiPhone className="w-4 h-4 text-white" />
+                        <span>{ad.action_text || 'Call Vendor'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <HiArrowTopRightOnSquare className="w-4 h-4 text-white" />
+                        <span>{ad.action_text || 'View Offer'}</span>
+                      </>
+                    )}
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Ad Creative Image (Vertical / 16:9 Right-Rail Aspect Ratio) */}
-          <div
-            className="relative w-full h-44 sm:h-48 cursor-pointer overflow-hidden group bg-slate-950"
-            onClick={() => handleAdClick(currentAd)}
-          >
-            {bannerUrl ? (
-              <img
-                src={bannerUrl}
-                alt={currentAd.title}
-                className="w-full h-full object-cover transform scale-100 group-hover:scale-105 transition-transform duration-700 ease-out"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-amber-400 text-3xl font-black">
-                🛍️
               </div>
-            )}
+            );
+          })}
 
-            {/* Gradient Overlay for Crisp Text Readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-
-            {/* Top Badges */}
-            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 pointer-events-none">
-              {currentAd.badge && (
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md">
-                  {currentAd.badge}
-                </span>
-              )}
-              {currentAd.shop_name && (
-                <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-white backdrop-blur-md border border-white/20">
-                  <HiCheckBadge className="w-3 h-3 text-cyan-400" />
-                  <span className="truncate max-w-[120px]">{currentAd.shop_name}</span>
-                </span>
-              )}
-            </div>
-
-            {/* Title Overlay in Image Bottom */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
-              <h4 className="text-xs sm:text-sm font-black leading-tight line-clamp-2 drop-shadow-md">
-                {currentAd.title}
-              </h4>
-            </div>
-          </div>
-
-          {/* Auto Rotation Progress Bar */}
-          <div className="w-full h-1 bg-gray-100 dark:bg-slate-800 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-75 ease-linear"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Ad Details & Direct Action Buttons */}
-          <div className="p-3.5 space-y-3">
-            {/* Tagline / Value Proposition */}
-            {currentAd.tagline && (
-              <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
-                {currentAd.tagline}
-              </p>
-            )}
-
-            {/* Call to Action Button (Android & Mobile Friendly) */}
-            <button
-              type="button"
-              onClick={() => handleAdClick(currentAd)}
-              className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 active:scale-98 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer touch-manipulation"
-            >
-              {currentAd.action_type === 'whatsapp' ? (
-                <>
-                  <HiChatBubbleOvalLeftEllipsis className="w-4 h-4 text-emerald-200" />
-                  <span>{currentAd.action_text || 'Order on WhatsApp'}</span>
-                </>
-              ) : currentAd.action_type === 'call' ? (
-                <>
-                  <HiPhone className="w-4 h-4 text-white" />
-                  <span>{currentAd.action_text || 'Call Merchant'}</span>
-                </>
-              ) : (
-                <>
-                  <HiArrowTopRightOnSquare className="w-4 h-4 text-white" />
-                  <span>{currentAd.action_text || 'View Offer'}</span>
-                </>
-              )}
-            </button>
-
-            {/* Slide Dots Indicator */}
-            {activeAds.length > 1 && (
-              <div className="flex items-center justify-center gap-1.5 pt-1">
-                {activeAds.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setProgress(0);
-                      setCurrentIndex(idx);
-                    }}
-                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                      idx === currentIndex
-                        ? 'w-6 bg-amber-500 dark:bg-amber-400'
-                        : 'w-1.5 bg-gray-300 dark:bg-slate-700 hover:bg-gray-400'
-                    }`}
-                    title={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Footer: Merchant / Vendor Ad Posting Prompt */}
-          <div className="px-3 py-2 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
-            <span className="text-gray-500 dark:text-gray-400 truncate">
-              Local Verified Shops • 500+ Residents
-            </span>
+          {/* Footer Card: Promote Your Business Prompt */}
+          <div className="p-3 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-slate-800/60 dark:to-slate-900 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-1.5">
+            <p className="text-xs font-black text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1">
+              <HiMegaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Promote Your Shop Here</span>
+            </p>
+            <p className="text-[10px] text-gray-600 dark:text-gray-400">
+              Reach 500+ verified layout resident households daily.
+            </p>
             {user?.role === 'vendor' ? (
               <button
                 type="button"
                 onClick={() => navigate('/vendor/ads')}
-                className="font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer flex-shrink-0"
+                className="mt-1 w-full py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
               >
-                + Post Ad
+                + Post Your Ad Now
               </button>
             ) : (
-              <span className="font-extrabold text-amber-600 dark:text-amber-400 flex-shrink-0">
-                Official Ads
+              <span className="inline-block text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                Contact Super Admin for Ad Space
               </span>
             )}
           </div>
@@ -348,7 +279,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
       </aside>
 
       {/* ======================================================== */}
-      {/* 2. ANDROID & MOBILE FLOATING RIGHT-EDGE QUICK TAB */}
+      {/* 2. ANDROID & MOBILE FLOATING RIGHT-EDGE QUICK TAB         */}
       {/* ======================================================== */}
       <div className="block xl:hidden fixed right-0 top-36 z-30">
         <button
@@ -371,17 +302,12 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
       </div>
 
       {/* ======================================================== */}
-      {/* 3. ANDROID MOBILE RIGHT-SIDE SLIDE DRAWER (SIDE VIEW) */}
+      {/* 3. ANDROID MOBILE RIGHT-SIDE SLIDE DRAWER (STACKED ADS)   */}
       {/* ======================================================== */}
       {mobileDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end xl:hidden bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
-          {/* Backdrop Tap to Close */}
-          <div
-            className="flex-1"
-            onClick={() => setMobileDrawerOpen(false)}
-          />
+          <div className="flex-1" onClick={() => setMobileDrawerOpen(false)} />
 
-          {/* Right-Side Slide Panel */}
           <div className="w-full max-w-xs sm:max-w-sm h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-300">
             {/* Drawer Header */}
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
@@ -392,7 +318,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                     Local Deals & Ads
                   </h3>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Sponsored Community Showcase
+                    {activeAds.length} Community Sponsored Offers
                   </p>
                 </div>
               </div>
@@ -406,7 +332,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
               </button>
             </div>
 
-            {/* Drawer Content: Active Ads List */}
+            {/* Drawer Content: All Ads Stacked Vertically */}
             <div className="p-4 space-y-4 flex-1 overflow-y-auto">
               {activeAds.map((ad, idx) => {
                 const img = ad.banner_image
@@ -456,7 +382,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                         handleAdClick(ad);
                         setMobileDrawerOpen(false);
                       }}
-                      className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       {ad.action_type === 'whatsapp' ? (
                         <>
