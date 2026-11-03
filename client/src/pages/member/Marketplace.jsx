@@ -595,25 +595,25 @@ Please confirm availability and approximate delivery time. Thank you!`;
 
       {/* FLOATING ORDER SUMMARY BAR (WHEN PRODUCTS ARE SELECTED) */}
       {totalProductCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:max-w-lg z-40 animate-in slide-in-from-bottom duration-300">
-          <div className="bg-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-2xl border-2 border-emerald-500/80 flex items-center justify-between gap-4 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-lg">
-                <HiShoppingBag className="w-6 h-6" />
+        <div className="fixed bottom-20 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-[248px] sm:max-w-md z-40 animate-in slide-in-from-bottom duration-300">
+          <div className="bg-slate-900 text-white rounded-3xl p-3.5 sm:p-4 shadow-2xl border-2 border-emerald-500/80 flex items-center justify-between gap-3 sm:gap-4 backdrop-blur-md">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-lg flex-shrink-0">
+                <HiShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
                   {totalItemCount}
                 </span>
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-300">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-300 truncate">
                   {totalProductCount} {totalProductCount === 1 ? 'Product' : 'Products'} Selected
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-black text-emerald-400">
+                  <span className="text-base sm:text-lg font-black text-emerald-400">
                     ₹{totalBillAmount.toFixed(2)}
                   </span>
                   {totalSavings > 0 && (
-                    <span className="text-[10px] font-bold text-amber-400">
+                    <span className="text-[10px] font-bold text-amber-400 truncate">
                       (Save ₹{totalSavings.toFixed(2)})
                     </span>
                   )}
@@ -621,11 +621,11 @@ Please confirm availability and approximate delivery time. Thank you!`;
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs sm:text-sm shadow-lg flex items-center gap-1.5 transition cursor-pointer"
+                className="py-2.5 px-3.5 sm:px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs sm:text-sm shadow-lg flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
               >
                 <span>View Order</span>
                 <HiArrowRight className="w-4 h-4" />
