@@ -599,7 +599,7 @@ Please confirm availability and approximate delivery time. Thank you!`;
 
       {/* FLOATING ORDER SUMMARY BAR (WHEN PRODUCTS ARE SELECTED) */}
       {totalProductCount > 0 && (
-        <div className="fixed bottom-20 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-[248px] sm:max-w-md z-40 animate-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-24 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-28 sm:max-w-md z-40 animate-in slide-in-from-bottom duration-300">
           <div className="bg-slate-900 text-white rounded-3xl p-3.5 sm:p-4 shadow-2xl border-2 border-emerald-500/80 flex items-center justify-between gap-3 sm:gap-4 backdrop-blur-md">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-lg flex-shrink-0">

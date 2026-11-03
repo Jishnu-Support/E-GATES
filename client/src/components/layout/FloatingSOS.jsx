@@ -1,579 +1,258 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+  HiExclamationTriangle,
   HiPhone,
+  HiShieldCheck,
+  HiFire,
+  HiHeart,
   HiShieldExclamation,
   HiMapPin,
-  HiHome,
-  HiArrowTopRightOnSquare,
   HiCheckCircle,
+  HiClock,
+  HiArrowTopRightOnSquare,
+  HiChatBubbleOvalLeftEllipsis,
 } from 'react-icons/hi2';
-import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../context/LanguageContext';
 import { useSOS } from '../../hooks/useSOS';
 import Modal from '../common/Modal';
-import LocationMap from '../common/LocationMap';
 import api from '../../services/api';
 
 export default function FloatingSOS() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const {
     showTypeSelector,
     setShowTypeSelector,
+    showCancel,
+    cancelCountdown,
     isSending,
     isTriggered,
     lastAlert,
     triggerSOS,
+    cancelSOS,
     resetSOS,
-    getCoordinates,
   } = useSOS();
 
   const [emergencyContacts, setEmergencyContacts] = useState([]);
-  const [familyContacts, setFamilyContacts] = useState([]);
-  const [dispatchedContact, setDispatchedContact] = useState(null);
-  const [dispatchedCoords, setDispatchedCoords] = useState({ latitude: null, longitude: null });
-
-  // Preferred contacts chosen by the resident in their SOS Contacts page
-  const [preferredContacts, setPreferredContacts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('preferred_sos_contacts');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      return {};
-    }
-  });
-
-  // Pre-fetch fresh GPS coordinates silently in background so one-tap SOS is instant
-  useEffect(() => {
-    if (user?.role === 'member') {
-      getCoordinates()
-        .then((coords) => {
-          if (coords.latitude && coords.longitude) {
-            setDispatchedCoords(coords);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user?.role]);
-
-  // Sync latest preferred contacts from localStorage whenever component renders or modal opens
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('preferred_sos_contacts');
-      if (saved) setPreferredContacts(JSON.parse(saved));
-    } catch (e) {}
-  }, [showTypeSelector]);
 
   // Fetch configured SOS contacts on mount or when alert triggers
   useEffect(() => {
     if (user?.role === 'member') {
       api.get('/sos/contacts')
         .then((res) => {
-          const list = res.data?.data || res.data?.defaultContacts || [];
+          const list = res.data?.data || res.data || [];
           if (Array.isArray(list)) setEmergencyContacts(list);
-
-          const fams = res.data?.familyContacts || (res.data?.familyContact ? [res.data.familyContact] : []);
-          setFamilyContacts(Array.isArray(fams) ? fams : []);
         })
         .catch((err) => console.warn('Could not load SOS contacts for floating widget:', err));
     }
   }, [user?.role, isTriggered]);
-
-  // 1. Group contacts into categories
-  const familyList = useMemo(() => {
-    return Array.isArray(familyContacts) ? familyContacts : [];
-  }, [familyContacts]);
-
-  const medicalList = useMemo(() => {
-    const list = emergencyContacts.filter(
-      (c) =>
-        c.contact_type === 'medical' ||
-        c.contact_type === 'ambulance' ||
-        c.designation?.toLowerCase().includes('hospital') ||
-        c.designation?.toLowerCase().includes('doctor') ||
-        c.designation?.toLowerCase().includes('ambulance') ||
-        c.name?.toLowerCase().includes('hospital') ||
-        c.name?.toLowerCase().includes('ambulance')
-    );
-    if (list.length === 0) {
-      return [{ id: 'def-med-1', name: '108 Ambulance Service', phone: '108', designation: 'Emergency Ambulance / Hospital' }];
-    }
-    return list;
-  }, [emergencyContacts]);
-
-  const policeList = useMemo(() => {
-    const list = emergencyContacts.filter(
-      (c) =>
-        c.contact_type === 'police' ||
-        c.designation?.toLowerCase().includes('police') ||
-        c.name?.toLowerCase().includes('police')
-    );
-    if (list.length === 0) {
-      return [{ id: 'def-pol-1', name: '100 Police Control Room', phone: '100', designation: 'Law & Order Police Control' }];
-    }
-    return list;
-  }, [emergencyContacts]);
-
-  const residentList = useMemo(() => {
-    const list = emergencyContacts.filter(
-      (c) => c.contact_type === 'member' || c.contact_type === 'resident'
-    );
-    if (list.length === 0) {
-      return [{
-        id: 'def-res-1',
-        name: user?.association_name ? `${user.association_name} Admin` : 'Association Responder',
-        phone: user?.association_phone || '112',
-        designation: 'Resident Committee Responder',
-      }];
-    }
-    return list;
-  }, [emergencyContacts, user?.association_name, user?.association_phone]);
-
-  const fireList = useMemo(() => {
-    const list = emergencyContacts.filter(
-      (c) =>
-        c.contact_type === 'fire' ||
-        c.designation?.toLowerCase().includes('fire') ||
-        c.name?.toLowerCase().includes('fire')
-    );
-    if (list.length === 0) {
-      return [{ id: 'def-fire-1', name: '101 Fire & Rescue Service', phone: '101', designation: 'Emergency Fire Station' }];
-    }
-    return list;
-  }, [emergencyContacts]);
-
-  // Resolve active contact for each emergency category
-  const activeFamily = useMemo(() => {
-    return familyList.find((f) => f.id === preferredContacts.family) || familyList[0] || null;
-  }, [familyList, preferredContacts.family]);
-
-  const activeMedical = useMemo(() => {
-    return medicalList.find((m) => m.id === preferredContacts.medical) || medicalList[0] || null;
-  }, [medicalList, preferredContacts.medical]);
-
-  const activePolice = useMemo(() => {
-    return policeList.find((p) => p.id === preferredContacts.police) || policeList[0] || null;
-  }, [policeList, preferredContacts.police]);
-
-  const activeResident = useMemo(() => {
-    return residentList.find((r) => r.id === preferredContacts.resident) || residentList[0] || null;
-  }, [residentList, preferredContacts.resident]);
-
-  const activeFire = useMemo(() => {
-    return fireList.find((f) => f.id === preferredContacts.fire) || fireList[0] || null;
-  }, [fireList, preferredContacts.fire]);
-
-  // PRIMARY ONE-TAP CONTACT: Used when tapping the SOS button once with zero confirmation
-  const primaryContact = useMemo(() => {
-    try {
-      const savedPrimaryId = localStorage.getItem('preferred_sos_primary');
-      if (savedPrimaryId) {
-        const found =
-          familyList.find((f) => String(f.id) === String(savedPrimaryId)) ||
-          emergencyContacts.find((c) => String(c.id) === String(savedPrimaryId));
-        if (found) return found;
-      }
-    } catch (e) {}
-
-    // First saved family member has highest default priority
-    if (familyList.length > 0) return familyList[0];
-    if (activeFamily) return activeFamily;
-    if (activeMedical) return activeMedical;
-    if (activePolice) return activePolice;
-    if (activeResident) return activeResident;
-
-    if (user?.association_phone) {
-      return {
-        id: 'assoc-admin',
-        name: user?.association_name ? `${user.association_name} Admin` : 'Association Help',
-        phone: user.association_phone,
-        designation: 'Association Security / Admin',
-      };
-    }
-
-    return {
-      id: 'national-112',
-      name: 'Emergency Helpline (112)',
-      phone: '112',
-      designation: 'National All-in-One Emergency',
-    };
-  }, [familyList, emergencyContacts, activeFamily, activeMedical, activePolice, activeResident, user]);
 
   // Floating SOS button is only displayed for resident members
   if (user?.role !== 'member') {
     return null;
   }
 
-  // Compile full resident address
+  const emergencyTypes = [
+    {
+      key: 'Medical Emergency',
+      label: 'Medical Emergency',
+      icon: HiHeart,
+      color: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 border-rose-200 dark:border-rose-800',
+    },
+    {
+      key: 'Fire Outbreak',
+      label: 'Fire Outbreak',
+      icon: HiFire,
+      color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800',
+    },
+    {
+      key: 'Theft / Intruder',
+      label: 'Theft / Intruder',
+      icon: HiShieldExclamation,
+      color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800',
+    },
+    {
+      key: 'Women Safety',
+      label: 'Women Safety',
+      icon: HiShieldCheck,
+      color: 'text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 hover:bg-pink-100 dark:hover:bg-pink-900/50 border-pink-200 dark:border-pink-800',
+    },
+    {
+      key: 'Other Emergency',
+      label: 'Other Emergency',
+      icon: HiExclamationTriangle,
+      color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200 dark:border-purple-800',
+    },
+  ];
+
+  // Helper to compile resident address string
   const compileAddress = () => {
     if (lastAlert?.resident_address) return lastAlert.resident_address;
     const parts = [];
-    if (user?.door_no) parts.push(`Door/Flat #${user.door_no}`);
+    if (user?.door_no) parts.push(`Door/Flat: ${user.door_no}`);
     if (user?.street) parts.push(`Street: ${user.street}`);
     if (user?.layout_name) parts.push(`Layout: ${user.layout_name}`);
     if (user?.taluk) parts.push(`Taluk: ${user.taluk}`);
     if (user?.district) parts.push(`District: ${user.district}`);
-    if (user?.state) parts.push(`State: ${user.state || 'Tamil Nadu'}`);
+    if (user?.state) parts.push(`State: ${user.state}`);
     return parts.length > 0 ? parts.join(', ') : 'Registered Association Residence';
   };
 
   const residentAddress = compileAddress();
+  const problemName = lastAlert?.problem || lastAlert?.emergency_type || 'Emergency Distress';
+  const displayedContacts = (lastAlert?.contacts && lastAlert.contacts.length > 0)
+    ? lastAlert.contacts
+    : emergencyContacts;
 
-  // Helper to normalize phone numbers for WhatsApp
-  const formatWaPhone = (phoneStr) => {
-    if (!phoneStr) return '';
-    const digits = String(phoneStr).replace(/\D/g, '');
-    if (digits.length === 10) return `91${digits}`;
-    return digits;
-  };
-
-  // Immediate Execution: Call, WhatsApp message with Original Map Location, and broadcast
-  const executeSOSDispatch = async (emergencyType, targetContact) => {
-    if (isSending || !targetContact) return;
-
-    setDispatchedContact(targetContact);
-
-    // 1. Get GPS coords (use cached immediately if ready, or fast lookup)
-    let coords = dispatchedCoords;
-    if (!coords.latitude || !coords.longitude) {
-      try {
-        coords = await Promise.race([
-          getCoordinates(),
-          new Promise((resolve) => setTimeout(() => resolve(dispatchedCoords), 400)),
-        ]);
-        if (coords.latitude) setDispatchedCoords(coords);
-      } catch (e) {
-        console.warn('Geolocation fast lookup notice:', e);
-      }
-    }
-
-    const mapsLink = (coords.latitude && coords.longitude)
-      ? `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`
-      : `https://maps.google.com/?q=${encodeURIComponent(residentAddress)}`;
-
-    const targetPhone = targetContact.phone || '112';
-    const cleanCallPhone = String(targetPhone).replace(/\D/g, '');
-    const formattedWa = formatWaPhone(targetPhone);
-
-    // 2. Pre-filled WhatsApp message with Problem, Recipient, Address, and Original Map Location
-    const waTextLines = [
-      `🚨 *EMERGENCY SOS ALERT!*`,
-      `*EMERGENCY TYPE:* ${emergencyType}`,
-      `*RESPONDER:* ${targetContact.name} (${targetContact.designation || 'Emergency Responder'})`,
-      `*RESIDENT:* ${user?.name || 'Resident'} (${user?.phone || 'N/A'}${user?.door_no ? `, Door #${user.door_no}` : ''})`,
-      `*HOME ADDRESS:* ${residentAddress}`,
-      `*ASSOCIATION:* ${user?.association_name || 'Community Layout'}`,
-      `*ORIGINAL MAP LOCATION:* ${mapsLink}`,
-      `*TIME:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-      `Urgent emergency assistance requested! Please respond immediately.`,
-    ];
-    const waEncoded = encodeURIComponent(waTextLines.join('\n'));
-
-    // 3. STEP 1: Launch WhatsApp immediately
-    const waUrl = formattedWa
-      ? `https://api.whatsapp.com/send?phone=${formattedWa}&text=${waEncoded}`
-      : `https://api.whatsapp.com/send?text=${waEncoded}`;
-
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
-
-    // 4. STEP 2: Immediately initiate Phone Call without asking or waiting
-    const callUrl = `tel:${cleanCallPhone || targetPhone}`;
-    setTimeout(() => {
-      window.location.href = callUrl;
-    }, 450);
-
-    // 5. Record and broadcast SOS Alert in Backend & WebSockets
-    const alertNote = [
-      `Emergency: ${emergencyType}`,
-      `Target Responder: ${targetContact.name} (${targetContact.phone})`,
-      `Address: ${residentAddress}`,
-      `Original Map Location: ${mapsLink}`,
-    ].join(' | ');
-
-    await triggerSOS(emergencyType, alertNote, coords);
-  };
-
-  // Determine specific emergency category based on contact type
-  const getContactEmergencyType = (contact) => {
-    if (!contact) return 'Family Emergency';
-    if (contact.contact_type === 'family' || familyList.some((f) => String(f.id) === String(contact.id))) {
-      return 'Family Emergency';
-    }
-    if (contact.contact_type === 'medical' || contact.contact_type === 'ambulance') {
-      return 'Medical Emergency';
-    }
-    if (contact.contact_type === 'police') {
-      return 'Police Emergency';
-    }
-    if (contact.contact_type === 'fire') {
-      return 'Fire Emergency';
-    }
-    if (contact.contact_type === 'resident' || contact.contact_type === 'member') {
-      return 'Resident Emergency';
-    }
-    return 'Family Emergency';
-  };
-
-  // ONE-TAP SOS: Immediately called when the user taps the SOS button once
-  const handleOneTapSOS = () => {
-    const emergencyType = getContactEmergencyType(primaryContact);
-    executeSOSDispatch(emergencyType, primaryContact);
+  const constructDistressText = () => {
+    return `🚨 EMERGENCY SOS DISTRESS ALERT!\n` +
+      `⚠️ Problem: ${problemName}\n` +
+      `👤 Resident: ${user?.name || 'Resident'} (Phone: ${user?.phone || 'N/A'})\n` +
+      `📍 Address: ${residentAddress}\n` +
+      (lastAlert?.location_link ? `🗺️ Map: ${lastAlert.location_link}\n` : '') +
+      `Please respond and send emergency help immediately!`;
   };
 
   return (
     <>
-      {/* Floating SOS Trigger (Fixed Bottom-Right, Fully Visible on Mobile & Desktop) */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 select-none">
-        {/* ONE-TAP SOS BUTTON (Instantly calls & sends WhatsApp to saved contact) */}
-        <button
-          type="button"
-          onClick={handleOneTapSOS}
-          disabled={isSending}
-          className="relative group px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-2xl shadow-red-600/50 hover:shadow-red-600/70 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center border-2 sm:border-4 border-white dark:border-slate-800 ring-2 ring-red-500/30"
-          title={`One-Tap SOS: Immediately calls & sends WhatsApp to ${primaryContact?.name || 'Emergency Contact'}`}
-          aria-label="Instant Emergency SOS"
-        >
-          <span className="absolute -inset-1 rounded-full bg-red-600/30 animate-ping opacity-75 pointer-events-none" />
-          <div className="relative flex items-center gap-1.5 sm:gap-2">
-            <HiShieldExclamation className="w-6 h-6 sm:w-8 sm:h-8 animate-pulse text-white flex-shrink-0" />
-            <div className="text-left flex flex-col justify-center">
-              <span className="font-black text-xs sm:text-sm tracking-wider uppercase leading-none text-white drop-shadow-xs">
-                SOS
-              </span>
-              <span className="text-[9px] sm:text-[10px] text-rose-100 font-bold leading-tight truncate max-w-[85px] sm:max-w-[120px]">
-                {primaryContact ? primaryContact.name : '1-Tap Alert'}
-              </span>
-            </div>
-          </div>
-        </button>
+      {/* Floating SOS Action Button (Classic round red pulsing button) */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center">
+        <div className="relative group">
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+              setShowTypeSelector(true);
+            }}
+            disabled={isSending}
+            className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center font-black text-white shadow-2xl select-none focus:outline-none cursor-pointer transform hover:scale-105 active:scale-95 transition ${
+              isTriggered
+                ? 'animate-siren bg-red-600 ring-4 sm:ring-8 ring-red-400'
+                : 'bg-red-600 hover:bg-red-700 animate-sos-pulse ring-2 sm:ring-4 ring-white/40'
+            }`}
+            aria-label="Emergency SOS (Click to trigger)"
+            title="Click for Emergency SOS"
+          >
+            <span className="text-sm sm:text-base md:text-xl tracking-wider leading-none">SOS</span>
+            <span className="text-[7px] sm:text-[8px] md:text-[9px] font-bold tracking-normal mt-0.5 bg-white/20 px-1.5 py-0.2 rounded-full">
+              {isSending ? '...' : 'CLICK'}
+            </span>
+          </button>
+        </div>
+
+        {/* Small hint label */}
+        <span className="mt-1 sm:mt-2 text-[10px] sm:text-[11px] font-bold text-gray-700 dark:text-gray-300 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-2 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-slate-800 hidden md:block pointer-events-none">
+          {t('sos_button_title') || 'Emergency SOS (Click)'}
+        </span>
       </div>
 
-      {/* MODAL 1: Specific Situations Selector (Optional for choosing specific category) */}
+      {/* Emergency Type Selector Modal (Instant Dispatch on Click) */}
       <Modal
-        isOpen={showTypeSelector && !isTriggered}
+        isOpen={showTypeSelector}
         onClose={() => setShowTypeSelector(false)}
-        title="🚨 Specific Emergency Situations"
+        title="Select Emergency Type"
         size="md"
       >
         <div className="space-y-3.5 py-1">
-          {/* Header instructions */}
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 rounded-2xl">
-            <p className="text-xs font-semibold text-red-900 dark:text-red-200 leading-snug">
-              ⚡ <strong>Instant Action:</strong> Touching any emergency below immediately calls your chosen contact and transmits your <strong>Home Address</strong> & <strong>Original Map Location</strong> via WhatsApp!
-            </p>
-            <p className="text-[10px] text-red-700 dark:text-red-300 font-medium mt-1">
-              💡 <em>To change which number is active for any emergency, select your preference in Emergency SOS Contacts.</em>
-            </p>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            Click any situation below to immediately dispatch emergency distress to association administrators and neighbors:
+          </p>
+
+          {/* Primary Top Immediate SOS Button */}
+          <button
+            type="button"
+            onClick={() => triggerSOS('Immediate Emergency Distress')}
+            disabled={isSending}
+            className="w-full p-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            <HiShieldExclamation className="w-5 h-5 text-white animate-pulse" />
+            <span>🚨 SEND IMMEDIATE SOS (DISPATCH NOW)</span>
+          </button>
+
+          {/* 5 Specific Emergency Category Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            {emergencyTypes.map((type) => {
+              const Icon = type.icon;
+              return (
+                <button
+                  key={type.key}
+                  type="button"
+                  onClick={() => triggerSOS(type.key)}
+                  disabled={isSending}
+                  className={`flex items-center gap-3 p-3.5 rounded-xl border text-left font-semibold text-xs sm:text-sm transition hover:scale-[1.02] shadow-sm cursor-pointer active:scale-95 disabled:opacity-50 ${type.color}`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span>{type.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="space-y-2.5">
-            {/* 1. FAMILY EMERGENCY */}
-            <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-900/60 bg-gradient-to-r from-purple-50/70 to-white dark:from-purple-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
-                  👨‍👩‍👧
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 truncate">
-                    Family Emergency
-                  </h4>
-                  {activeFamily ? (
-                    <p className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold truncate">
-                      {activeFamily.name} ({activeFamily.designation || 'Family Kin'}) • {activeFamily.phone}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic truncate">
-                      No family member saved yet (Default Helpline: 112)
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTypeSelector(false);
-                  executeSOSDispatch(
-                    'Family Emergency',
-                    activeFamily || { name: 'Emergency Helpline', phone: '112', designation: 'National Helpline' }
-                  );
-                }}
-                disabled={isSending}
-                className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+          {/* Immediate Phone Calls Section */}
+          <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs">
+            <span className="text-gray-500 dark:text-gray-400 font-medium">Immediate phone call:</span>
+            <div className="flex gap-2">
+              <a
+                href="tel:100"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
               >
-                <span>
-                  Alert {activeFamily ? activeFamily.name : 'Family Helpline'} (Call & WhatsApp ⚡)
-                </span>
-              </button>
-            </div>
-
-            {/* 2. MEDICAL EMERGENCY */}
-            <div className="rounded-2xl border-2 border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-50/70 to-white dark:from-rose-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
-                  🏥
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-extrabold text-rose-950 dark:text-rose-200 truncate">
-                    Medical Emergency
-                  </h4>
-                  {activeMedical ? (
-                    <p className="text-[11px] text-rose-700 dark:text-rose-300 font-semibold truncate">
-                      {activeMedical.name} ({activeMedical.designation || 'Ambulance'}) • {activeMedical.phone}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic truncate">
-                      108 Emergency Ambulance
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTypeSelector(false);
-                  executeSOSDispatch(
-                    'Medical Emergency',
-                    activeMedical || { name: '108 Ambulance', phone: '108', designation: 'Ambulance Service' }
-                  );
-                }}
-                disabled={isSending}
-                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                <HiPhone className="w-3.5 h-3.5" />
+                <span>100 (Police)</span>
+              </a>
+              <a
+                href="tel:112"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition"
               >
-                <span>
-                  Alert {activeMedical ? activeMedical.name : '108 Ambulance'} (Call & WhatsApp ⚡)
-                </span>
-              </button>
-            </div>
-
-            {/* 3. POLICE EMERGENCY */}
-            <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/70 to-white dark:from-blue-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
-                  🚓
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-extrabold text-blue-950 dark:text-blue-200 truncate">
-                    Police Emergency
-                  </h4>
-                  {activePolice ? (
-                    <p className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold truncate">
-                      {activePolice.name} ({activePolice.designation || 'Police Station'}) • {activePolice.phone}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic truncate">
-                      100 Police Control Room
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTypeSelector(false);
-                  executeSOSDispatch(
-                    'Police Emergency',
-                    activePolice || { name: '100 Police Control Room', phone: '100', designation: 'Police Control' }
-                  );
-                }}
-                disabled={isSending}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                <HiPhone className="w-3.5 h-3.5" />
+                <span>112 (Helpline)</span>
+              </a>
+              <a
+                href="tel:108"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition"
               >
-                <span>
-                  Alert {activePolice ? activePolice.name : 'Police Control'} (Call & WhatsApp ⚡)
-                </span>
-              </button>
-            </div>
-
-            {/* 4. RESIDENT RESPONDER / SECURITY */}
-            <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-900/60 bg-gradient-to-r from-amber-50/70 to-white dark:from-amber-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
-                  🏡
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-extrabold text-amber-950 dark:text-amber-200 truncate">
-                    Resident Responder / Security
-                  </h4>
-                  {activeResident ? (
-                    <p className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold truncate">
-                      {activeResident.name} ({activeResident.designation || 'Community Responder'}) • {activeResident.phone}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic truncate">
-                      Community Layout Admin / Guard
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTypeSelector(false);
-                  executeSOSDispatch(
-                    'Resident Responder Emergency',
-                    activeResident || {
-                      name: 'Association Admin',
-                      phone: user?.association_phone || '112',
-                      designation: 'Resident Admin',
-                    }
-                  );
-                }}
-                disabled={isSending}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-              >
-                <span>
-                  Alert {activeResident ? activeResident.name : 'Association Security'} (Call & WhatsApp ⚡)
-                </span>
-              </button>
-            </div>
-
-            {/* 5. FIRE EMERGENCY */}
-            <div className="rounded-2xl border-2 border-orange-200 dark:border-orange-900/60 bg-gradient-to-r from-orange-50/70 to-white dark:from-orange-950/40 dark:to-slate-900 p-3.5 space-y-2.5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
-                  🔥
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-extrabold text-orange-950 dark:text-orange-200 truncate">
-                    Fire & Rescue
-                  </h4>
-                  {activeFire ? (
-                    <p className="text-[11px] text-orange-700 dark:text-orange-300 font-semibold truncate">
-                      {activeFire.name} ({activeFire.designation || 'Fire Station'}) • {activeFire.phone}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic truncate">
-                      101 Fire & Rescue Service
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTypeSelector(false);
-                  executeSOSDispatch(
-                    'Fire & Rescue Emergency',
-                    activeFire || { name: '101 Fire Station', phone: '101', designation: 'Fire & Rescue' }
-                  );
-                }}
-                disabled={isSending}
-                className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-              >
-                <span>
-                  Alert {activeFire ? activeFire.name : '101 Fire Station'} (Call & WhatsApp ⚡)
-                </span>
-              </button>
+                <HiPhone className="w-3.5 h-3.5" />
+                <span>108 (Ambulance)</span>
+              </a>
             </div>
           </div>
         </div>
       </Modal>
 
-      {/* MODAL 2: Dispatched Confirmation Modal with Problem, Responder Details & ORIGINAL MAP LOCATION */}
+      {/* 5-Second Cancel Countdown Overlay */}
+      {showCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/80 backdrop-blur-md">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 text-center shadow-2xl border-4 border-red-500">
+            <div className="w-20 h-20 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <HiExclamationTriangle className="w-10 h-10" />
+            </div>
+
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-wide">
+              Emergency Distress Alert
+            </h3>
+
+            <p className="text-base text-gray-700 dark:text-gray-300 font-medium mb-6">
+              {t('sos_countdown_text', { seconds: cancelCountdown })}
+            </p>
+
+            <div className="w-24 h-24 rounded-full border-4 border-red-600 flex items-center justify-center mx-auto mb-6 text-4xl font-extrabold text-red-600 dark:text-red-400 font-mono">
+              {cancelCountdown}
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={cancelSOS}
+                className="w-full py-3.5 px-6 bg-gray-900 hover:bg-black text-white font-bold text-base rounded-xl transition shadow-lg cursor-pointer"
+              >
+                {t('sos_cancel_button')} (False Alarm)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispatched Confirmation Modal with Problem, Address, and SOS Contacts */}
       {isTriggered && (
         <Modal
           isOpen={isTriggered}
@@ -583,92 +262,174 @@ export default function FloatingSOS() {
         >
           <div className="py-2 space-y-4">
             {/* Header banner */}
-            <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl p-4 text-white shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-                  <HiShieldExclamation className="w-6 h-6 text-white animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold">EMERGENCY ASSISTANCE INITIATED</h3>
-                  <p className="text-xs text-rose-100">
-                    Phone call initiated & WhatsApp message sent with your live address & location.
-                  </p>
-                </div>
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 font-bold text-lg shadow-sm">
+                ✓
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                  Distress Alert Dispatched Automatically!
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                  Your emergency situation, resident profile, and full address have been transmitted to all association responders and emergency contacts.
+                </p>
               </div>
             </div>
 
-            {/* Responder & Emergency Details Box */}
-            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-amber-200/60 dark:border-amber-900/40">
-                <span className="font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider text-[10px]">
-                  Emergency Situation
+            {/* Problem & Resident Address Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {/* Problem Details */}
+              <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl space-y-1.5">
+                <span className="font-bold text-red-800 dark:text-red-300 uppercase tracking-wider block text-[10px]">
+                  Emergency Problem
                 </span>
-                <span className="font-extrabold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/70 px-2.5 py-0.5 rounded-full text-xs">
-                  {lastAlert?.emergency_type || 'One-Tap Emergency SOS'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black text-red-700 dark:text-red-400">
+                    {problemName}
+                  </span>
+                </div>
+                <div className="text-[11px] text-gray-600 dark:text-gray-400 flex items-center gap-1 pt-1">
+                  <HiClock className="w-3.5 h-3.5 text-gray-400" />
+                  <span>Time: {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
               </div>
 
-              {dispatchedContact && (
-                <div className="flex items-center justify-between pt-0.5 text-gray-800 dark:text-gray-200">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 block">
-                      Alerted Responder
-                    </span>
-                    <p className="font-bold text-gray-900 dark:text-white text-xs">
-                      {dispatchedContact.name} ({dispatchedContact.designation || 'Emergency Responder'})
-                    </p>
-                  </div>
+              {/* Address Details */}
+              <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl space-y-1.5">
+                <span className="font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider block text-[10px]">
+                  Dispatched Resident Address
+                </span>
+                <p className="font-semibold text-gray-900 dark:text-white leading-relaxed">
+                  {residentAddress}
+                </p>
+                {lastAlert?.location_link && (
                   <a
-                    href={`tel:${dispatchedContact.phone}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                    href={lastAlert.location_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 dark:text-cyan-400 hover:underline pt-0.5"
                   >
-                    <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call {dispatchedContact.phone}</span>
+                    <HiMapPin className="w-3.5 h-3.5 text-primary-600 dark:text-cyan-400" />
+                    <span>View Live GPS Location</span>
+                    <HiArrowTopRightOnSquare className="w-3 h-3" />
                   </a>
-                </div>
-              )}
-
-              <div className="flex items-start gap-2 pt-1 text-gray-800 dark:text-gray-200">
-                <HiHome className="w-4 h-4 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-gray-900 dark:text-white">Resident Address Dispatched:</p>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-mono text-[11px] mt-0.5">
-                    {residentAddress}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* ORIGINAL MAP LOCATION: Real Interactive Map (Leaflet + OpenStreetMap) */}
-            <LocationMap
-              latitude={dispatchedCoords.latitude || lastAlert?.latitude}
-              longitude={dispatchedCoords.longitude || lastAlert?.longitude}
-              address={residentAddress}
-              title="Original Map Location"
-              height="h-56"
-            />
+            {/* SOS Contacts Notified Section */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
+                  Emergency Contacts Notified ({displayedContacts.length})
+                </span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <HiCheckCircle className="w-3.5 h-3.5" />
+                  <span>SMS Dispatched</span>
+                </span>
+              </div>
 
-            {/* Actions: Redial / Dismiss */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  const num = dispatchedContact?.phone || user?.association_phone || '112';
-                  window.location.href = `tel:${num}`;
-                }}
-                className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {displayedContacts.map((contact, idx) => {
+                  const cleanedPhone = (contact.phone || '').replace(/\D/g, '').slice(-10);
+                  const waUrl = `https://wa.me/91${cleanedPhone}?text=${encodeURIComponent(constructDistressText())}`;
+
+                  return (
+                    <div
+                      key={contact.id || idx}
+                      className="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-xs flex flex-col justify-between hover:border-gray-300 dark:hover:border-slate-700 transition"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                            contact.contact_type === 'family'
+                              ? 'text-rose-700 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                              : 'text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-950/60'
+                          }`}>
+                            {contact.contact_type === 'member'
+                              ? `Community Member`
+                              : contact.contact_type === 'police'
+                              ? 'Police Department'
+                              : '❤️ Your Family Contact'}
+                          </span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                            <HiCheckCircle className="w-3 h-3" />
+                            Sent
+                          </span>
+                        </div>
+
+                        <h5 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm mt-1">
+                          {contact.name || 'Emergency Responder'}
+                        </h5>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                          {contact.designation || 'Emergency Contact'}
+                        </p>
+                        <p className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300 mt-0.5">
+                          📞 {contact.phone}
+                        </p>
+                      </div>
+
+                      {/* Immediate Call & WhatsApp Buttons */}
+                      <div className="grid grid-cols-2 gap-1.5 pt-2 mt-2 border-t border-gray-100 dark:border-slate-800">
+                        <a
+                          href={`tel:${contact.phone}`}
+                          className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 rounded-lg text-xs font-bold transition"
+                          title="Call Contact"
+                        >
+                          <HiPhone className="w-3.5 h-3.5" />
+                          <span>Call</span>
+                        </a>
+
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 rounded-lg text-xs font-bold transition"
+                          title="Send SOS message on WhatsApp"
+                        >
+                          <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Direct Emergency Call Bar */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-slate-800">
+              <a
+                href="tel:100"
+                className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
               >
                 <HiPhone className="w-4 h-4" />
-                <span>Redial Responder ({dispatchedContact?.phone || '112'})</span>
-              </button>
+                <span>Call Police (100)</span>
+              </a>
+              <a
+                href="tel:112"
+                className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+              >
+                <HiPhone className="w-4 h-4" />
+                <span>Helpline (112)</span>
+              </a>
+              <a
+                href="tel:108"
+                className="flex-1 py-2.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+              >
+                <HiPhone className="w-4 h-4" />
+                <span>Ambulance (108)</span>
+              </a>
+            </div>
 
+            {/* Dismiss */}
+            <div className="text-center pt-1">
               <button
                 type="button"
                 onClick={resetSOS}
-                className="py-2.5 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white underline font-medium cursor-pointer"
               >
-                <HiCheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Dismiss / Mark Safe</span>
+                Dismiss alert view
               </button>
             </div>
           </div>
