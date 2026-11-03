@@ -87,4 +87,8 @@ router.use('/products', productRoutes);
 const propertyRoutes = safeLoadRoute(['property.routes.js', 'properties.routes.js', 'property.js'], 'Properties');
 router.use('/properties', propertyRoutes);
 
+// 16. Advertisements & Banners routes
+const adRoutes = safeLoadRoute(['ad.routes.js', 'ads.routes.js', 'ad.js', 'ads.js'], 'Advertisements');
+router.use('/ads', adRoutes);
+
 module.exports = router;

@@ -33,6 +33,7 @@ import api, { getFileUrl } from '../../services/api';
 import StatsCard from '../../components/common/StatsCard';
 import Modal from '../../components/common/Modal';
 import AudioPlayer from '../../components/common/AudioPlayer';
+import AdBannerCarousel from '../../components/common/AdBannerCarousel';
 
 export default function MemberDashboard() {
   const { user } = useAuth();
@@ -278,8 +279,8 @@ export default function MemberDashboard() {
         </p>
       </div>
 
-
-
+      {/* Sponsored Partner & Layout Advertisements Carousel */}
+      <AdBannerCarousel panel="member" associationId={user?.association_id} />
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

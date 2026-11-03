@@ -23,6 +23,7 @@ const ManageUsers = lazy(() => import('./pages/super-admin/ManageUsers'));
 const PollResults = lazy(() => import('./pages/super-admin/PollResults'));
 const SOSReports = lazy(() => import('./pages/super-admin/SOSReports'));
 const AuditLog = lazy(() => import('./pages/super-admin/AuditLog'));
+const AdManager = lazy(() => import('./pages/super-admin/AdManager'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -50,6 +51,7 @@ const Properties = lazy(() => import('./pages/member/Properties'));
 
 // Vendor Pages
 const VendorDashboard = lazy(() => import('./pages/vendor/VendorDashboard'));
+const VendorAds = lazy(() => import('./pages/vendor/VendorAds'));
 
 // Home Redirect Component
 function RootRedirect() {
@@ -136,6 +138,7 @@ export default function App() {
           <Route path="market" element={<Marketplace />} />
           <Route path="shops" element={<Marketplace />} />
           <Route path="properties" element={<Properties />} />
+          <Route path="ads" element={<AdManager />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
@@ -214,6 +217,7 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<VendorDashboard />} />
           <Route path="products" element={<VendorDashboard />} />
+          <Route path="ads" element={<VendorAds />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>

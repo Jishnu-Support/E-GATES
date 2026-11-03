@@ -23,6 +23,7 @@ import {
   HiBuildingStorefront,
   HiShoppingBag,
   HiHome,
+  HiSparkles,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -45,6 +46,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_sos_reports'), path: '/super-admin/sos-reports', icon: HiExclamationCircle },
     { name: 'Local Market & Shops', path: '/super-admin/market', icon: HiBuildingStorefront },
     { name: 'Properties (Sale / Rent)', path: '/super-admin/properties', icon: HiHome },
+    { name: 'Advertisements & Banners', path: '/super-admin/ads', icon: HiSparkles },
     { name: t('nav_audit_log'), path: '/super-admin/audit-log', icon: HiClipboardDocumentList },
     { name: t('nav_profile') || 'My Profile', path: '/super-admin/profile', icon: HiUserCircle },
   ];
@@ -84,6 +86,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const vendorLinks = [
     { name: 'Shop Dashboard', path: '/vendor/dashboard', icon: HiSquares2X2 },
     { name: 'My Products Catalog', path: '/vendor/products', icon: HiShoppingBag },
+    { name: 'My Ad Campaigns', path: '/vendor/ads', icon: HiSparkles },
     { name: 'Shop Profile', path: '/vendor/profile', icon: HiUserCircle },
   ];
 

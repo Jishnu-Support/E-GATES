@@ -143,6 +143,36 @@ async function initPostgresSchemaAndSeed() {
       CREATE INDEX IF NOT EXISTS idx_property_assoc ON property_listings(association_id);
       CREATE INDEX IF NOT EXISTS idx_property_status ON property_listings(status);
       CREATE INDEX IF NOT EXISTS idx_property_listing_type ON property_listings(listing_type);
+
+      CREATE TABLE IF NOT EXISTS advertisements (
+        id SERIAL PRIMARY KEY,
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        creator_role VARCHAR(20) NOT NULL DEFAULT 'super_admin',
+        association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        tagline VARCHAR(255),
+        description TEXT,
+        banner_image VARCHAR(500) NOT NULL,
+        target_panel VARCHAR(20) NOT NULL DEFAULT 'both' CHECK (target_panel IN ('both', 'member', 'admin')),
+        action_type VARCHAR(20) NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'whatsapp', 'call')),
+        action_url VARCHAR(500),
+        action_text VARCHAR(100) DEFAULT 'Learn More',
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'paused', 'rejected')),
+        rejection_reason TEXT,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        start_date DATE,
+        end_date DATE,
+        click_count INTEGER DEFAULT 0,
+        impression_count INTEGER DEFAULT 0,
+        priority INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_ads_created_by ON advertisements(created_by);
+      CREATE INDEX IF NOT EXISTS idx_ads_assoc ON advertisements(association_id);
+      CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
+      CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration

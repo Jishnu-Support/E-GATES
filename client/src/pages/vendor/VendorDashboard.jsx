@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   HiBuildingStorefront,
   HiPlus,
@@ -15,6 +16,7 @@ import {
   HiCurrencyRupee,
   HiEye,
   HiExclamationCircle,
+  HiSparkles,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,6 +26,7 @@ import toast from 'react-hot-toast';
 
 export default function VendorDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -278,7 +281,16 @@ export default function VendorDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/vendor/ads')}
+              className="px-4 py-3 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-white font-extrabold text-sm border border-white/20 backdrop-blur-md transition flex items-center gap-2 cursor-pointer"
+            >
+              <HiSparkles className="w-5 h-5 text-amber-300" />
+              <span>Ad Campaigns</span>
+            </button>
+
             <button
               type="button"
               onClick={openAddModal}

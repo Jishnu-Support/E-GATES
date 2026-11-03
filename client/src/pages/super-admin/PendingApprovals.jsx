@@ -37,7 +37,7 @@ export default function PendingApprovals() {
   const [deleteUser, setDeleteUser] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Section: 'registrations' | 'properties'
+  // Section: 'registrations' | 'properties' | 'ads'
   const [activeSection, setActiveSection] = useState('registrations');
   const [pendingProperties, setPendingProperties] = useState([]);
   const [loadingProps, setLoadingProps] = useState(false);
@@ -45,6 +45,14 @@ export default function PendingApprovals() {
   const [propRejectReason, setPropRejectReason] = useState('');
   const [isRejectingProp, setIsRejectingProp] = useState(false);
   const [previewProperty, setPreviewProperty] = useState(null);
+
+  // Advertisements state
+  const [pendingAds, setPendingAds] = useState([]);
+  const [loadingAds, setLoadingAds] = useState(false);
+  const [rejectAdModal, setRejectAdModal] = useState(null);
+  const [adRejectReason, setAdRejectReason] = useState('');
+  const [isRejectingAd, setIsRejectingAd] = useState(false);
+  const [previewAd, setPreviewAd] = useState(null);
 
   const fetchPending = async () => {
     try {
@@ -72,12 +80,55 @@ export default function PendingApprovals() {
     }
   };
 
+  const fetchPendingAds = async () => {
+    if (currentUser?.role !== 'super_admin') return;
+    try {
+      setLoadingAds(true);
+      const res = await api.get('/ads/pending');
+      setPendingAds(res.data?.data || []);
+    } catch (err) {
+      console.warn('Error fetching pending ads:', err);
+    } finally {
+      setLoadingAds(false);
+    }
+  };
+
   useEffect(() => {
     fetchPending();
     if (currentUser?.role === 'super_admin') {
       fetchPendingProperties();
+      fetchPendingAds();
     }
   }, [currentUser]);
+
+  const handleApproveAd = async (id, title) => {
+    try {
+      await api.patch(`/ads/${id}/approve`);
+      toast.success(`Ad campaign "${title}" approved! It is now live in member and admin portals.`);
+      fetchPendingAds();
+      if (previewAd?.id === id) setPreviewAd(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to approve ad campaign');
+    }
+  };
+
+  const handleRejectAdSubmit = async (e) => {
+    e.preventDefault();
+    if (!rejectAdModal) return;
+    try {
+      setIsRejectingAd(true);
+      await api.patch(`/ads/${rejectAdModal.id}/reject`, { reason: adRejectReason });
+      toast.success(`Ad campaign "${rejectAdModal.title}" rejected`);
+      setRejectAdModal(null);
+      setAdRejectReason('');
+      fetchPendingAds();
+      if (previewAd?.id === rejectAdModal.id) setPreviewAd(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reject ad');
+    } finally {
+      setIsRejectingAd(false);
+    }
+  };
 
   const handleApproveProperty = async (id, title) => {
     try {
@@ -235,6 +286,23 @@ export default function PendingApprovals() {
             {pendingProperties.length > 0 && (
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
                 {pendingProperties.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('ads')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 ${
+              activeSection === 'ads'
+                ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <span>📢 Vendor Ad Campaigns</span>
+            {pendingAds.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                {pendingAds.length}
               </span>
             )}
           </button>
@@ -625,6 +693,173 @@ export default function PendingApprovals() {
         </div>
       )}
 
+      {/* SECTION 3: VENDOR ADVERTISEMENT CAMPAIGN REQUESTS */}
+      {activeSection === 'ads' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Review and approve promotional banner ads submitted by local shops and registered vendors. Approved ads are displayed on Admin and Member dashboards.
+            </p>
+            <button
+              type="button"
+              onClick={fetchPendingAds}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition"
+            >
+              <HiArrowPath className={`w-3.5 h-3.5 ${loadingAds ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            {pendingAds.length === 0 ? (
+              <div className="p-12 text-center text-sm text-gray-500 dark:text-gray-400 space-y-2">
+                <span className="text-3xl block">📢</span>
+                <p className="font-bold text-gray-700 dark:text-gray-300">
+                  No pending vendor advertisement requests.
+                </p>
+                <p className="text-xs">
+                  All submitted vendor campaigns have been reviewed.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-gray-50/80 dark:bg-slate-800/60 text-gray-600 dark:text-gray-300 uppercase tracking-wider text-[11px] font-bold border-b border-gray-100 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">Banner Creative</th>
+                      <th className="py-3 px-4">Campaign Title & Offer</th>
+                      <th className="py-3 px-4">Vendor Shop & Contact</th>
+                      <th className="py-3 px-4 text-center">Placement</th>
+                      <th className="py-3 px-4 text-center">Target Layout</th>
+                      <th className="py-3 px-4 text-center">Call-To-Action</th>
+                      <th className="py-3 px-4 text-right">Approval Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                    {pendingAds.map((ad) => {
+                      const bannerUrl = ad.banner_image ? getFileUrl(ad.banner_image) : null;
+                      return (
+                        <tr
+                          key={ad.id}
+                          className="hover:bg-amber-50/20 dark:hover:bg-slate-800/40 transition group"
+                        >
+                          <td className="py-3 px-4">
+                            <div
+                              onClick={() => setPreviewAd(ad)}
+                              className="w-24 h-14 rounded-xl overflow-hidden bg-slate-950 border border-gray-200 dark:border-slate-700 cursor-pointer relative group/img flex-shrink-0"
+                            >
+                              {bannerUrl ? (
+                                <img
+                                  src={bannerUrl}
+                                  alt={ad.title}
+                                  className="w-full h-full object-cover group-hover/img:scale-105 transition"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                  📢
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition">
+                                <HiEye className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4 font-bold text-gray-900 dark:text-white max-w-xs">
+                            <p className="truncate text-sm">{ad.title}</p>
+                            {ad.tagline && (
+                              <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold truncate mt-0.5">
+                                {ad.tagline}
+                              </p>
+                            )}
+                            <span className="text-[10px] text-gray-400 font-normal block mt-1">
+                              Submitted: {new Date(ad.created_at).toLocaleDateString()}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-1.5 font-bold">
+                              <span>🏪</span>
+                              <span className="text-gray-900 dark:text-white">
+                                {ad.shop_name || ad.vendor_name}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-500 font-mono mt-0.5">
+                              📞 {ad.shop_phone || ad.vendor_phone || 'N/A'}
+                            </p>
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              {ad.target_panel === 'both' ? 'Admin + Member' : `${ad.target_panel} Only`}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300 font-medium">
+                            {ad.association_name ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                📍 {ad.association_name}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold">
+                                🌐 All Layouts
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200">
+                              {ad.action_type === 'whatsapp' ? '💬 WhatsApp' : ad.action_type === 'call' ? '📞 Phone' : '🔗 Link'}
+                            </span>
+                            {ad.action_text && (
+                              <p className="text-[10px] text-gray-400 mt-0.5">"{ad.action_text}"</p>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewAd(ad)}
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-slate-800 transition"
+                                title="Preview Creative Banner"
+                              >
+                                <HiEye className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleApproveAd(ad.id, ad.title)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <HiCheckCircle className="w-3.5 h-3.5" />
+                                <span>Approve</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRejectAdModal(ad);
+                                  setAdRejectReason('');
+                                }}
+                                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <HiXCircle className="w-3.5 h-3.5" />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* PROOF PREVIEW MODAL */}
       <Modal
         isOpen={Boolean(previewProof)}
@@ -838,6 +1073,96 @@ export default function PendingApprovals() {
           </div>
         </Modal>
       )}
+
+      {/* REJECT AD MODAL */}
+      <Modal
+        isOpen={Boolean(rejectAdModal)}
+        onClose={() => setRejectAdModal(null)}
+        title="Reject Ad Campaign Request"
+      >
+        <form onSubmit={handleRejectAdSubmit} className="space-y-4">
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            Please provide feedback or a reason for rejecting the campaign{' '}
+            <strong className="text-gray-900 dark:text-white">"{rejectAdModal?.title}"</strong> submitted by{' '}
+            <strong className="text-gray-900 dark:text-white">{rejectAdModal?.shop_name || rejectAdModal?.vendor_name}</strong>.
+          </p>
+          <textarea
+            required
+            rows={3}
+            value={adRejectReason}
+            onChange={(e) => setAdRejectReason(e.target.value)}
+            placeholder="e.g. Inappropriate banner text / please upload higher resolution creative banner..."
+            className="w-full p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-rose-500"
+          />
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setRejectAdModal(null)}
+              className="px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs font-bold transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isRejectingAd}
+              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition disabled:opacity-50"
+            >
+              {isRejectingAd ? 'Rejecting...' : 'Confirm Rejection'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* PREVIEW AD MODAL */}
+      <Modal
+        isOpen={Boolean(previewAd)}
+        onClose={() => setPreviewAd(null)}
+        title={previewAd?.title || 'Advertisement Creative Preview'}
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <div className="relative rounded-2xl overflow-hidden bg-slate-950 max-h-[380px] flex items-center justify-center">
+            {previewAd?.banner_image && (
+              <img
+                src={getFileUrl(previewAd.banner_image)}
+                alt={previewAd.title}
+                className="w-full h-auto object-contain max-h-[380px]"
+              />
+            )}
+          </div>
+          <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl space-y-1 text-xs">
+            <span className="font-bold text-amber-500 uppercase">
+              {previewAd?.target_panel === 'both' ? 'Admin & Member Portals' : `${previewAd?.target_panel} Portal`}
+            </span>
+            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">{previewAd?.title}</h4>
+            {previewAd?.tagline && (
+              <p className="text-amber-600 dark:text-amber-400 font-semibold">{previewAd.tagline}</p>
+            )}
+            <p className="text-gray-500 dark:text-gray-400">
+              Submitted by <strong>{previewAd?.shop_name || previewAd?.vendor_name}</strong> • Phone: {previewAd?.shop_phone || previewAd?.vendor_phone}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => handleApproveAd(previewAd.id, previewAd.title)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
+            >
+              Approve & Publish Live
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRejectAdModal(previewAd);
+                setPreviewAd(null);
+              }}
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-bold text-xs rounded-xl transition"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

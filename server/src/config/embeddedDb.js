@@ -292,6 +292,43 @@ function ensureSchemaMigrations(db) {
         }
       }
     } catch (e) {}
+
+    // 4. Ensure advertisements table exists
+    try {
+      db.run(`
+        CREATE TABLE IF NOT EXISTS advertisements (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          creator_role TEXT NOT NULL DEFAULT 'super_admin',
+          association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+          title TEXT NOT NULL,
+          tagline TEXT,
+          description TEXT,
+          banner_image TEXT NOT NULL,
+          target_panel TEXT NOT NULL DEFAULT 'both' CHECK (target_panel IN ('both', 'member', 'admin')),
+          action_type TEXT NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'whatsapp', 'call')),
+          action_url TEXT,
+          action_text TEXT DEFAULT 'Learn More',
+          status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'paused', 'rejected')),
+          rejection_reason TEXT,
+          reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          reviewed_at TEXT,
+          start_date TEXT,
+          end_date TEXT,
+          click_count INTEGER DEFAULT 0,
+          impression_count INTEGER DEFAULT 0,
+          priority INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_ads_created_by ON advertisements(created_by);
+        CREATE INDEX IF NOT EXISTS idx_ads_assoc ON advertisements(association_id);
+        CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
+        CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
+      `);
+    } catch (adMigErr) {
+      console.warn('[EmbeddedDB Ad Migration Notice]:', adMigErr.message);
+    }
   } catch (err) {
     console.error('[EmbeddedDB Migration Error]:', err.message);
   }
@@ -552,6 +589,36 @@ function initSchemaAndSeed(db) {
     CREATE INDEX IF NOT EXISTS idx_property_assoc ON property_listings(association_id);
     CREATE INDEX IF NOT EXISTS idx_property_status ON property_listings(status);
     CREATE INDEX IF NOT EXISTS idx_property_type ON property_listings(listing_type);
+
+    CREATE TABLE IF NOT EXISTS advertisements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      creator_role TEXT NOT NULL DEFAULT 'super_admin',
+      association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      tagline TEXT,
+      description TEXT,
+      banner_image TEXT NOT NULL,
+      target_panel TEXT NOT NULL DEFAULT 'both' CHECK (target_panel IN ('both', 'member', 'admin')),
+      action_type TEXT NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'whatsapp', 'call')),
+      action_url TEXT,
+      action_text TEXT DEFAULT 'Learn More',
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'paused', 'rejected')),
+      rejection_reason TEXT,
+      reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_at TEXT,
+      start_date TEXT,
+      end_date TEXT,
+      click_count INTEGER DEFAULT 0,
+      impression_count INTEGER DEFAULT 0,
+      priority INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_ads_created_by ON advertisements(created_by);
+    CREATE INDEX IF NOT EXISTS idx_ads_assoc ON advertisements(association_id);
+    CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
+    CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
 
     CREATE TABLE IF NOT EXISTS audit_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

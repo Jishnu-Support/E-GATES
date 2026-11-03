@@ -7,7 +7,7 @@ const config = require('./env');
 const UPLOADS_BASE = config.attachmentsPath || path.resolve(__dirname, '../../uploads');
 
 // Ensure upload subdirectories exist
-const subdirs = ['proofs', 'news', 'voting', 'documents', 'logos', 'audio', 'profiles', 'events', 'products', 'properties'];
+const subdirs = ['proofs', 'news', 'voting', 'documents', 'logos', 'audio', 'profiles', 'events', 'products', 'properties', 'ads'];
 subdirs.forEach((dir) => {
   const fullPath = path.join(UPLOADS_BASE, dir);
   if (!fs.existsSync(fullPath)) {
@@ -249,6 +249,7 @@ const documentUploadInstance = uploadGeneric('documents', 25 * 1024 * 1024);
 const logoUploadInstance = uploadGeneric('logos', 5 * 1024 * 1024);
 const audioUploadInstance = uploadGeneric('audio', 10 * 1024 * 1024);
 const propertyUploadInstance = uploadGeneric('properties', 15 * 1024 * 1024).array('images', 8);
+const adUploadInstance = uploadGeneric('ads', 15 * 1024 * 1024).single('banner_image');
 
 const uploadEventCaptures = multer({
   storage: createDiskStorage('events'),
@@ -288,4 +289,5 @@ module.exports = {
   audioUpload: audioUploadInstance,
   eventCapturesUpload: uploadEventCaptures,
   propertyUpload: propertyUploadInstance,
+  adUpload: adUploadInstance,
 };

@@ -181,7 +181,7 @@ export const getFileUrl = (filePath) => {
   if (normalized.startsWith('uploads/')) {
     return `${origin}/${normalized}`;
   }
-  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news'];
+  const subdirs = ['profiles', 'proofs', 'logos', 'documents', 'events', 'audio', 'voting', 'news', 'products', 'properties', 'ads'];
   for (const dir of subdirs) {
     const dirIdx = normalized.indexOf(`/${dir}/`);
     if (dirIdx !== -1) {

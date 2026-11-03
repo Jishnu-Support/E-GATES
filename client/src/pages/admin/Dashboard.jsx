@@ -33,6 +33,7 @@ import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ScrollingAnnouncement from '../../components/common/ScrollingAnnouncement';
 import AudioPlayer from '../../components/common/AudioPlayer';
+import AdBannerCarousel from '../../components/common/AdBannerCarousel';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -408,6 +409,9 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Sponsored Partner & Layout Advertisements Carousel */}
+      <AdBannerCarousel panel="admin" associationId={user?.association_id} />
 
       {/* Top Stats Cards Row (5 Cards - Maintenance removed) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
