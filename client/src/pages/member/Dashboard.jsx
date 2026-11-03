@@ -336,6 +336,36 @@ export default function MemberDashboard() {
         </div>
       </div>
 
+      {/* Local Community Market Quick Banner */}
+      <div
+        onClick={() => navigate('/member/market')}
+        className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-emerald-500/10 border border-amber-300/40 dark:border-amber-800/40 hover:border-amber-400 dark:hover:border-amber-700 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-xs"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-105 transition">
+            🏪
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-900">
+                LOCAL SHOPS
+              </span>
+              <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
+                Community Layout Marketplace
+              </h3>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Browse products, fresh dairy, groceries & home services from approved vendors with direct WhatsApp ordering.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition self-end sm:self-center">
+          <span>Explore Market</span>
+          <span>&rarr;</span>
+        </div>
+      </div>
+
       {/* News & Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Daily News & Notice Board (Admin Method) - 2 Cols */}

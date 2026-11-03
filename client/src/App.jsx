@@ -12,6 +12,7 @@ import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
 // Auth Pages (Eagerly or Lazily loaded)
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const VendorRegister = lazy(() => import('./pages/auth/VendorRegister'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 
@@ -44,6 +45,10 @@ const NewsFeed = lazy(() => import('./pages/member/NewsFeed'));
 const VotingPage = lazy(() => import('./pages/member/VotingPage'));
 const MemberComplaints = lazy(() => import('./pages/member/Complaints'));
 const Profile = lazy(() => import('./pages/member/Profile'));
+const Marketplace = lazy(() => import('./pages/member/Marketplace'));
+
+// Vendor Pages
+const VendorDashboard = lazy(() => import('./pages/vendor/VendorDashboard'));
 
 // Home Redirect Component
 function RootRedirect() {
@@ -61,6 +66,8 @@ function RootRedirect() {
     return <Navigate to="/super-admin/dashboard" replace />;
   } else if (user.role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
+  } else if (user.role === 'vendor') {
+    return <Navigate to="/vendor/dashboard" replace />;
   } else {
     return <Navigate to="/member/dashboard" replace />;
   }
@@ -97,6 +104,8 @@ export default function App() {
         {/* Public Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/vendor/login" element={<Login />} />
+        <Route path="/vendor/register" element={<VendorRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
@@ -176,8 +185,28 @@ export default function App() {
           <Route path="news" element={<NewsFeed />} />
           <Route path="voting" element={<VotingPage />} />
           <Route path="complaints" element={<MemberComplaints />} />
+          <Route path="market" element={<Marketplace />} />
+          <Route path="shops" element={<Marketplace />} />
           <Route path="profile" element={<Profile />} />
           <Route path="maintenance" element={<Navigate to="/member/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Route>
+
+        {/* Vendor Protected Routes */}
+        <Route
+          path="/vendor"
+          element={
+            <ProtectedRoute allowedRoles={['vendor']}>
+              <SocketProvider>
+                <DashboardLayout />
+              </SocketProvider>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<VendorDashboard />} />
+          <Route path="products" element={<VendorDashboard />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
 

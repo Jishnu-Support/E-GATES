@@ -93,6 +93,46 @@ router.post(
   authController.registerAssociationAndAdmin
 );
 
+// Multer middleware wrapper for vendor shop registration (shop logo)
+const vendorUploadMiddleware = (req, res, next) => {
+  if (upload && upload.uploadGeneric) {
+    upload.uploadGeneric('logos', 5 * 1024 * 1024).fields([
+      { name: 'shop_logo', maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'Shop logo upload failed'
+        });
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+};
+
+/**
+ * @route   POST /api/v1/auth/register-vendor
+ * @desc    Public registration for local vendor / merchant shop
+ * @access  Public
+ */
+router.post(
+  '/register-vendor',
+  authLimiter,
+  vendorUploadMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Merchant name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('phone').trim().isLength({ min: 10, max: 15 }).withMessage('Valid phone number is required (10-15 digits)'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    body('shop_name').trim().notEmpty().withMessage('Shop / Business name is required'),
+    body('shop_category').trim().notEmpty().withMessage('Shop category is required'),
+    validate
+  ],
+  authController.registerVendor
+);
+
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login user with email/phone & password

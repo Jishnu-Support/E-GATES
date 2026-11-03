@@ -20,6 +20,8 @@ import {
   HiShieldExclamation,
   HiIdentification,
   HiArrowRightOnRectangle,
+  HiBuildingStorefront,
+  HiShoppingBag,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -67,9 +69,16 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: t('nav_events'), path: '/member/events', icon: HiCalendarDays },
     { name: t('nav_event_captures') || 'Event Captures', path: '/member/event-captures', icon: HiFilm },
     { name: t('nav_news'), path: '/member/news', icon: HiMegaphone },
+    { name: 'Local Market & Shops', path: '/member/market', icon: HiBuildingStorefront },
     { name: t('nav_voting'), path: '/member/voting', icon: HiChartBarSquare },
     { name: t('nav_complaints'), path: '/member/complaints', icon: HiChatBubbleLeftRight },
     { name: t('nav_profile'), path: '/member/profile', icon: HiUserCircle },
+  ];
+
+  const vendorLinks = [
+    { name: 'Shop Dashboard', path: '/vendor/dashboard', icon: HiSquares2X2 },
+    { name: 'My Products Catalog', path: '/vendor/products', icon: HiShoppingBag },
+    { name: 'Shop Profile', path: '/vendor/profile', icon: HiUserCircle },
   ];
 
   const links =
@@ -77,6 +86,8 @@ export default function Sidebar({ isOpen, onClose }) {
       ? superAdminLinks
       : user?.role === 'admin'
       ? adminLinks
+      : user?.role === 'vendor'
+      ? vendorLinks
       : memberLinks;
 
   const resolveFileUrl = (filePath) => {
@@ -191,7 +202,14 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="p-3 border-t border-slate-800 bg-slate-950/70 space-y-2">
           <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/40">
             <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-500 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-              {user?.profile_photo ? (
+              {user?.role === 'vendor' && user?.shop_logo ? (
+                <img
+                  src={resolveFileUrl(user.shop_logo)}
+                  alt={user?.shop_name || 'Vendor'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : user?.profile_photo ? (
                 <img
                   src={resolveFileUrl(user.profile_photo)}
                   alt={user?.name || 'User'}
@@ -199,13 +217,15 @@ export default function Sidebar({ isOpen, onClose }) {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
-                user?.name ? user.name.slice(0, 2).toUpperCase() : 'ME'
+                user?.role === 'vendor' ? '🏪' : user?.name ? user.name.slice(0, 2).toUpperCase() : 'ME'
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
+              <p className="text-xs font-semibold text-white truncate">
+                {user?.role === 'vendor' ? (user?.shop_name || user?.name) : user?.name}
+              </p>
               <p className="text-[10px] text-slate-400 truncate">
-                {user?.email || user?.phone || 'Online'}
+                {user?.role === 'vendor' ? (user?.shop_category || 'Shop Vendor') : (user?.email || user?.phone || 'Online')}
               </p>
             </div>
           </div>

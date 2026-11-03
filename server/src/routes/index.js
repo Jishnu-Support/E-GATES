@@ -79,4 +79,8 @@ router.use('/audit', auditRoutes);
 const eventCaptureRoutes = safeLoadRoute(['eventCapture.routes.js', 'event-captures.routes.js', 'eventCaptures.routes.js'], 'Event Captures');
 router.use('/event-captures', eventCaptureRoutes);
 
+// 14. Products & Vendor Shop routes
+const productRoutes = safeLoadRoute(['product.routes.js', 'products.routes.js', 'products.js', 'product.js'], 'Products');
+router.use('/products', productRoutes);
+
 module.exports = router;

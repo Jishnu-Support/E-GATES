@@ -66,6 +66,35 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE sos_contacts DROP CONSTRAINT IF EXISTS sos_contacts_contact_type_check;
       ALTER TABLE event_captures ALTER COLUMN file_size TYPE BIGINT;
       ALTER TABLE documents ALTER COLUMN file_type TYPE VARCHAR(255);
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor'));
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_category VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_address TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_phone VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_logo VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS business_hours VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_description TEXT;
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        price DECIMAL(10, 2) NOT NULL,
+        discount_price DECIMAL(10, 2),
+        unit VARCHAR(50) DEFAULT 'piece',
+        image VARCHAR(500),
+        in_stock BOOLEAN DEFAULT true,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_products_vendor ON products(vendor_id);
+      CREATE INDEX IF NOT EXISTS idx_products_assoc ON products(association_id);
+      CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
     `);
 
     // 2. Ensure Super Admin exists matching seedAdmin configuration

@@ -102,9 +102,91 @@ function ensureSchemaMigrations(db) {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
       CREATE INDEX IF NOT EXISTS idx_tenants_user ON tenants(user_id);
+
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT,
+        price REAL NOT NULL,
+        discount_price REAL,
+        unit TEXT DEFAULT 'piece',
+        image TEXT,
+        in_stock INTEGER DEFAULT 1,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_products_vendor ON products(vendor_id);
+      CREATE INDEX IF NOT EXISTS idx_products_assoc ON products(association_id);
+      CREATE INDEX IF NOT EXISTS idx_products_cat ON products(category);
     `);
 
-    // 2. Ensure missing columns on users
+    // 2. Ensure missing columns on users and vendor migration
+    const schemaRes = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='users';");
+    const currentSql = schemaRes[0]?.values[0]?.[0] || '';
+    if (currentSql && !currentSql.includes("'vendor'")) {
+      db.run("PRAGMA foreign_keys = OFF;");
+      db.run(`
+        CREATE TABLE users_v_migration (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE,
+          phone TEXT,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor')),
+          association_id INTEGER REFERENCES associations(id) ON DELETE SET NULL,
+          member_code TEXT UNIQUE,
+          door_no TEXT,
+          street TEXT,
+          layout_name TEXT,
+          taluk TEXT,
+          district TEXT,
+          state TEXT,
+          eb_bill_proof TEXT,
+          property_tax_receipt TEXT,
+          profile_photo TEXT,
+          blood_group TEXT,
+          dob TEXT,
+          aadhaar_number TEXT,
+          is_main_admin INTEGER DEFAULT 0,
+          shop_name TEXT,
+          shop_category TEXT,
+          shop_address TEXT,
+          shop_phone TEXT,
+          shop_logo TEXT,
+          business_hours TEXT,
+          upi_id TEXT,
+          shop_description TEXT,
+          status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+          rejection_reason TEXT,
+          language TEXT DEFAULT 'en',
+          reset_token TEXT,
+          reset_token_expires TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      const colsRes = db.exec("PRAGMA table_info(users);");
+      const existingCols = colsRes[0]?.values.map((v) => v[1]) || [];
+      const commonCols = [
+        'id', 'name', 'email', 'phone', 'password_hash', 'role', 'association_id',
+        'member_code', 'door_no', 'street', 'layout_name', 'taluk', 'district', 'state',
+        'eb_bill_proof', 'property_tax_receipt', 'profile_photo', 'blood_group', 'dob',
+        'aadhaar_number', 'is_main_admin', 'status', 'rejection_reason', 'language',
+        'reset_token', 'reset_token_expires', 'created_at', 'updated_at'
+      ].filter((c) => existingCols.includes(c));
+
+      const colsStr = commonCols.join(', ');
+      db.run(`INSERT INTO users_v_migration (${colsStr}) SELECT ${colsStr} FROM users;`);
+      db.run("DROP TABLE users;");
+      db.run("ALTER TABLE users_v_migration RENAME TO users;");
+      db.run("PRAGMA foreign_keys = ON;");
+    }
+
     const userRes = db.exec("PRAGMA table_info(users);");
     const userCols = userRes[0]?.values.map((v) => v[1]) || [];
     if (!userCols.includes('is_main_admin')) {
@@ -121,6 +203,30 @@ function ensureSchemaMigrations(db) {
     }
     if (!userCols.includes('aadhaar_number')) {
       db.run("ALTER TABLE users ADD COLUMN aadhaar_number TEXT;");
+    }
+    if (!userCols.includes('shop_name')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_name TEXT;");
+    }
+    if (!userCols.includes('shop_category')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_category TEXT;");
+    }
+    if (!userCols.includes('shop_address')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_address TEXT;");
+    }
+    if (!userCols.includes('shop_phone')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_phone TEXT;");
+    }
+    if (!userCols.includes('shop_logo')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_logo TEXT;");
+    }
+    if (!userCols.includes('business_hours')) {
+      db.run("ALTER TABLE users ADD COLUMN business_hours TEXT;");
+    }
+    if (!userCols.includes('upi_id')) {
+      db.run("ALTER TABLE users ADD COLUMN upi_id TEXT;");
+    }
+    if (!userCols.includes('shop_description')) {
+      db.run("ALTER TABLE users ADD COLUMN shop_description TEXT;");
     }
 
     // 3. Ensure missing columns on associations
@@ -165,7 +271,7 @@ function initSchemaAndSeed(db) {
       email TEXT UNIQUE,
       phone TEXT,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member')),
+      role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor')),
       association_id INTEGER REFERENCES associations(id) ON DELETE SET NULL,
       member_code TEXT UNIQUE,
       door_no TEXT,
@@ -176,6 +282,19 @@ function initSchemaAndSeed(db) {
       state TEXT,
       eb_bill_proof TEXT,
       property_tax_receipt TEXT,
+      profile_photo TEXT,
+      blood_group TEXT,
+      dob TEXT,
+      aadhaar_number TEXT,
+      is_main_admin INTEGER DEFAULT 0,
+      shop_name TEXT,
+      shop_category TEXT,
+      shop_address TEXT,
+      shop_phone TEXT,
+      shop_logo TEXT,
+      business_hours TEXT,
+      upi_id TEXT,
+      shop_description TEXT,
       status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       rejection_reason TEXT,
       language TEXT DEFAULT 'en',
@@ -331,6 +450,23 @@ function initSchemaAndSeed(db) {
       is_read INTEGER DEFAULT 0,
       link TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      category TEXT,
+      price REAL NOT NULL,
+      discount_price REAL,
+      unit TEXT DEFAULT 'piece',
+      image TEXT,
+      in_stock INTEGER DEFAULT 1,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS audit_log (

@@ -79,12 +79,15 @@ const userController = {
       let queryText = `
         SELECT u.id, u.name, u.email, u.phone, u.role, u.is_main_admin, u.association_id, u.profile_photo,
                CASE
+                 WHEN u.role = 'vendor' THEN 'Shop Vendor'
                  WHEN u.is_main_admin = true THEN 'Main Association Admin'
                  WHEN u.role = 'admin' THEN 'Layout Admin'
                  ELSE 'Resident Member'
                END as display_role,
                u.door_no, u.street, u.layout_name, u.taluk, u.district, u.state,
                u.eb_bill_proof, u.property_tax_receipt, u.status, u.created_at,
+               u.shop_name, u.shop_category, u.shop_address, u.shop_phone, u.shop_logo,
+               u.business_hours, u.upi_id, u.shop_description,
                a.name as association_name
         FROM users u
         LEFT JOIN associations a ON u.association_id = a.id
@@ -93,9 +96,8 @@ const userController = {
       const queryParams = [];
 
       if (role === 'super_admin') {
-        // Super Admin only approves new Association & Main Association Admin registrations
-        // Regular user and layout admin registration approvals are canceled for superadmin
-        queryText += ' AND u.is_main_admin = true';
+        // Super Admin approves new Association / Main Admin AND local Vendor registrations
+        queryText += " AND (u.is_main_admin = true OR u.role = 'vendor')";
         if (req.query.association_id) {
           queryParams.push(req.query.association_id);
           queryText += ` AND u.association_id = $${queryParams.length}`;
@@ -149,10 +151,10 @@ const userController = {
       const targetUser = userCheck.rows[0];
 
       // Permission check:
-      // Super Admin: only approves new Association & Main Association Admin registrations
-      // Regular user & layout admin registration approvals are canceled for Super Admin
+      // Super Admin: approves new Association / Main Admin registrations AND local Vendor registrations
+      // Regular user & layout admin registration approvals are handled by Main Association Admin
       if (role === 'super_admin') {
-        if (!targetUser.is_main_admin) {
+        if (!targetUser.is_main_admin && targetUser.role !== 'vendor') {
           return res.status(403).json({
             success: false,
             message: 'Approval canceled for Super Admin. Resident member and layout administrator registrations must be approved by the Main Association Admin.'
@@ -224,16 +226,17 @@ const userController = {
       );
 
       // Notification in DB
+      const isVendor = approvedUser.role === 'vendor';
+      const notifTitle = isVendor ? 'Vendor Shop Approved' : 'Account Approved';
+      const notifMsg = isVendor
+        ? `Congratulations! Your vendor shop has been approved by the Super Administrator. You can now log in and add your shop products to the resident portal.`
+        : `Congratulations! Your membership account has been approved. Your Member Code is ${memberCode}.`;
+      const notifLink = isVendor ? '/vendor/dashboard' : '/member/dashboard';
+
       await pool.query(
         `INSERT INTO notifications (user_id, title, message, type, link)
          VALUES ($1, $2, $3, $4, $5)`,
-        [
-          userId,
-          'Account Approved',
-          `Congratulations! Your membership account has been approved. Your Member Code is ${memberCode}.`,
-          'success',
-          '/member/dashboard'
-        ]
+        [userId, notifTitle, notifMsg, 'success', notifLink]
       );
 
       // Send email
@@ -312,10 +315,10 @@ const userController = {
       const targetUser = userCheck.rows[0];
 
       // Permission check:
-      // Super Admin: only reviews new Association & Main Association Admin registrations
-      // Regular user & layout admin registration rejections are canceled for Super Admin
+      // Super Admin: reviews new Association & Main Admin registrations AND local Vendor registrations
+      // Regular user & layout admin registration rejections are reviewed by the Main Association Admin
       if (role === 'super_admin') {
-        if (!targetUser.is_main_admin) {
+        if (!targetUser.is_main_admin && targetUser.role !== 'vendor') {
           return res.status(403).json({
             success: false,
             message: 'Rejection canceled for Super Admin. Resident member and layout administrator registrations must be reviewed by the Main Association Admin.'

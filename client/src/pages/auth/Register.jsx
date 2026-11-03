@@ -51,6 +51,13 @@ export default function Register() {
   const [viewPhotoModal, setViewPhotoModal] = useState(null); // { url, title }
   const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
+  // If vendor type param is passed, direct to vendor registration
+  useEffect(() => {
+    if (searchParams.get('type') === 'vendor') {
+      navigate('/vendor/register', { replace: true });
+    }
+  }, [searchParams, navigate]);
+
   // Member Registration Code auto-fetch state
   const [memberAssocCodeInput, setMemberAssocCodeInput] = useState('');
   const [memberFetchedAssoc, setMemberFetchedAssoc] = useState(null);

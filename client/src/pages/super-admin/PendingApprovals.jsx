@@ -58,12 +58,15 @@ export default function PendingApprovals() {
     try {
       await api.put(`/users/${id}/approve`);
       const isMain = userObj?.is_main_admin || userObj?.display_role === 'Main Association Admin';
-      const roleLabel = isMain
+      const roleLabel = userObj?.role === 'vendor'
+        ? 'Shop Vendor'
+        : isMain
         ? 'Main Association Admin'
         : userObj?.role === 'admin'
         ? 'Layout Admin'
         : 'Resident Member';
-      toast.success(`${roleLabel} "${name}" approved successfully! They can now log in.`);
+      const displayName = userObj?.shop_name || name;
+      toast.success(`${roleLabel} "${displayName}" approved successfully! They can now log in.`);
       fetchPending();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to approve user');
@@ -113,13 +116,13 @@ export default function PendingApprovals() {
             </span>
             <span>
               {currentUser?.role === 'super_admin'
-                ? 'Pending Association & Main Admin Registrations'
+                ? 'Pending Association, Main Admin & Vendor Registrations'
                 : 'Pending Resident & Admin Registrations'}
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {currentUser?.role === 'super_admin'
-              ? 'Approve or reject new Association registrations and their Main Association Admins. (Regular member & layout admin approvals are managed by the Main Association Admin).'
+              ? 'Approve or reject new Association registrations, Main Association Admins, and local Vendor merchant shop registrations.'
               : currentUser?.is_main_admin
               ? 'Review resident membership and layout administrator applications awaiting your approval as Main Association Admin.'
               : 'Review uploaded EB bills, property tax receipts, and verify registration legitimacy.'}
@@ -131,7 +134,7 @@ export default function PendingApprovals() {
         <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl text-blue-900 dark:text-blue-200 text-xs font-medium flex items-center gap-2.5">
           <HiShieldCheck className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <span>
-            <strong>Super Admin Scope:</strong> User (resident member) & layout administrator registration approvals are <strong>canceled for Super Admin</strong>. Super Admin exclusively approves new layout Associations and Main Association Admins. Individual resident & admin approvals are handled directly by each layout's Main Association Admin.
+            <strong>Super Admin Scope:</strong> Super Admin approves new layout Associations, Main Association Admins, and local <strong>Vendor Shop registrations</strong>. Resident member approvals are handled by each layout's Main Association Admin.
           </span>
         </div>
       )}
@@ -176,23 +179,66 @@ export default function PendingApprovals() {
                     className="hover:bg-amber-50/30 dark:hover:bg-slate-800/40 transition group"
                   >
                     <td className="py-3.5 px-4 font-bold text-gray-900 dark:text-white">
-                      <p>{user.name}</p>
-                      <span className="text-[10px] text-gray-400 font-normal">
+                      {user.role === 'vendor' ? (
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">🏪</span>
+                            <span className="text-sm font-black text-amber-600 dark:text-amber-400">
+                              {user.shop_name || 'Vendor Shop'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold mt-0.5">
+                            Owner: {user.name}
+                          </p>
+                          {user.shop_category && (
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              {user.shop_category}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p>{user.name}</p>
+                      )}
+                      <span className="text-[10px] text-gray-400 font-normal block mt-0.5">
                         Registered: {new Date(user.created_at).toLocaleDateString()}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-medium text-gray-700 dark:text-gray-300">
-                      📍 {user.association_name || 'Layout Association'}
+                      📍 {user.association_name || 'General / All Layouts'}
                     </td>
                     <td className="py-3.5 px-4 text-gray-600 dark:text-gray-300 font-mono">
-                      <p>{user.phone || 'N/A'}</p>
+                      <p>{user.shop_phone || user.phone || 'N/A'}</p>
                       <p className="text-[10px] text-gray-400 font-sans">{user.email}</p>
                     </td>
                     <td className="py-3.5 px-4 text-gray-700 dark:text-gray-300">
-                      Door #{user.door_no || 'N/A'}, {user.street || ''}
+                      {user.role === 'vendor' ? (
+                        <div>
+                          <p className="text-xs">{user.shop_address || 'Shop Location'}</p>
+                          {user.business_hours && (
+                            <p className="text-[10px] text-gray-400 font-sans mt-0.5">⏰ {user.business_hours}</p>
+                          )}
+                        </div>
+                      ) : (
+                        `Door #${user.door_no || 'N/A'}, ${user.street || ''}`
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        {user.shop_logo ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewProof({
+                                url: resolveFileUrl(user.shop_logo),
+                                title: `${user.shop_name || user.name} - Shop Logo`,
+                              })
+                            }
+                            className="px-2 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                          >
+                            <HiEye className="w-3 h-3" />
+                            <span>Shop Logo</span>
+                          </button>
+                        ) : null}
                         {user.eb_bill_proof ? (
                           <button
                             type="button"
@@ -231,7 +277,12 @@ export default function PendingApprovals() {
                       </div>
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      {user.is_main_admin || user.display_role === 'Main Association Admin' ? (
+                      {user.role === 'vendor' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center justify-center gap-1 shadow-xs">
+                          <span>🏪</span>
+                          <span>Shop Vendor</span>
+                        </span>
+                      ) : user.is_main_admin || user.display_role === 'Main Association Admin' ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 flex items-center justify-center gap-1 shadow-xs">
                           <span>🛡️</span>
                           <span>Main Association Admin</span>

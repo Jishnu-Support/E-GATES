@@ -9,6 +9,7 @@ import {
   HiShieldCheck,
   HiBuildingOffice2,
   HiUserGroup,
+  HiBuildingStorefront,
   HiArrowRight,
   HiCheckCircle,
 } from 'react-icons/hi2';
@@ -24,13 +25,18 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 2 Distinct Tabs for Top Slides: 'admin' | 'member'
+  // 3 Tabs for Top Slides: 'admin' | 'member' | 'vendor'
   // Super admin login is accessed via the word/link below the sign in button.
-  const [activeTab, setActiveTab] = useState(
-    location.state?.role && ['super_admin', 'admin', 'member'].includes(location.state.role)
+  const queryParams = new URLSearchParams(location.search);
+  const queryRole = queryParams.get('role');
+  const initialTab =
+    location.pathname.includes('/vendor') || queryRole === 'vendor' || location.state?.role === 'vendor'
+      ? 'vendor'
+      : location.state?.role && ['super_admin', 'admin', 'member', 'vendor'].includes(location.state.role)
       ? location.state.role
-      : 'admin'
-  );
+      : 'admin';
+
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [brandingModalType, setBrandingModalType] = useState(null); // 'egates' | 'jishnu' | null
 
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
@@ -107,6 +113,17 @@ export default function Login() {
       activeBg: 'bg-emerald-600 text-white',
       accentColor: 'text-emerald-600',
       description: 'House owners & residents portal with emergency SOS and voting',
+    },
+    {
+      id: 'vendor',
+      label: 'Vendor / Shop',
+      badge: 'Merchant Portal',
+      icon: HiBuildingStorefront,
+      color: 'from-amber-600 to-orange-600',
+      activeBorder: 'border-amber-600 text-amber-600',
+      activeBg: 'bg-amber-600 text-white',
+      accentColor: 'text-amber-600',
+      description: 'Manage shop products, pricing, stock and orders for layout members',
     },
   ];
 
@@ -213,6 +230,8 @@ export default function Login() {
         navigate('/super-admin/dashboard', { replace: true });
       } else if (user.role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
+      } else if (user.role === 'vendor') {
+        navigate('/vendor/dashboard', { replace: true });
       } else {
         navigate('/member/dashboard', { replace: true });
       }
@@ -234,6 +253,8 @@ export default function Login() {
       navigate('/super-admin/dashboard', { replace: true });
     } else if (targetRole === 'admin') {
       navigate('/admin/dashboard', { replace: true });
+    } else if (targetRole === 'vendor') {
+      navigate('/vendor/dashboard', { replace: true });
     } else {
       navigate('/member/dashboard', { replace: true });
     }
@@ -563,28 +584,40 @@ export default function Login() {
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-3">
                 Need to register? Select a Registration Form:
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <Link
                   to="/register?type=assoc-admin"
-                  className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
-                    🏛️ Association Registration Form
+                  <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
+                    🏛️ Association
                   </span>
-                  <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
                     Main Admin & Layout
                   </span>
                 </Link>
 
                 <Link
                   to="/register?type=member"
-                  className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
                 >
-                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                    👥 Member Registration Form
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                    👥 Member
                   </span>
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
                     Resident Registration
+                  </span>
+                </Link>
+
+                <Link
+                  to="/vendor/register"
+                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100/90 dark:hover:bg-amber-900/50 hover:border-amber-300 transition text-center group shadow-sm"
+                >
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                    🏪 Vendor Shop
+                  </span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                    Register Shop & Products
                   </span>
                 </Link>
               </div>

@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE,
   phone VARCHAR(20),
   password_hash VARCHAR(255) NOT NULL,
-  role VARCHAR(20) NOT NULL CHECK (role IN ('super_admin', 'admin', 'member')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor')),
   is_main_admin BOOLEAN DEFAULT false,
   association_id INTEGER REFERENCES associations(id) ON DELETE SET NULL,
   member_code VARCHAR(6) UNIQUE,
@@ -41,6 +41,14 @@ CREATE TABLE IF NOT EXISTS users (
   blood_group VARCHAR(10),
   dob DATE,
   aadhaar_number VARCHAR(20),
+  shop_name VARCHAR(255),
+  shop_category VARCHAR(100),
+  shop_address TEXT,
+  shop_phone VARCHAR(50),
+  shop_logo VARCHAR(500),
+  business_hours VARCHAR(100),
+  upi_id VARCHAR(100),
+  shop_description TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   rejection_reason TEXT,
   language VARCHAR(5) DEFAULT 'en',
@@ -299,5 +307,27 @@ CREATE TABLE IF NOT EXISTS event_captures (
 CREATE INDEX IF NOT EXISTS idx_event_captures_assoc ON event_captures(association_id);
 CREATE INDEX IF NOT EXISTS idx_event_captures_event ON event_captures(event_id);
 CREATE INDEX IF NOT EXISTS idx_event_captures_type ON event_captures(media_type);
+
+-- 19. Products (Vendor Shop Catalog)
+CREATE TABLE IF NOT EXISTS products (
+  id SERIAL PRIMARY KEY,
+  vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  association_id INTEGER REFERENCES associations(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  category VARCHAR(100),
+  price DECIMAL(10, 2) NOT NULL,
+  discount_price DECIMAL(10, 2),
+  unit VARCHAR(50) DEFAULT 'piece',
+  image VARCHAR(500),
+  in_stock BOOLEAN DEFAULT true,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_products_vendor ON products(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_products_assoc ON products(association_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 
 

@@ -483,11 +483,13 @@ const authController = {
 
       // Check account approval status
       if (user.status === 'pending') {
-        const pendingMsg = user.is_main_admin
-          ? 'Your association and Main Association Admin registration is pending approval by the Super Administrator. You will be able to log in once approved.'
-          : (user.role === 'admin'
-            ? 'Your administrator registration is pending approval by the Main Association Admin. You will be able to log in once approved.'
-            : 'Your resident registration is pending approval by the Main Association Admin. You will be able to log in once approved.');
+        const pendingMsg = user.role === 'vendor'
+          ? 'Your vendor shop account registration is pending approval by the Super Administrator. You will be able to log in once approved.'
+          : (user.is_main_admin
+            ? 'Your association and Main Association Admin registration is pending approval by the Super Administrator. You will be able to log in once approved.'
+            : (user.role === 'admin'
+              ? 'Your administrator registration is pending approval by the Main Association Admin. You will be able to log in once approved.'
+              : 'Your resident registration is pending approval by the Main Association Admin. You will be able to log in once approved.'));
         return res.status(403).json({
           success: false,
           message: pendingMsg
@@ -540,13 +542,15 @@ const authController = {
       }
 
       // Determine designation
-      const userDesignation = user.is_main_admin
-        ? 'Main Association Admin'
-        : user.role === 'admin'
-        ? 'Layout Admin'
-        : user.role === 'super_admin'
-        ? 'Super Admin'
-        : 'Resident Member';
+      const userDesignation = user.role === 'vendor'
+        ? 'Shop Vendor'
+        : (user.is_main_admin
+          ? 'Main Association Admin'
+          : user.role === 'admin'
+          ? 'Layout Admin'
+          : user.role === 'super_admin'
+          ? 'Super Admin'
+          : 'Resident Member');
 
       // Generate Access Token (15m)
       const tokenPayload = {
@@ -559,7 +563,10 @@ const authController = {
         association_code: user.association_code,
         name: user.name,
         email: user.email,
-        member_code: user.member_code
+        member_code: user.member_code,
+        shop_name: user.shop_name,
+        shop_category: user.shop_category,
+        shop_logo: user.shop_logo
       };
 
       const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
@@ -602,6 +609,14 @@ const authController = {
             association_name: user.association_name,
             association_code: user.association_code,
             member_code: user.member_code,
+            shop_name: user.shop_name,
+            shop_category: user.shop_category,
+            shop_address: user.shop_address,
+            shop_phone: user.shop_phone,
+            shop_logo: user.shop_logo,
+            business_hours: user.business_hours,
+            upi_id: user.upi_id,
+            shop_description: user.shop_description,
             door_no: user.door_no,
             street: user.street,
             layout_name: user.layout_name,
@@ -951,6 +966,151 @@ const authController = {
         data: {
           loginIdentifier: user.email || user.phone || user.member_code
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Register a new Vendor / Shop Merchant
+   * Status defaults to 'pending' (requires Super Admin approval)
+   */
+  async registerVendor(req, res, next) {
+    try {
+      const {
+        name,
+        email,
+        phone,
+        password,
+        shop_name,
+        shop_category,
+        shop_address,
+        shop_phone,
+        business_hours,
+        upi_id,
+        shop_description,
+        association_id,
+        association_code,
+        door_no,
+        street,
+        taluk,
+        district,
+        state = 'Tamil Nadu'
+      } = req.body;
+
+      if (!name || !email || !phone || !password || !shop_name || !shop_category) {
+        return res.status(400).json({
+          success: false,
+          message: 'Owner name, email, phone, password, shop name, and business category are required'
+        });
+      }
+
+      // Check duplicate email or phone
+      const duplicateUser = await pool.query(
+        'SELECT id, email, phone FROM users WHERE email = $1 OR phone = $2',
+        [email.trim().toLowerCase(), phone.trim()]
+      );
+
+      if (duplicateUser.rows.length > 0) {
+        const existing = duplicateUser.rows[0];
+        const field = existing.email.toLowerCase() === email.trim().toLowerCase() ? 'Email' : 'Phone number';
+        return res.status(409).json({
+          success: false,
+          message: `${field} is already registered`
+        });
+      }
+
+      // Resolve association if provided via code
+      let resolvedAssocId = association_id ? parseInt(association_id, 10) : null;
+      if (!resolvedAssocId && association_code && association_code.trim()) {
+        const assocRes = await pool.query(
+          'SELECT id FROM associations WHERE UPPER(code) = UPPER($1) LIMIT 1',
+          [association_code.trim()]
+        );
+        if (assocRes.rows.length > 0) {
+          resolvedAssocId = assocRes.rows[0].id;
+        }
+      }
+
+      // Handle shop logo
+      const shopLogo = req.files && req.files.shop_logo && req.files.shop_logo[0]
+        ? normalizeFilePath(req.files.shop_logo[0], 'logos')
+        : (req.file ? normalizeFilePath(req.file, 'logos') : null);
+
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const insertQuery = `
+        INSERT INTO users (
+          name, email, phone, password_hash, role, status,
+          association_id, shop_name, shop_category, shop_address, shop_phone,
+          shop_logo, business_hours, upi_id, shop_description,
+          door_no, street, taluk, district, state
+        ) VALUES (
+          $1, $2, $3, $4, 'vendor', 'pending',
+          $5, $6, $7, $8, $9,
+          $10, $11, $12, $13,
+          $14, $15, $16, $17, $18
+        )
+        RETURNING id, name, email, phone, role, status, shop_name, shop_category, shop_logo, created_at
+      `;
+
+      const result = await pool.query(insertQuery, [
+        name.trim(),
+        email.trim().toLowerCase(),
+        phone.trim(),
+        passwordHash,
+        resolvedAssocId,
+        shop_name.trim(),
+        shop_category.trim(),
+        shop_address ? shop_address.trim() : null,
+        shop_phone ? shop_phone.trim() : phone.trim(),
+        shopLogo,
+        business_hours ? business_hours.trim() : null,
+        upi_id ? upi_id.trim() : null,
+        shop_description ? shop_description.trim() : null,
+        door_no ? door_no.trim() : null,
+        street ? street.trim() : null,
+        taluk ? taluk.trim() : null,
+        district ? district.trim() : null,
+        state ? state.trim() : 'Tamil Nadu'
+      ]);
+
+      const newVendor = result.rows[0];
+
+      // Notify Super Admins
+      try {
+        const superAdmins = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+        for (const sa of superAdmins.rows) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              sa.id,
+              'New Vendor Pending Approval',
+              `Shop "${newVendor.shop_name}" (${newVendor.shop_category}) registered by "${newVendor.name}" requires Super Admin review.`,
+              'info',
+              '/super-admin/approvals'
+            ]
+          );
+        }
+      } catch (notifErr) {
+        console.warn('Super admin notification error for vendor:', notifErr.message);
+      }
+
+      await logAudit(
+        newVendor.id,
+        'VENDOR_REGISTER',
+        'users',
+        newVendor.id,
+        { shop_name: newVendor.shop_name, shop_category: newVendor.shop_category, status: 'pending' },
+        req.ip
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Vendor shop registration submitted successfully! Your account is pending Super Administrator approval. You will be able to log in and list your products once approved.',
+        data: newVendor
       });
     } catch (error) {
       next(error);

@@ -158,6 +158,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerVendor = async (formData) => {
+    try {
+      setLoading(true);
+      const response = await api.post('/auth/register-vendor', formData);
+      const msg = response.data?.message || 'Vendor shop registration submitted! Awaiting Super Admin review.';
+      toast.success(msg);
+      return response.data;
+    } catch (error) {
+      const errMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Vendor registration failed.';
+      toast.error(errMsg);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem('association_refresh_token');
     try {
@@ -192,6 +212,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     registerAssociationAdmin,
+    registerVendor,
     logout,
     updateUser,
   };
