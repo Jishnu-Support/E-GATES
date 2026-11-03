@@ -47,8 +47,38 @@ export default function FloatingSOS() {
   const [newFamilyForm, setNewFamilyForm] = useState({ name: '', phone: '', designation: 'Family Contact' });
   const [savingFamily, setSavingFamily] = useState(false);
 
-  // Preference selection state for family if resident has multiple family members
-  const [selectedFamilyId, setSelectedFamilyId] = useState(null);
+  // Preference selection state: resident chooses ONLY ONE active contact per emergency category
+  const [preferredContacts, setPreferredContacts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('preferred_sos_contacts');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Update chosen preference and sync to localStorage
+  const updatePreference = (categoryKey, contactId) => {
+    const updated = {
+      ...preferredContacts,
+      [categoryKey]: contactId,
+    };
+    setPreferredContacts(updated);
+    try {
+      localStorage.setItem('preferred_sos_contacts', JSON.stringify(updated));
+      api.put('/sos/preferences', { preferred_contacts: updated }).catch(() => {});
+    } catch (e) {}
+  };
+
+  // Sync latest preferred contacts from localStorage whenever modal opens
+  useEffect(() => {
+    if (showTypeSelector) {
+      try {
+        const saved = localStorage.getItem('preferred_sos_contacts');
+        if (saved) setPreferredContacts(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, [showTypeSelector]);
 
   // Fetch configured SOS contacts on mount or when alert triggers
   const fetchSOSContacts = () => {
@@ -61,10 +91,6 @@ export default function FloatingSOS() {
           const fams = res.data?.familyContacts || (res.data?.familyContact ? [res.data.familyContact] : []);
           const validFams = Array.isArray(fams) ? fams : [];
           setFamilyContacts(validFams);
-
-          if (validFams.length > 0 && !selectedFamilyId) {
-            setSelectedFamilyId(validFams[0].id);
-          }
         })
         .catch((err) => console.warn('Could not load SOS contacts for floating widget:', err));
     }
@@ -79,7 +105,7 @@ export default function FloatingSOS() {
     return null;
   }
 
-  // 1. Group contacts into clean categories
+  // 1. Group configured contacts into clean emergency categories
   const familyList = useMemo(() => {
     return Array.isArray(familyContacts) ? familyContacts : [];
   }, [familyContacts]);
@@ -141,6 +167,41 @@ export default function FloatingSOS() {
     }
     return list;
   }, [emergencyContacts]);
+
+  const otherList = useMemo(() => {
+    return emergencyContacts.filter((c) => c.contact_type === 'other');
+  }, [emergencyContacts]);
+
+  // Resolve the EXACT ONE selected/preferred contact for each emergency category
+  const activeFamily = useMemo(() => {
+    if (familyList.length === 0) return null;
+    return familyList.find((f) => f.id === preferredContacts.family) || familyList[0];
+  }, [familyList, preferredContacts.family]);
+
+  const activeMedical = useMemo(() => {
+    if (medicalList.length === 0) return null;
+    return medicalList.find((m) => m.id === preferredContacts.medical) || medicalList[0];
+  }, [medicalList, preferredContacts.medical]);
+
+  const activePolice = useMemo(() => {
+    if (policeList.length === 0) return null;
+    return policeList.find((p) => p.id === preferredContacts.police) || policeList[0];
+  }, [policeList, preferredContacts.police]);
+
+  const activeResident = useMemo(() => {
+    if (residentList.length === 0) return null;
+    return residentList.find((r) => r.id === preferredContacts.resident) || residentList[0];
+  }, [residentList, preferredContacts.resident]);
+
+  const activeFire = useMemo(() => {
+    if (fireList.length === 0) return null;
+    return fireList.find((f) => f.id === preferredContacts.fire) || fireList[0];
+  }, [fireList, preferredContacts.fire]);
+
+  const activeOther = useMemo(() => {
+    if (otherList.length === 0) return null;
+    return otherList.find((o) => o.id === preferredContacts.other) || otherList[0];
+  }, [otherList, preferredContacts.other]);
 
   // Helper to compile resident address string
   const compileAddress = () => {
@@ -281,12 +342,6 @@ export default function FloatingSOS() {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residentAddress)}`;
   }, [dispatchedCoords, lastAlert, residentAddress]);
 
-  // Primary selected family contact
-  const activeFamilyContact = useMemo(() => {
-    if (familyList.length === 0) return null;
-    return familyList.find((f) => f.id === selectedFamilyId) || familyList[0];
-  }, [familyList, selectedFamilyId]);
-
   return (
     <>
       {/* ======================================================== */}
@@ -294,10 +349,8 @@ export default function FloatingSOS() {
       {/* ======================================================== */}
       <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center">
         <div className="relative group">
-          {/* Subtle Outer Glow Wave */}
           <div className="absolute -inset-1 bg-red-600 rounded-full blur-sm opacity-60 group-hover:opacity-100 animate-pulse transition duration-500 pointer-events-none" />
 
-          {/* Trigger Button */}
           <button
             type="button"
             onClick={() => {
@@ -322,14 +375,13 @@ export default function FloatingSOS() {
           </button>
         </div>
 
-        {/* Small hint label */}
         <span className="mt-1.5 text-[10px] sm:text-[11px] font-bold text-gray-800 dark:text-gray-200 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-md border border-gray-200 dark:border-slate-800 hidden md:block pointer-events-none">
           {t('sos_button_title') || 'Emergency SOS'}
         </span>
       </div>
 
       {/* ======================================================== */}
-      {/* 2. CHOOSE CONTACTS & DISPATCH MODAL (PROFESSIONAL & ANDROID) */}
+      {/* 2. CHOOSE 1 CONTACT PER EMERGENCY & DISPATCH MODAL */}
       {/* ======================================================== */}
       <Modal
         isOpen={showTypeSelector}
@@ -338,7 +390,7 @@ export default function FloatingSOS() {
         size="lg"
       >
         <div className="space-y-3.5 py-1 max-h-[82vh] overflow-y-auto px-0.5">
-          {/* Mobile Drag Indicator Handle for Android native feel */}
+          {/* Mobile Drag Indicator Handle */}
           <div className="w-12 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full mx-auto -mt-1 mb-2 block sm:hidden" />
 
           {/* Subtitle & Resident Location Indicator */}
@@ -380,7 +432,7 @@ export default function FloatingSOS() {
                   : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300 hover:bg-gray-200'
               }`}
             >
-              All Categories
+              All Options
             </button>
             <button
               type="button"
@@ -391,7 +443,7 @@ export default function FloatingSOS() {
                   : 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
               }`}
             >
-              👨‍👩‍👧 Family ({familyList.length})
+              👨‍👩‍👧 Family
             </button>
             <button
               type="button"
@@ -402,7 +454,7 @@ export default function FloatingSOS() {
                   : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
               }`}
             >
-              🏥 Medical (108)
+              🏥 Medical
             </button>
             <button
               type="button"
@@ -413,7 +465,7 @@ export default function FloatingSOS() {
                   : 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
               }`}
             >
-              🚓 Police (100)
+              🚓 Police
             </button>
             <button
               type="button"
@@ -424,7 +476,7 @@ export default function FloatingSOS() {
                   : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
               }`}
             >
-              🏡 Community
+              🏡 Responders
             </button>
             <button
               type="button"
@@ -435,16 +487,15 @@ export default function FloatingSOS() {
                   : 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300'
               }`}
             >
-              🔥 Fire (101)
+              🔥 Fire
             </button>
           </div>
 
           {/* ======================================================== */}
-          {/* CATEGORY 1: FAMILY EMERGENCY (SHOWS NUMBER PROMINENTLY BELOW) */}
+          {/* 1. FAMILY EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN WITH NUMBER BELOW) */}
           {/* ======================================================== */}
           {(activeCategoryTab === 'all' || activeCategoryTab === 'family') && (
-            <div className="rounded-2xl border-2 border-purple-300 dark:border-purple-800 bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 dark:from-purple-950/40 dark:via-slate-900 dark:to-purple-950/20 p-4 space-y-3 shadow-sm transition hover:shadow-md">
-              {/* Header */}
+            <div className="rounded-2xl border-2 border-purple-300 dark:border-purple-800 bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 dark:from-purple-950/40 dark:via-slate-900 dark:to-purple-950/20 p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
@@ -458,7 +509,7 @@ export default function FloatingSOS() {
                       </span>
                     </h3>
                     <p className="text-[11px] text-purple-700 dark:text-purple-300">
-                      Alert your personal family members with live location
+                      Alert your personal family emergency contact with live location
                     </p>
                   </div>
                 </div>
@@ -480,12 +531,12 @@ export default function FloatingSOS() {
                   className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-purple-200 dark:border-purple-700/60 space-y-2.5 text-xs shadow-inner"
                 >
                   <p className="font-bold text-purple-900 dark:text-purple-200">
-                    Add New Family Emergency Number:
+                    Add Family Emergency Number:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
-                      placeholder="Family Member Name (e.g. Priya)"
+                      placeholder="Name (e.g. Priya)"
                       value={newFamilyForm.name}
                       onChange={(e) => setNewFamilyForm({ ...newFamilyForm, name: e.target.value })}
                       className="px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
@@ -503,7 +554,7 @@ export default function FloatingSOS() {
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <input
                       type="text"
-                      placeholder="Relation (e.g. Spouse, Father, Mother)"
+                      placeholder="Relation (e.g. Spouse, Father)"
                       value={newFamilyForm.designation}
                       onChange={(e) => setNewFamilyForm({ ...newFamilyForm, designation: e.target.value })}
                       className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
@@ -513,131 +564,131 @@ export default function FloatingSOS() {
                       disabled={savingFamily}
                       className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-sm cursor-pointer disabled:opacity-50"
                     >
-                      {savingFamily ? 'Saving...' : 'Save Family Number'}
+                      {savingFamily ? 'Saving...' : 'Save & Select'}
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* IF FAMILY MEANS BELOW NUMBER WILL SHOW (SINGLE OR MULTIPLE NUMBERS) */}
-              {familyList.length === 0 ? (
-                <div className="p-3 bg-purple-100/60 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800/50 space-y-2">
+              {/* SELECTION BAR WHEN 2 OR MORE FAMILY CONTACTS EXIST */}
+              {familyList.length > 1 && (
+                <div className="p-2.5 bg-purple-100/60 dark:bg-purple-950/50 rounded-xl border border-purple-200 dark:border-purple-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-purple-950 dark:text-purple-200">
+                      You have {familyList.length} family contacts. Select 1 to alert:
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {familyList.map((fam) => {
+                      const isSelected = activeFamily?.id === fam.id;
+                      return (
+                        <button
+                          key={fam.id}
+                          type="button"
+                          onClick={() => updatePreference('family', fam.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-400'
+                              : 'bg-white dark:bg-slate-800 text-purple-900 dark:text-purple-200 hover:bg-purple-50 border border-purple-200 dark:border-purple-800'
+                          }`}
+                        >
+                          {isSelected ? '✓ ' : ''}{fam.name} ({fam.designation || 'Family'})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ONLY ONE ACTIVE FAMILY CONTACT DISPLAYED (WITH NUMBER SHOWN PROMINENTLY BELOW) */}
+              {!activeFamily ? (
+                <div className="p-3 bg-purple-100/50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800 text-center space-y-2">
                   <p className="text-xs text-purple-900 dark:text-purple-200">
                     No personal family contact saved yet. Click <strong>"+ Add Number"</strong> above or alert National Helpline 112:
                   </p>
                   <button
                     type="button"
                     onClick={() => handleDispatchContact('Family Emergency', {
-                      name: 'National Helpline (Family Fallback)',
+                      name: 'National Helpline (112)',
                       phone: '112',
                       designation: 'National Helpline',
                     })}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    <HiPhone className="w-4 h-4" />
-                    <span>Call National Emergency Helpline (112)</span>
+                    Call National Helpline (112)
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2.5">
-                  {familyList.map((fam, idx) => {
-                    const isSelected = selectedFamilyId === fam.id || (idx === 0 && !selectedFamilyId);
-                    return (
-                      <div
-                        key={fam.id || idx}
-                        onClick={() => setSelectedFamilyId(fam.id)}
-                        className={`p-3 rounded-xl border transition cursor-pointer ${
-                          isSelected
-                            ? 'border-purple-600 bg-purple-100/70 dark:bg-purple-950/80 ring-2 ring-purple-400 dark:ring-purple-600'
-                            : 'border-purple-200 dark:border-purple-900/60 bg-white dark:bg-slate-900 hover:bg-purple-50/60'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <input
-                              type="radio"
-                              name="family_selector"
-                              checked={isSelected}
-                              onChange={() => setSelectedFamilyId(fam.id)}
-                              className="w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer mt-0.5"
-                            />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                                  {fam.name}
-                                </h4>
-                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-200/80 dark:bg-purple-900/80 px-2 py-0.5 rounded-full">
-                                  {fam.designation || 'Family Contact'}
-                                </span>
-                              </div>
-
-                              {/* PROMINENT PHONE NUMBER SHOWN CLEARLY RIGHT BELOW NAME */}
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-xs font-mono font-black text-purple-900 dark:text-purple-200 bg-purple-200/60 dark:bg-purple-950 px-2.5 py-1 rounded-lg border border-purple-300 dark:border-purple-800 flex items-center gap-1.5">
-                                  <HiPhone className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
-                                  <span>{fam.phone}</span>
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Quick 1-Tap Action Pills */}
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <a
-                              href={`tel:${fam.phone}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDispatchContact('Family Emergency', fam);
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95"
-                              title="Direct Phone Call"
-                            >
-                              <HiPhone className="w-3.5 h-3.5" />
-                              <span>Call</span>
-                            </a>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDispatchContact('Family Emergency', fam);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95"
-                              title="WhatsApp SOS Alert"
-                            >
-                              <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">WhatsApp</span>
-                            </button>
-                          </div>
-                        </div>
+                <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800/80 bg-white dark:bg-slate-900 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
+                          {activeFamily.name}
+                        </h4>
+                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-full">
+                          {activeFamily.designation || 'Family Contact'}
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      {/* PROMINENT PHONE NUMBER SHOWN DIRECTLY BELOW NAME */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-xs sm:text-sm font-mono font-black text-purple-900 dark:text-purple-200 bg-purple-100/80 dark:bg-purple-950 px-3 py-1 rounded-xl border border-purple-300 dark:border-purple-700 flex items-center gap-2">
+                          <HiPhone className="w-4 h-4 text-purple-700 dark:text-purple-300" />
+                          <span>{activeFamily.phone}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick 1-Tap Action Pills */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <a
+                        href={`tel:${activeFamily.phone}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDispatchContact('Family Emergency', activeFamily);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95"
+                        title="Direct Phone Call"
+                      >
+                        <HiPhone className="w-3.5 h-3.5" />
+                        <span>Call</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDispatchContact('Family Emergency', activeFamily)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95 cursor-pointer"
+                        title="WhatsApp SOS Alert"
+                      >
+                        <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                      </button>
+                    </div>
+                  </div>
 
                   {/* Primary Big Confirm Button for selected family */}
-                  {activeFamilyContact && (
-                    <button
-                      type="button"
-                      onClick={() => handleDispatchContact('Family Emergency', activeFamilyContact)}
-                      disabled={isSending}
-                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                    >
-                      <HiShieldExclamation className="w-4 h-4 text-white" />
-                      <span>
-                        ALERT {activeFamilyContact.name.toUpperCase()} (CALL & WHATSAPP: {activeFamilyContact.phone})
-                      </span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchContact('Family Emergency', activeFamily)}
+                    disabled={isSending}
+                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <HiShieldExclamation className="w-4 h-4 text-white" />
+                    <span>
+                      ALERT {activeFamily.name.toUpperCase()} ({activeFamily.phone})
+                    </span>
+                  </button>
                 </div>
               )}
             </div>
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 2: MEDICAL EMERGENCY (108 AMBULANCE) */}
+          {/* 2. MEDICAL EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
           {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'medical') && (
-            <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-900 bg-gradient-to-br from-rose-50/80 via-white to-rose-50/40 dark:from-rose-950/40 dark:via-slate-900 dark:to-rose-950/20 p-4 space-y-3 shadow-sm transition hover:shadow-md">
+          {(activeCategoryTab === 'all' || activeCategoryTab === 'medical') && activeMedical && (
+            <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-900 bg-gradient-to-br from-rose-50/80 via-white to-rose-50/40 dark:from-rose-950/40 dark:via-slate-900 dark:to-rose-950/20 p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
@@ -651,56 +702,86 @@ export default function FloatingSOS() {
                       </span>
                     </h3>
                     <p className="text-[11px] text-rose-700 dark:text-rose-300">
-                      Dispatches immediate medical SOS & dials ambulance
+                      Dispatches medical distress with GPS coordinates & triggers call
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Medical Contacts List */}
-              <div className="space-y-2">
-                {medicalList.map((med, idx) => (
-                  <div
-                    key={med.id || idx}
-                    className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                  >
-                    <div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                        {med.name}
-                      </h4>
-                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                        {med.designation || 'Emergency Medical Services'}
-                      </p>
-                      {/* NUMBER SHOWN PROMINENTLY BELOW */}
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-xs font-mono font-black text-rose-900 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-950 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 flex items-center gap-1.5">
-                          <HiPhone className="w-3.5 h-3.5 text-rose-600" />
-                          <span>{med.phone}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 sm:pt-0">
+              {/* SELECTION BAR IF MULTIPLE MEDICAL CONTACTS */}
+              {medicalList.length > 1 && (
+                <div className="p-2 bg-rose-100/60 dark:bg-rose-950/50 rounded-xl border border-rose-200 dark:border-rose-800 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-rose-900 dark:text-rose-200">
+                    Select 1:
+                  </span>
+                  {medicalList.map((m) => {
+                    const isSelected = activeMedical.id === m.id;
+                    return (
                       <button
+                        key={m.id}
                         type="button"
-                        onClick={() => handleDispatchContact('Medical Emergency', med)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-xs transition active:scale-95 cursor-pointer"
+                        onClick={() => updatePreference('medical', m.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-rose-600 text-white shadow-xs ring-1 ring-rose-400'
+                            : 'bg-white dark:bg-slate-800 text-rose-900 dark:text-rose-200 hover:bg-rose-50'
+                        }`}
                       >
-                        <HiPhone className="w-4 h-4" />
-                        <span>Call & Alert ({med.phone})</span>
+                        {isSelected ? '✓ ' : ''}{m.name}
                       </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* SINGLE ACTIVE MEDICAL CONTACT WITH NUMBER BELOW */}
+              <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
+                      {activeMedical.name}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                      {activeMedical.designation || 'Emergency Medical Responder'}
+                    </p>
+
+                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-xs sm:text-sm font-mono font-black text-rose-900 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-950 px-3 py-1 rounded-xl border border-rose-300 dark:border-rose-800 flex items-center gap-2">
+                        <HiPhone className="w-4 h-4 text-rose-600" />
+                        <span>{activeMedical.phone}</span>
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <a
+                    href={`tel:${activeMedical.phone}`}
+                    onClick={() => handleDispatchContact('Medical Emergency', activeMedical)}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                  >
+                    <HiPhone className="w-3.5 h-3.5" />
+                    <span>Call Now</span>
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleDispatchContact('Medical Emergency', activeMedical)}
+                  disabled={isSending}
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <HiPhone className="w-4 h-4" />
+                  <span>ALERT & CALL {activeMedical.name.toUpperCase()} ({activeMedical.phone})</span>
+                </button>
               </div>
             </div>
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 3: POLICE & INTRUDER EMERGENCY (100 POLICE) */}
+          {/* 3. POLICE EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
           {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'police') && (
-            <div className="rounded-2xl border-2 border-blue-300 dark:border-blue-900 bg-gradient-to-br from-blue-50/80 via-white to-blue-50/40 dark:from-blue-950/40 dark:via-slate-900 dark:to-blue-950/20 p-4 space-y-3 shadow-sm transition hover:shadow-md">
+          {(activeCategoryTab === 'all' || activeCategoryTab === 'police') && activePolice && (
+            <div className="rounded-2xl border-2 border-blue-300 dark:border-blue-900 bg-gradient-to-br from-blue-50/80 via-white to-blue-50/40 dark:from-blue-950/40 dark:via-slate-900 dark:to-blue-950/20 p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
@@ -714,56 +795,86 @@ export default function FloatingSOS() {
                       </span>
                     </h3>
                     <p className="text-[11px] text-blue-700 dark:text-blue-300">
-                      Alerts police station with GPS coordinates and triggers call
+                      Alerts police station with GPS location and triggers direct call
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Police Contacts List */}
-              <div className="space-y-2">
-                {policeList.map((pol, idx) => (
-                  <div
-                    key={pol.id || idx}
-                    className="p-3 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                  >
-                    <div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                        {pol.name}
-                      </h4>
-                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                        {pol.designation || 'Police Station Control Room'}
-                      </p>
-                      {/* NUMBER SHOWN PROMINENTLY BELOW */}
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-xs font-mono font-black text-blue-900 dark:text-blue-200 bg-blue-100/80 dark:bg-blue-950 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
-                          <HiPhone className="w-3.5 h-3.5 text-blue-600" />
-                          <span>{pol.phone}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 sm:pt-0">
+              {/* SELECTION BAR IF MULTIPLE POLICE CONTACTS */}
+              {policeList.length > 1 && (
+                <div className="p-2 bg-blue-100/60 dark:bg-blue-950/50 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-blue-900 dark:text-blue-200">
+                    Select 1:
+                  </span>
+                  {policeList.map((p) => {
+                    const isSelected = activePolice.id === p.id;
+                    return (
                       <button
+                        key={p.id}
                         type="button"
-                        onClick={() => handleDispatchContact('Theft / Intruder', pol)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-xs transition active:scale-95 cursor-pointer"
+                        onClick={() => updatePreference('police', p.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
+                            : 'bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-200 hover:bg-blue-50'
+                        }`}
                       >
-                        <HiPhone className="w-4 h-4" />
-                        <span>Call & Alert ({pol.phone})</span>
+                        {isSelected ? '✓ ' : ''}{p.name}
                       </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* SINGLE ACTIVE POLICE CONTACT WITH NUMBER BELOW */}
+              <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-slate-900 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
+                      {activePolice.name}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                      {activePolice.designation || 'Police Station Control Room'}
+                    </p>
+
+                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-xs sm:text-sm font-mono font-black text-blue-900 dark:text-blue-200 bg-blue-100/80 dark:bg-blue-950 px-3 py-1 rounded-xl border border-blue-300 dark:border-blue-800 flex items-center gap-2">
+                        <HiPhone className="w-4 h-4 text-blue-600" />
+                        <span>{activePolice.phone}</span>
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <a
+                    href={`tel:${activePolice.phone}`}
+                    onClick={() => handleDispatchContact('Theft / Intruder', activePolice)}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                  >
+                    <HiPhone className="w-3.5 h-3.5" />
+                    <span>Call Now</span>
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleDispatchContact('Theft / Intruder', activePolice)}
+                  disabled={isSending}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <HiPhone className="w-4 h-4" />
+                  <span>ALERT & CALL {activePolice.name.toUpperCase()} ({activePolice.phone})</span>
+                </button>
               </div>
             </div>
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 4: COMMUNITY RESIDENT RESPONDER / SECURITY */}
+          {/* 4. COMMUNITY RESIDENT RESPONDER / SECURITY (ONLY 1 SHOWN) */}
           {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'resident') && (
-            <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-900 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 dark:from-amber-950/40 dark:via-slate-900 dark:to-amber-950/20 p-4 space-y-3 shadow-sm transition hover:shadow-md">
+          {(activeCategoryTab === 'all' || activeCategoryTab === 'resident') && activeResident && (
+            <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-900 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 dark:from-amber-950/40 dark:via-slate-900 dark:to-amber-950/20 p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
@@ -783,50 +894,80 @@ export default function FloatingSOS() {
                 </div>
               </div>
 
-              {/* Resident Responders List */}
-              <div className="space-y-2">
-                {residentList.map((res, idx) => (
-                  <div
-                    key={res.id || idx}
-                    className="p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                  >
-                    <div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                        {res.name}
-                      </h4>
-                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                        {res.designation || 'Association Security Responder'}
-                      </p>
-                      {/* NUMBER SHOWN PROMINENTLY BELOW */}
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-xs font-mono font-black text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
-                          <HiPhone className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{res.phone}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 sm:pt-0">
+              {/* SELECTION BAR IF MULTIPLE RESIDENT RESPONDERS */}
+              {residentList.length > 1 && (
+                <div className="p-2 bg-amber-100/60 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-amber-900 dark:text-amber-200">
+                    Select 1:
+                  </span>
+                  {residentList.map((r) => {
+                    const isSelected = activeResident.id === r.id;
+                    return (
                       <button
+                        key={r.id}
                         type="button"
-                        onClick={() => handleDispatchContact('Community Emergency', res)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold rounded-xl shadow-xs transition active:scale-95 cursor-pointer"
+                        onClick={() => updatePreference('resident', r.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400'
+                            : 'bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-200 hover:bg-amber-50'
+                        }`}
                       >
-                        <HiPhone className="w-4 h-4" />
-                        <span>Call & Alert ({res.phone})</span>
+                        {isSelected ? '✓ ' : ''}{r.name}
                       </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* SINGLE ACTIVE RESIDENT RESPONDER WITH NUMBER BELOW */}
+              <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
+                      {activeResident.name}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                      {activeResident.designation || 'Association Security Responder'}
+                    </p>
+
+                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-xs sm:text-sm font-mono font-black text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950 px-3 py-1 rounded-xl border border-amber-300 dark:border-amber-800 flex items-center gap-2">
+                        <HiPhone className="w-4 h-4 text-amber-600" />
+                        <span>{activeResident.phone}</span>
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <a
+                    href={`tel:${activeResident.phone}`}
+                    onClick={() => handleDispatchContact('Community Emergency', activeResident)}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                  >
+                    <HiPhone className="w-3.5 h-3.5" />
+                    <span>Call Now</span>
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleDispatchContact('Community Emergency', activeResident)}
+                  disabled={isSending}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <HiPhone className="w-4 h-4" />
+                  <span>ALERT & CALL {activeResident.name.toUpperCase()} ({activeResident.phone})</span>
+                </button>
               </div>
             </div>
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 5: FIRE & RESCUE EMERGENCY (101 FIRE) */}
+          {/* 5. FIRE & RESCUE EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
           {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'fire') && (
-            <div className="rounded-2xl border-2 border-orange-300 dark:border-orange-900 bg-gradient-to-br from-orange-50/80 via-white to-orange-50/40 dark:from-orange-950/40 dark:via-slate-900 dark:to-orange-950/20 p-4 space-y-3 shadow-sm transition hover:shadow-md">
+          {(activeCategoryTab === 'all' || activeCategoryTab === 'fire') && activeFire && (
+            <div className="rounded-2xl border-2 border-orange-300 dark:border-orange-900 bg-gradient-to-br from-orange-50/80 via-white to-orange-50/40 dark:from-orange-950/40 dark:via-slate-900 dark:to-orange-950/20 p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
@@ -846,42 +987,104 @@ export default function FloatingSOS() {
                 </div>
               </div>
 
-              {/* Fire Contacts List */}
-              <div className="space-y-2">
-                {fireList.map((fir, idx) => (
-                  <div
-                    key={fir.id || idx}
-                    className="p-3 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                  >
-                    <div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                        {fir.name}
-                      </h4>
-                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                        {fir.designation || 'Fire & Rescue Station'}
-                      </p>
-                      {/* NUMBER SHOWN PROMINENTLY BELOW */}
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-xs font-mono font-black text-orange-900 dark:text-orange-200 bg-orange-100/80 dark:bg-orange-950 px-2.5 py-1 rounded-lg border border-orange-200 dark:border-orange-800 flex items-center gap-1.5">
-                          <HiPhone className="w-3.5 h-3.5 text-orange-600" />
-                          <span>{fir.phone}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 sm:pt-0">
+              {/* SELECTION BAR IF MULTIPLE FIRE CONTACTS */}
+              {fireList.length > 1 && (
+                <div className="p-2 bg-orange-100/60 dark:bg-orange-950/50 rounded-xl border border-orange-200 dark:border-orange-800 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-orange-900 dark:text-orange-200">
+                    Select 1:
+                  </span>
+                  {fireList.map((f) => {
+                    const isSelected = activeFire.id === f.id;
+                    return (
                       <button
+                        key={f.id}
                         type="button"
-                        onClick={() => handleDispatchContact('Fire Incident', fir)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold rounded-xl shadow-xs transition active:scale-95 cursor-pointer"
+                        onClick={() => updatePreference('fire', f.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-orange-600 text-white shadow-xs ring-1 ring-orange-400'
+                            : 'bg-white dark:bg-slate-800 text-orange-900 dark:text-orange-200 hover:bg-orange-50'
+                        }`}
                       >
-                        <HiPhone className="w-4 h-4" />
-                        <span>Call & Alert ({fir.phone})</span>
+                        {isSelected ? '✓ ' : ''}{f.name}
                       </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* SINGLE ACTIVE FIRE CONTACT WITH NUMBER BELOW */}
+              <div className="p-3.5 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-white dark:bg-slate-900 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
+                      {activeFire.name}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                      {activeFire.designation || 'Fire & Rescue Department'}
+                    </p>
+
+                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-xs sm:text-sm font-mono font-black text-orange-900 dark:text-orange-200 bg-orange-100/80 dark:bg-orange-950 px-3 py-1 rounded-xl border border-orange-300 dark:border-orange-800 flex items-center gap-2">
+                        <HiPhone className="w-4 h-4 text-orange-600" />
+                        <span>{activeFire.phone}</span>
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <a
+                    href={`tel:${activeFire.phone}`}
+                    onClick={() => handleDispatchContact('Fire Incident', activeFire)}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                  >
+                    <HiPhone className="w-3.5 h-3.5" />
+                    <span>Call Now</span>
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleDispatchContact('Fire Incident', activeFire)}
+                  disabled={isSending}
+                  className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <HiPhone className="w-4 h-4" />
+                  <span>ALERT & CALL {activeFire.name.toUpperCase()} ({activeFire.phone})</span>
+                </button>
               </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* 6. OTHER EMERGENCY (IF CONFIGURED) */}
+          {/* ======================================================== */}
+          {activeOther && (
+            <div className="rounded-2xl border-2 border-purple-300 dark:border-purple-900 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+                  ⚠️
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-purple-950 dark:text-purple-100">
+                    Other Emergency Service
+                  </h3>
+                  <p className="text-[11px] text-purple-700 dark:text-purple-300">
+                    {activeOther.name} • {activeOther.designation}
+                  </p>
+                  <p className="font-mono text-xs font-black text-purple-900 dark:text-purple-200 mt-1">
+                    📞 {activeOther.phone}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleDispatchContact('Other Emergency', activeOther)}
+                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                Call & Alert ({activeOther.phone})
+              </button>
             </div>
           )}
 
@@ -935,7 +1138,6 @@ export default function FloatingSOS() {
           size="md"
         >
           <div className="text-center py-2 space-y-4 max-h-[82vh] overflow-y-auto px-1">
-            {/* Animated Beacon Ring */}
             <div className="relative w-16 h-16 mx-auto">
               <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               <div className="relative w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl font-bold shadow-md">
