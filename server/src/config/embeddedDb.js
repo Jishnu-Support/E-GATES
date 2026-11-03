@@ -326,6 +326,42 @@ function ensureSchemaMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
         CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
       `);
+
+      // Auto-seed initial showcase ads if table is empty
+      const adCountRes = db.exec("SELECT COUNT(*) FROM advertisements;");
+      const adCount = adCountRes[0]?.values?.[0]?.[0] || 0;
+      if (adCount === 0) {
+        db.run(`
+          INSERT INTO advertisements (
+            created_by, creator_role, association_id, title, tagline, description, banner_image,
+            target_panel, action_type, action_url, action_text, status, click_count, impression_count, priority
+          ) VALUES 
+          (
+            1, 'super_admin', NULL,
+            'D-MART Supermarket • Daily Essentials & Fresh Groceries',
+            'Flat 15% OFF on monthly grocery bundles & farm fresh dairy with free 30-min doorstep delivery!',
+            'Exclusive layout partnership with verified resident discounts.',
+            'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80',
+            'both', 'whatsapp', '9876543210', 'Order on WhatsApp', 'active', 18, 164, 10
+          ),
+          (
+            1, 'super_admin', NULL,
+            'Smart RFID Boom Barriers & Automated Gates',
+            'Automated vehicle recognition, digital visitor passes, and 24/7 technical support by Jishnu Infotech.',
+            'Modernize layout entrance security with automated contactless access control.',
+            'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1200&q=80',
+            'both', 'call', '9566823219', 'Call Specialist', 'active', 12, 115, 8
+          ),
+          (
+            1, 'super_admin', NULL,
+            'Verified Home Maintenance • Electrician, Plumbing & AC',
+            'Certified layout technicians ready at your doorstep within 45 minutes. Transparent pricing & warranty.',
+            'Emergency electrical fixes, pipe leakage repair, and deep home cleaning.',
+            'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80',
+            'both', 'call', '9876543210', 'Book Technician', 'active', 9, 92, 6
+          );
+        `);
+      }
     } catch (adMigErr) {
       console.warn('[EmbeddedDB Ad Migration Notice]:', adMigErr.message);
     }
