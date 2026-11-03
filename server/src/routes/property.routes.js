@@ -7,22 +7,21 @@ const upload = require('../config/multer');
 
 // Multer upload middleware for property images (up to 8 photos)
 const propertyImagesUpload = (req, res, next) => {
-  if (upload && upload.propertyUpload) {
-    upload.propertyUpload(req, res, (err) => {
+  const handler =
+    typeof upload?.propertyUpload === 'function'
+      ? upload.propertyUpload
+      : upload?.propertyUpload?.array
+      ? upload.propertyUpload.array('images', 8)
+      : upload?.uploadGeneric
+      ? upload.uploadGeneric('properties', 15 * 1024 * 1024).array('images', 8)
+      : null;
+
+  if (handler) {
+    handler(req, res, (err) => {
       if (err) {
         return res.status(400).json({
           success: false,
-          message: err.message || 'Property photos upload failed'
-        });
-      }
-      next();
-    });
-  } else if (upload && upload.uploadGeneric) {
-    upload.uploadGeneric('properties', 15 * 1024 * 1024).array('images', 8)(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'Property photos upload failed'
+          message: err.message || 'Property photos upload failed',
         });
       }
       next();

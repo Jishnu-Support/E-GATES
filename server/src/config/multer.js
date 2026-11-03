@@ -248,7 +248,7 @@ const votingUploadInstance = uploadGeneric('voting', 5 * 1024 * 1024);
 const documentUploadInstance = uploadGeneric('documents', 25 * 1024 * 1024);
 const logoUploadInstance = uploadGeneric('logos', 5 * 1024 * 1024);
 const audioUploadInstance = uploadGeneric('audio', 10 * 1024 * 1024);
-const propertyUploadInstance = uploadGeneric('properties', 15 * 1024 * 1024);
+const propertyUploadInstance = uploadGeneric('properties', 15 * 1024 * 1024).array('images', 8);
 
 const uploadEventCaptures = multer({
   storage: createDiskStorage('events'),
