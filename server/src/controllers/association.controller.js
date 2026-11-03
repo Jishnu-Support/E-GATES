@@ -209,7 +209,18 @@ const associationController = {
         });
       }
 
-      const association = assocResult.rows[0];
+      let association = assocResult.rows[0];
+
+      // Auto-generate code if missing and persist to database
+      if (!association.code && association.name) {
+        try {
+          const genCode = await generateAssociationCode(association.name, pool);
+          await pool.query('UPDATE associations SET code = $1 WHERE id = $2', [genCode, assocId]);
+          association.code = genCode;
+        } catch (codeErr) {
+          console.warn('Auto-generate code fallback:', codeErr.message);
+        }
+      }
 
       // Get member count
       const memberCountResult = await pool.query(

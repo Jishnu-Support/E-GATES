@@ -280,6 +280,18 @@ function ensureSchemaMigrations(db) {
     if (!assocCols.includes('code')) {
       db.run("ALTER TABLE associations ADD COLUMN code TEXT;");
     }
+    try {
+      const missingAssocs = db.exec("SELECT id, name FROM associations WHERE code IS NULL OR code = '';");
+      if (missingAssocs[0]?.values?.length) {
+        const { generateAssociationCode } = require('../utils/generateAssociationCode');
+        for (const row of missingAssocs[0].values) {
+          const [aId, aName] = row;
+          generateAssociationCode(aName, dbWrapper).then((genCode) => {
+            db.run("UPDATE associations SET code = ? WHERE id = ?;", [genCode, aId]);
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {}
   } catch (err) {
     console.error('[EmbeddedDB Migration Error]:', err.message);
   }

@@ -56,6 +56,18 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS scrolling_announcement TEXT;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS is_scrolling_active BOOLEAN DEFAULT true;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+      try {
+        const missingCodes = await pgPool.query("SELECT id, name FROM associations WHERE code IS NULL OR code = ''");
+        if (missingCodes.rows.length > 0) {
+          const { generateAssociationCode } = require('../utils/generateAssociationCode');
+          for (const assoc of missingCodes.rows) {
+            const genCode = await generateAssociationCode(assoc.name, pgPool);
+            await pgPool.query('UPDATE associations SET code = $1 WHERE id = $2', [genCode, assoc.id]);
+          }
+        }
+      } catch (backfillErr) {
+        console.warn('Association code backfill notice:', backfillErr.message);
+      }
       CREATE UNIQUE INDEX IF NOT EXISTS idx_associations_code ON associations(code);
       ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_key;
       ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_unique;

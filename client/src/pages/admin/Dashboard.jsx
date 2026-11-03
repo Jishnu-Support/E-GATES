@@ -183,6 +183,24 @@ export default function AdminDashboard() {
   const assocDisplayName =
     associationInfo?.name || user?.association_name || 'Layout Association Portal';
 
+  // Derive association sign-up code with intelligent acronym fallback (e.g. "Hosur KCC Nagar..." -> "KCC")
+  const derivedAssocCode = useMemo(() => {
+    if (associationInfo?.code) return associationInfo.code;
+    if (user?.association_code) return user.association_code;
+    const name = assocDisplayName || '';
+    const words = name.trim().split(/\s+/);
+    const acronym = words.find((w) => {
+      const l = w.replace(/[^A-Za-z]/g, '');
+      return l.length >= 2 && l.length <= 5 && l === l.toUpperCase();
+    });
+    if (acronym) return acronym.replace(/[^A-Za-z]/g, '').toUpperCase();
+    const clean = words
+      .map((w) => w.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())
+      .filter((w) => !['AND', '&', 'OF', 'THE', 'IN', 'FOR', 'AT', 'TO', 'ASSOCIATION', 'WELFARE', 'SOCIETY', 'OWNERS', 'HOUSE', 'RESIDENTS'].includes(w) && w.length > 0);
+    if (clean.length >= 2) return clean.slice(0, 4).map((w) => w[0]).join('');
+    return clean[0] ? clean[0].slice(0, 4) : 'KCC';
+  }, [associationInfo?.code, user?.association_code, assocDisplayName]);
+
   // Filtered News for Left Half
   const filteredNews = useMemo(() => {
     return newsList
@@ -352,16 +370,28 @@ export default function AdminDashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {assocDisplayName}
           </h1>
-          {(associationInfo?.code || user?.association_code) && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                Association Code:
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-extrabold bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs tracking-wider">
-                {associationInfo?.code || user?.association_code}
-              </span>
-            </div>
-          )}
+
+          {/* Association Sign Up Code Display */}
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-xs sm:text-sm font-extrabold text-gray-700 dark:text-gray-300">
+              association sign up code-
+            </span>
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-xs sm:text-sm font-mono font-black bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/80 shadow-xs tracking-wider">
+              <span>{derivedAssocCode}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(derivedAssocCode);
+                  toast.success(`Copied Association Sign-up Code: ${derivedAssocCode}`);
+                }}
+                className="hover:scale-110 active:scale-95 transition cursor-pointer p-0.5 text-emerald-600 dark:text-emerald-400"
+                title="Copy sign-up code to clipboard"
+              >
+                📋
+              </button>
+            </span>
+          </div>
+
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {associationInfo?.city ? `${associationInfo.city} • ` : ''}
             {associationInfo?.address || 'Community Administration Portal'}

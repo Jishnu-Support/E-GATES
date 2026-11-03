@@ -481,6 +481,17 @@ const authController = {
 
       const user = userResult.rows[0];
 
+      // If user belongs to association and association has no code, auto-generate and persist it
+      if (user.association_id && !user.association_code && user.association_name) {
+        try {
+          const genCode = await generateAssociationCode(user.association_name, pool);
+          await pool.query('UPDATE associations SET code = $1 WHERE id = $2', [genCode, user.association_id]).catch(() => {});
+          user.association_code = genCode;
+        } catch (codeErr) {
+          console.warn('Auto association_code error in login:', codeErr.message);
+        }
+      }
+
       // Check account approval status
       if (user.status === 'pending') {
         const pendingMsg = user.role === 'vendor'
@@ -778,6 +789,17 @@ const authController = {
 
       const user = userResult.rows[0];
 
+      // If user belongs to association and association has no code, auto-generate and persist it
+      if (user.association_id && !user.association_code && user.association_name) {
+        try {
+          const genCode = await generateAssociationCode(user.association_name, pool);
+          await pool.query('UPDATE associations SET code = $1 WHERE id = $2', [genCode, user.association_id]).catch(() => {});
+          user.association_code = genCode;
+        } catch (codeErr) {
+          console.warn('Auto association_code error in login:', codeErr.message);
+        }
+      }
+
       if (user.status === 'pending') {
         return res.status(403).json({
           success: false,
@@ -948,6 +970,17 @@ const authController = {
       }
 
       const user = userResult.rows[0];
+
+      // If user belongs to association and association has no code, auto-generate and persist it
+      if (user.association_id && !user.association_code && user.association_name) {
+        try {
+          const genCode = await generateAssociationCode(user.association_name, pool);
+          await pool.query('UPDATE associations SET code = $1 WHERE id = $2', [genCode, user.association_id]).catch(() => {});
+          user.association_code = genCode;
+        } catch (codeErr) {
+          console.warn('Auto association_code error in login:', codeErr.message);
+        }
+      }
       const newHash = await bcrypt.hash(password, 12);
 
       await pool.query(
