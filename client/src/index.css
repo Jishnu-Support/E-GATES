@@ -366,3 +366,22 @@
 .animate-ticker:hover {
   animation-play-state: paused;
 }
+
+/* -- Mobile Responsive Fixes --------------------------- */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iPhone safe area support */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Prevent horizontal overflow on all elements */
+* { max-width: 100%; box-sizing: border-box; }
+

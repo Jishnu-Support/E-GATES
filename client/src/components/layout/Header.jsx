@@ -208,7 +208,7 @@ export default function Header({ onMenuToggle, associationName }) {
 
           {/* Notifications Dropdown */}
           {notifDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-800 py-2 z-50 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-[88vw] max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-800 py-2 z-50 overflow-hidden">
               <div className="px-4 py-2 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{t('notifications_title')}</span>
                 {unreadCount > 0 && (

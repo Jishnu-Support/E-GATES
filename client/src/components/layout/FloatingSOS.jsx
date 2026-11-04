@@ -347,7 +347,7 @@ export default function FloatingSOS() {
       {/* ======================================================== */}
       {/* 1. RESPONSIVE FLOATING SOS TRIGGER BUTTON (ANDROID-FRIENDLY) */}
       {/* ======================================================== */}
-      <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-center">
+      <div className="fixed bottom-6 right-4 sm:bottom-7 sm:right-5 z-40 flex flex-col items-center">
         <div className="relative group">
           <div className="absolute -inset-1 bg-red-600 rounded-full blur-sm opacity-60 group-hover:opacity-100 animate-pulse transition duration-500 pointer-events-none" />
 

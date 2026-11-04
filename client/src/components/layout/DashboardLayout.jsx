@@ -14,6 +14,8 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
 
+  const showAds = user?.role === 'member' || user?.role === 'admin';
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
       {/* Sidebar (Desktop fixed left 64, Mobile slide-over) */}
@@ -21,18 +23,19 @@ export default function DashboardLayout({ children }) {
 
       {/* Main Content Area (offset by sidebar width on lg screens) */}
       <div className="lg:pl-64 flex flex-col flex-1 min-h-screen">
-        {/* Top Header */}
+        {/* Sticky Top Header */}
         <Header
           onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
           associationName={user?.association_name}
         />
 
-        {/* User-Only Live Scrolling Announcement Strip (Visible ONLY to resident members for their layout) */}
+        {/* Live Scrolling Announcement Strip (members only) */}
         {user?.role === 'member' && <ScrollingAnnouncement />}
 
-        {/* Dynamic Page Content with Global Right-Side View Sponsored Ads Rail on All Pages */}
-        <main className="flex-1 p-3 sm:p-5 lg:p-6 xl:p-7 max-w-[1600px] w-full mx-auto pb-28 sm:pb-20">
-          <div className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* Page Content + Global Right-Side Ad Rail */}
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 pb-28 sm:pb-24 lg:pb-10">
+          <div className="flex flex-col xl:flex-row gap-5 xl:gap-6 items-start w-full">
+
             {/* Primary Page Content */}
             <div className="flex-1 min-w-0 w-full">
               <ErrorBoundary>
@@ -48,8 +51,8 @@ export default function DashboardLayout({ children }) {
               </ErrorBoundary>
             </div>
 
-            {/* Global Right-Side Sponsored Ads Rail (Stacked Vertically on All Pages) */}
-            {(user?.role === 'member' || user?.role === 'admin') && (
+            {/* Global Right-Side Sponsored Ads Rail — desktop only (mobile uses floating tab in AdSideView) */}
+            {showAds && (
               <AdSideView
                 panel={user?.role === 'admin' ? 'admin' : 'member'}
                 associationId={user?.association_id}
@@ -58,7 +61,7 @@ export default function DashboardLayout({ children }) {
           </div>
         </main>
 
-        {/* Floating SOS Trigger Button (for members) */}
+        {/* Floating SOS Trigger Button (members only) */}
         <FloatingSOS />
 
         {/* Global Footer */}

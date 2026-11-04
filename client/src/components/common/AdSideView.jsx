@@ -63,8 +63,6 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
 
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Mobile Right Side Slide Drawer State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -90,9 +88,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
     };
 
     fetchAds();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [panel, associationId]);
 
   const activeAds = ads.length > 0 ? ads : DEFAULT_SHOWCASE_ADS;
@@ -101,7 +97,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
     if (!ad) return;
 
     if (ad.id && !String(ad.id).startsWith('showcase-')) {
-      api.post(`/ads/${ad.id}/click`).catch((err) => console.warn('Click track err:', err));
+      api.post(`/ads/${ad.id}/click`).catch(() => {});
     }
 
     if (ad.action_type === 'whatsapp') {
@@ -121,18 +117,78 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
     }
   };
 
+  // ── Reusable single ad card for mobile drawer ──────────────────────────────
+  const MobileAdCard = ({ ad, idx }) => {
+    const img = ad.banner_image
+      ? ad.banner_image.startsWith('http') ? ad.banner_image : getFileUrl(ad.banner_image)
+      : null;
+
+    return (
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm bg-white dark:bg-slate-800">
+        {img && (
+          <div className="relative w-full h-36 bg-slate-900">
+            <img src={img} alt={ad.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            {ad.badge && (
+              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-600 text-white shadow">
+                {ad.badge}
+              </span>
+            )}
+            <p className="absolute bottom-2 left-2.5 right-2.5 text-white text-xs font-black line-clamp-2 drop-shadow">
+              {ad.title}
+            </p>
+          </div>
+        )}
+
+        <div className="p-3 space-y-2">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase truncate">
+              {ad.shop_name || 'Verified Vendor'}
+            </span>
+            <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">#{idx + 1}</span>
+          </div>
+
+          {!img && (
+            <h4 className="font-black text-xs text-gray-900 dark:text-white">{ad.title}</h4>
+          )}
+
+          {ad.tagline && (
+            <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+              {ad.tagline}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => { handleAdClick(ad); setMobileDrawerOpen(false); }}
+            className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer touch-manipulation"
+          >
+            {ad.action_type === 'whatsapp' ? (
+              <><HiChatBubbleOvalLeftEllipsis className="w-4 h-4" /><span>{ad.action_text || 'Order on WhatsApp'}</span></>
+            ) : ad.action_type === 'call' ? (
+              <><HiPhone className="w-4 h-4" /><span>{ad.action_text || 'Call Vendor'}</span></>
+            ) : (
+              <><HiArrowTopRightOnSquare className="w-4 h-4" /><span>{ad.action_text || 'View Offer'}</span></>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
-      {/* ======================================================== */}
-      {/* 1. RIGHT-SIDE SPONSORED ADS RAIL (DESKTOP STICKY STACK)   */}
-      {/* ======================================================== */}
+      {/* ══════════════════════════════════════════════════════════
+          1. DESKTOP RIGHT-SIDE STICKY AD RAIL (xl and above)
+          Stacked vertically — all ads shown at once
+          ══════════════════════════════════════════════════════════ */}
       <aside
-        className={`w-full xl:w-80 2xl:w-84 xl:flex-shrink-0 sticky top-20 self-start space-y-4 select-none ${className}`}
+        className={`hidden xl:flex xl:flex-col xl:w-80 2xl:w-84 xl:flex-shrink-0 sticky top-20 self-start gap-4 select-none ${className}`}
       >
-        {/* Rail Top Header */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-3 shadow-xs flex items-center justify-between gap-2">
+        {/* Rail Header */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-3 shadow-sm flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold shadow-xs">
+            <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold">
               📢
             </span>
             <div>
@@ -145,19 +201,16 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
               </p>
             </div>
           </div>
-
           <span className="text-[10px] font-mono font-black text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/60 px-2 py-0.5 rounded-full">
             {activeAds.length} Ads
           </span>
         </div>
 
-        {/* STACKED ADS FEED: FIRST AD, ANOTHER AD BELOW IT, ETC. */}
-        <div className="space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-0.5 no-scrollbar">
+        {/* Stacked Ads Feed */}
+        <div className="space-y-4 max-h-[calc(100vh-9rem)] overflow-y-auto pr-0.5 no-scrollbar">
           {activeAds.map((ad, idx) => {
             const bannerUrl = ad.banner_image
-              ? ad.banner_image.startsWith('http')
-                ? ad.banner_image
-                : getFileUrl(ad.banner_image)
+              ? ad.banner_image.startsWith('http') ? ad.banner_image : getFileUrl(ad.banner_image)
               : null;
 
             return (
@@ -165,22 +218,21 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                 key={ad.id || idx}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/90 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group"
               >
-                {/* Ad Card Top Header */}
+                {/* Card Header */}
                 <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
                   <div className="flex items-center gap-1 font-bold text-gray-800 dark:text-gray-200 truncate">
                     <HiBuildingStorefront className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                     <span className="truncate">{ad.shop_name || 'Verified Partner'}</span>
                     <HiCheckBadge className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" title="Verified Merchant" />
                   </div>
-
                   <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400">
                     #{idx + 1}
                   </span>
                 </div>
 
-                {/* Ad Banner Image */}
+                {/* Banner Image */}
                 <div
-                  className="relative w-full h-40 sm:h-44 cursor-pointer overflow-hidden bg-slate-950"
+                  className="relative w-full h-40 cursor-pointer overflow-hidden bg-slate-950"
                   onClick={() => handleAdClick(ad)}
                 >
                   {bannerUrl ? (
@@ -194,11 +246,8 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                       🛍️
                     </div>
                   )}
-
-                  {/* Gradient Overlay for Text Visibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-                  {/* Badge in Top-Left */}
                   {ad.badge && (
                     <div className="absolute top-2 left-2">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md">
@@ -208,7 +257,6 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                     </div>
                   )}
 
-                  {/* Title Overlay in Image Bottom */}
                   <div className="absolute bottom-2 left-2.5 right-2.5 text-white">
                     <h4 className="text-xs sm:text-sm font-black leading-tight line-clamp-2 drop-shadow-md">
                       {ad.title}
@@ -216,35 +264,24 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                   </div>
                 </div>
 
-                {/* Card Content & Action Button */}
+                {/* CTA */}
                 <div className="p-3 space-y-2.5">
                   {ad.tagline && (
-                    <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
                       {ad.tagline}
                     </p>
                   )}
-
-                  {/* 1-Tap Action CTA */}
                   <button
                     type="button"
                     onClick={() => handleAdClick(ad)}
-                    className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 active:scale-[0.98] text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer touch-manipulation"
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 active:scale-[0.98] text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer touch-manipulation"
                   >
                     {ad.action_type === 'whatsapp' ? (
-                      <>
-                        <HiChatBubbleOvalLeftEllipsis className="w-4 h-4 text-emerald-200" />
-                        <span>{ad.action_text || 'Order on WhatsApp'}</span>
-                      </>
+                      <><HiChatBubbleOvalLeftEllipsis className="w-4 h-4 text-emerald-200" /><span>{ad.action_text || 'Order on WhatsApp'}</span></>
                     ) : ad.action_type === 'call' ? (
-                      <>
-                        <HiPhone className="w-4 h-4 text-white" />
-                        <span>{ad.action_text || 'Call Vendor'}</span>
-                      </>
+                      <><HiPhone className="w-4 h-4 text-white" /><span>{ad.action_text || 'Call Vendor'}</span></>
                     ) : (
-                      <>
-                        <HiArrowTopRightOnSquare className="w-4 h-4 text-white" />
-                        <span>{ad.action_text || 'View Offer'}</span>
-                      </>
+                      <><HiArrowTopRightOnSquare className="w-4 h-4 text-white" /><span>{ad.action_text || 'View Offer'}</span></>
                     )}
                   </button>
                 </div>
@@ -252,7 +289,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
             );
           })}
 
-          {/* Footer Card: Promote Your Business Prompt */}
+          {/* Promote Your Shop footer */}
           <div className="p-3 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-slate-800/60 dark:to-slate-900 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-1.5">
             <p className="text-xs font-black text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1">
               <HiMegaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -265,7 +302,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
               <button
                 type="button"
                 onClick={() => navigate('/vendor/ads')}
-                className="mt-1 w-full py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 text-xs font-bold rounded-lg transition shadow-xs cursor-pointer"
+                className="mt-1 w-full py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 text-xs font-bold rounded-lg transition shadow-sm cursor-pointer"
               >
                 + Post Your Ad Now
               </button>
@@ -278,43 +315,60 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
         </div>
       </aside>
 
-      {/* ======================================================== */}
-      {/* 2. ANDROID & MOBILE FLOATING RIGHT-EDGE QUICK TAB         */}
-      {/* ======================================================== */}
-      <div className="block xl:hidden fixed right-0 top-36 z-30">
+      {/* ══════════════════════════════════════════════════════════
+          2. MOBILE FLOATING TAB — vertically centred on right edge
+          Positioned at 42% from top (clear of header + SOS button)
+          ══════════════════════════════════════════════════════════ */}
+      <div
+        className="block xl:hidden fixed right-0 z-30"
+        style={{ top: '42%', transform: 'translateY(-50%)' }}
+      >
         <button
           type="button"
           onClick={() => {
             if (navigator.vibrate) navigator.vibrate(60);
             setMobileDrawerOpen(true);
           }}
-          className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-xs py-2 px-2.5 rounded-l-2xl shadow-xl border-y border-l border-amber-300 flex items-center gap-1.5 cursor-pointer touch-manipulation transition"
-          title="Open Sponsored Deals & Ads"
+          className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 px-2.5 rounded-l-2xl shadow-xl border-y border-l border-amber-400 flex flex-col items-center gap-1.5 cursor-pointer touch-manipulation transition focus:outline-none"
+          aria-label="Open sponsored deals and ads"
         >
-          <span className="text-sm">📢</span>
-          <span className="writing-vertical sm:writing-horizontal text-[10px] tracking-wider uppercase font-black">
+          <span className="text-base leading-none">📢</span>
+          <span
+            className="text-[9px] font-black uppercase"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.12em' }}
+          >
             Deals
           </span>
-          <span className="w-4 h-4 rounded-full bg-slate-950 text-amber-300 text-[9px] flex items-center justify-center font-bold">
+          <span className="w-4 h-4 rounded-full bg-slate-950 text-amber-300 text-[9px] flex items-center justify-center font-bold leading-none">
             {activeAds.length}
           </span>
         </button>
       </div>
 
-      {/* ======================================================== */}
-      {/* 3. ANDROID MOBILE RIGHT-SIDE SLIDE DRAWER (STACKED ADS)   */}
-      {/* ======================================================== */}
+      {/* ══════════════════════════════════════════════════════════
+          3. MOBILE SLIDE-IN DRAWER — full-height right panel
+          ══════════════════════════════════════════════════════════ */}
       {mobileDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end xl:hidden bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
-          <div className="flex-1" onClick={() => setMobileDrawerOpen(false)} />
+        <div
+          className="fixed inset-0 z-50 flex justify-end xl:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sponsored deals"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
 
-          <div className="w-full max-w-xs sm:max-w-sm h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-300">
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
             {/* Drawer Header */}
-            <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="flex-shrink-0 p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📢</span>
                 <div>
-                  <h3 className="font-black text-sm text-gray-900 dark:text-white uppercase">
+                  <h3 className="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wide">
                     Local Deals & Ads
                   </h3>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -322,98 +376,48 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                   </p>
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => setMobileDrawerOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-200 transition cursor-pointer"
+                className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer flex-shrink-0"
+                aria-label="Close deals drawer"
               >
                 <HiXMark className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Drawer Content: All Ads Stacked Vertically */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-              {activeAds.map((ad, idx) => {
-                const img = ad.banner_image
-                  ? ad.banner_image.startsWith('http')
-                    ? ad.banner_image
-                    : getFileUrl(ad.banner_image)
-                  : null;
+            {/* Scrollable Ad Cards */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {activeAds.map((ad, idx) => (
+                <MobileAdCard key={ad.id || idx} ad={ad} idx={idx} />
+              ))}
 
-                return (
-                  <div
-                    key={ad.id || idx}
-                    className="rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm bg-gray-50 dark:bg-slate-800/60 p-3 space-y-2.5"
+              {/* Promote footer */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-1.5">
+                <p className="text-xs font-black text-amber-800 dark:text-amber-300 flex items-center justify-center gap-1">
+                  <HiMegaphone className="w-4 h-4 text-amber-600" />
+                  Promote Your Shop Here
+                </p>
+                {user?.role === 'vendor' && (
+                  <button
+                    type="button"
+                    onClick={() => { navigate('/vendor/ads'); setMobileDrawerOpen(false); }}
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition cursor-pointer"
                   >
-                    {img && (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden bg-slate-950">
-                        <img src={img} alt={ad.title} className="w-full h-full object-cover" />
-                        {ad.badge && (
-                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-600 text-white shadow-xs">
-                            {ad.badge}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">
-                          {ad.shop_name || 'Verified Vendor'}
-                        </span>
-                        <span className="text-[9px] font-mono text-gray-400">
-                          #{idx + 1}
-                        </span>
-                      </div>
-                      <h4 className="font-black text-xs text-gray-900 dark:text-white mt-0.5">
-                        {ad.title}
-                      </h4>
-                      {ad.tagline && (
-                        <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
-                          {ad.tagline}
-                        </p>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleAdClick(ad);
-                        setMobileDrawerOpen(false);
-                      }}
-                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      {ad.action_type === 'whatsapp' ? (
-                        <>
-                          <HiChatBubbleOvalLeftEllipsis className="w-4 h-4" />
-                          <span>Order on WhatsApp</span>
-                        </>
-                      ) : ad.action_type === 'call' ? (
-                        <>
-                          <HiPhone className="w-4 h-4" />
-                          <span>Call Vendor</span>
-                        </>
-                      ) : (
-                        <>
-                          <HiArrowTopRightOnSquare className="w-4 h-4" />
-                          <span>View Offer</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
+                    + Post Your Ad Now
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-3 bg-gray-50 dark:bg-slate-800 border-t border-gray-100 dark:border-slate-800 text-center">
+            <div className="flex-shrink-0 p-3 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setMobileDrawerOpen(false)}
-                className="w-full py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="w-full py-2.5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition cursor-pointer"
               >
-                Close Deals
+                Close
               </button>
             </div>
           </div>
