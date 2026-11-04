@@ -381,65 +381,117 @@ export default function FloatingSOS() {
       </div>
 
       {/* ======================================================== */}
-      {/* 2. CHOOSE 1 CONTACT PER EMERGENCY & DISPATCH MODAL */}
+      {/* 2. CHOOSE 1 CONTACT PER EMERGENCY & DISPATCH (SINGLE PAGE NO SCROLL) */}
       {/* ======================================================== */}
       <Modal
         isOpen={showTypeSelector}
         onClose={() => setShowTypeSelector(false)}
         title="🚨 Emergency SOS Dispatch & Contacts"
-        size="lg"
+        size="xl"
       >
-        <div className="space-y-3.5 py-1 max-h-[82vh] overflow-y-auto px-0.5">
-          {/* Mobile Drag Indicator Handle */}
-          <div className="w-12 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full mx-auto -mt-1 mb-2 block sm:hidden" />
-
-          {/* Subtitle & Resident Location Indicator */}
-          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-3 flex items-start gap-2.5">
-            <HiMapPin className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5 animate-bounce" />
-            <div className="text-xs">
-              <p className="font-bold text-rose-950 dark:text-rose-200">
-                Your Dispatch Location:
-              </p>
-              <p className="text-rose-800 dark:text-rose-300 font-mono text-[11px] mt-0.5 leading-snug">
-                {residentAddress}
-              </p>
+        <div className="space-y-2 py-0.5">
+          {/* Top Bar: Compact Dispatch Location & 1-Tap Broadcast */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2 rounded-xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <HiMapPin className="w-4 h-4 text-rose-600 flex-shrink-0 animate-bounce" />
+              <div className="truncate">
+                <span className="font-extrabold text-rose-950 dark:text-rose-100 mr-1.5">Dispatch:</span>
+                <span className="font-mono text-[11px] text-rose-800 dark:text-rose-300 truncate" title={residentAddress}>
+                  {residentAddress}
+                </span>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => handleDispatchContact('Immediate Distress', {
+                name: 'All Emergency Responders',
+                phone: '112',
+                designation: 'National Helpline & Community Dispatch',
+              })}
+              disabled={isSending}
+              className="py-1.5 px-3 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer whitespace-nowrap flex-shrink-0"
+              title="Broadcast immediate distress signal to all available community responders & helpline"
+            >
+              <HiShieldExclamation className="w-3.5 h-3.5 animate-pulse" />
+              <span>🚨 BROADCAST ALL (112)</span>
+            </button>
           </div>
 
-          {/* 1-Tap Broadcast to ALL Responders */}
-          <button
-            type="button"
-            onClick={() => handleDispatchContact('Immediate Distress', {
-              name: 'All Emergency Responders',
-              phone: '112',
-              designation: 'National Helpline & Community Dispatch',
-            })}
-            disabled={isSending}
-            className="w-full p-3.5 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer touch-manipulation disabled:opacity-50"
-          >
-            <HiShieldExclamation className="w-5 h-5 text-white animate-pulse" />
-            <span>🚨 BROADCAST IMMEDIATE SOS TO ALL RESPONDERS</span>
-          </button>
+          {/* Inline Quick Add Family Contact Form (when toggled) */}
+          {showAddFamilyInline && (
+            <form
+              onSubmit={handleSaveInlineFamily}
+              className="p-2.5 bg-purple-50 dark:bg-slate-800 rounded-xl border border-purple-300 dark:border-purple-700 space-y-2 text-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-black text-purple-950 dark:text-purple-200">
+                  + Add Personal Family Emergency Number:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddFamilyInline(false)}
+                  className="text-purple-600 hover:text-purple-800 text-[11px] font-bold cursor-pointer"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  type="text"
+                  placeholder="Name (e.g. Priya)"
+                  value={newFamilyForm.name}
+                  onChange={(e) => setNewFamilyForm({ ...newFamilyForm, name: e.target.value })}
+                  className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="10-digit Phone Number *"
+                  value={newFamilyForm.phone}
+                  onChange={(e) => setNewFamilyForm({ ...newFamilyForm, phone: e.target.value })}
+                  className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs font-mono"
+                  required
+                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Relation (Spouse, Dad)"
+                    value={newFamilyForm.designation}
+                    onChange={(e) => setNewFamilyForm({ ...newFamilyForm, designation: e.target.value })}
+                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs"
+                  />
+                  <button
+                    type="submit"
+                    disabled={savingFamily}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg whitespace-nowrap cursor-pointer disabled:opacity-50"
+                  >
+                    {savingFamily ? '...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
 
-          {/* Quick Filter Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+          {/* Filter Tabs: Single Page (All 5 at a glance) OR Category Focus */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-xs no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveCategoryTab('all')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-black text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'all'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-sm'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs'
                   : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300 hover:bg-gray-200'
               }`}
             >
-              All Options
+              📋 All Contacts (Single Page)
             </button>
             <button
               type="button"
               onClick={() => setActiveCategoryTab('family')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'family'
-                  ? 'bg-purple-600 text-white shadow-sm'
+                  ? 'bg-purple-600 text-white shadow-xs'
                   : 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
               }`}
             >
@@ -448,9 +500,9 @@ export default function FloatingSOS() {
             <button
               type="button"
               onClick={() => setActiveCategoryTab('medical')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'medical'
-                  ? 'bg-rose-600 text-white shadow-sm'
+                  ? 'bg-rose-600 text-white shadow-xs'
                   : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
               }`}
             >
@@ -459,9 +511,9 @@ export default function FloatingSOS() {
             <button
               type="button"
               onClick={() => setActiveCategoryTab('police')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'police'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
               }`}
             >
@@ -470,9 +522,9 @@ export default function FloatingSOS() {
             <button
               type="button"
               onClick={() => setActiveCategoryTab('resident')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'resident'
-                  ? 'bg-amber-600 text-white shadow-sm'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
               }`}
             >
@@ -481,9 +533,9 @@ export default function FloatingSOS() {
             <button
               type="button"
               onClick={() => setActiveCategoryTab('fire')}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-bold text-xs whitespace-nowrap transition cursor-pointer ${
                 activeCategoryTab === 'fire'
-                  ? 'bg-orange-600 text-white shadow-sm'
+                  ? 'bg-orange-600 text-white shadow-xs'
                   : 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300'
               }`}
             >
@@ -491,635 +543,456 @@ export default function FloatingSOS() {
             </button>
           </div>
 
-          {/* ======================================================== */}
-          {/* 1. FAMILY EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN WITH NUMBER BELOW) */}
-          {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'family') && (
-            <div className="rounded-2xl border-2 border-purple-300 dark:border-purple-800 bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 dark:from-purple-950/40 dark:via-slate-900 dark:to-purple-950/20 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+          {/* =================================================================== */}
+          {/* THE 5 EMERGENCY CATEGORIES — COMPACT & FIT ON 1 SCREEN (NO SCROLL)   */}
+          {/* =================================================================== */}
+          <div className="space-y-1.5">
+            {/* 1. FAMILY ROW */}
+            {(activeCategoryTab === 'all' || activeCategoryTab === 'family') && (
+              <div className="p-2 sm:p-2.5 rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30 flex items-center justify-between gap-2 transition hover:border-purple-400">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
                     👨‍👩‍👧
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
-                      <span>Family Emergency Contact</span>
-                      <span className="text-[10px] font-extrabold bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 px-2 py-0.5 rounded-full">
-                        Personal Kin
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase text-purple-700 dark:text-purple-300">
+                        Family
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-purple-700 dark:text-purple-300">
-                      Alert your personal family emergency contact with live location
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAddFamilyInline(!showAddFamilyInline)}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-100 dark:bg-purple-900/60 hover:bg-purple-200 px-2.5 py-1 rounded-lg transition cursor-pointer"
-                >
-                  <HiPlus className="w-3.5 h-3.5" />
-                  <span>{showAddFamilyInline ? 'Cancel' : 'Add Number'}</span>
-                </button>
-              </div>
-
-              {/* Inline Quick Add Family Number Form */}
-              {showAddFamilyInline && (
-                <form
-                  onSubmit={handleSaveInlineFamily}
-                  className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-purple-200 dark:border-purple-700/60 space-y-2.5 text-xs shadow-inner"
-                >
-                  <p className="font-bold text-purple-900 dark:text-purple-200">
-                    Add Family Emergency Number:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Name (e.g. Priya)"
-                      value={newFamilyForm.name}
-                      onChange={(e) => setNewFamilyForm({ ...newFamilyForm, name: e.target.value })}
-                      className="px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                      required
-                    />
-                    <input
-                      type="tel"
-                      placeholder="10-digit Mobile Phone Number *"
-                      value={newFamilyForm.phone}
-                      onChange={(e) => setNewFamilyForm({ ...newFamilyForm, phone: e.target.value })}
-                      className="px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs font-mono focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <input
-                      type="text"
-                      placeholder="Relation (e.g. Spouse, Father)"
-                      value={newFamilyForm.designation}
-                      onChange={(e) => setNewFamilyForm({ ...newFamilyForm, designation: e.target.value })}
-                      className="flex-1 px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      disabled={savingFamily}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-sm cursor-pointer disabled:opacity-50"
-                    >
-                      {savingFamily ? 'Saving...' : 'Save & Select'}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* SELECTION BAR WHEN 2 OR MORE FAMILY CONTACTS EXIST */}
-              {familyList.length > 1 && (
-                <div className="p-2.5 bg-purple-100/60 dark:bg-purple-950/50 rounded-xl border border-purple-200 dark:border-purple-800 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-purple-950 dark:text-purple-200">
-                      You have {familyList.length} family contacts. Select 1 to alert:
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {familyList.map((fam) => {
-                      const isSelected = activeFamily?.id === fam.id;
-                      return (
-                        <button
-                          key={fam.id}
-                          type="button"
-                          onClick={() => updatePreference('family', fam.id)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-400'
-                              : 'bg-white dark:bg-slate-800 text-purple-900 dark:text-purple-200 hover:bg-purple-50 border border-purple-200 dark:border-purple-800'
-                          }`}
-                        >
-                          {isSelected ? '✓ ' : ''}{fam.name} ({fam.designation || 'Family'})
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* ONLY ONE ACTIVE FAMILY CONTACT DISPLAYED (WITH NUMBER SHOWN PROMINENTLY BELOW) */}
-              {!activeFamily ? (
-                <div className="p-3 bg-purple-100/50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800 text-center space-y-2">
-                  <p className="text-xs text-purple-900 dark:text-purple-200">
-                    No personal family contact saved yet. Click <strong>"+ Add Number"</strong> above or alert National Helpline 112:
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleDispatchContact('Family Emergency', {
-                      name: 'National Helpline (112)',
-                      phone: '112',
-                      designation: 'National Helpline',
-                    })}
-                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Call National Helpline (112)
-                  </button>
-                </div>
-              ) : (
-                <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800/80 bg-white dark:bg-slate-900 space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
-                          {activeFamily.name}
-                        </h4>
-                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-full">
-                          {activeFamily.designation || 'Family Contact'}
+                      {activeFamily ? (
+                        <>
+                          <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                            {activeFamily.name}
+                          </span>
+                          {activeFamily.designation && (
+                            <span className="text-[10px] font-bold text-purple-800 dark:text-purple-200 bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.2 rounded">
+                              {activeFamily.designation}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-purple-600 font-bold">
+                          No personal contact yet
                         </span>
-                      </div>
+                      )}
 
-                      {/* PROMINENT PHONE NUMBER SHOWN DIRECTLY BELOW NAME */}
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-xs sm:text-sm font-mono font-black text-purple-900 dark:text-purple-200 bg-purple-100/80 dark:bg-purple-950 px-3 py-1 rounded-xl border border-purple-300 dark:border-purple-700 flex items-center gap-2">
-                          <HiPhone className="w-4 h-4 text-purple-700 dark:text-purple-300" />
-                          <span>{activeFamily.phone}</span>
-                        </span>
-                      </div>
+                      {/* Multi-contact selection pill (Choose only 1) */}
+                      {familyList.length > 1 && (
+                        <div className="inline-flex items-center gap-1 ml-1 flex-wrap">
+                          <span className="text-[9px] text-purple-600 font-bold">Select 1:</span>
+                          {familyList.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => updatePreference('family', f.id)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold transition cursor-pointer ${
+                                activeFamily?.id === f.id
+                                  ? 'bg-purple-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-purple-900 dark:text-purple-200 border border-purple-300'
+                              }`}
+                            >
+                              {activeFamily?.id === f.id ? '✓ ' : ''}{f.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quick 1-Tap Action Pills */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* PHONE NUMBER CLEARLY DISPLAYED BELOW NAME */}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[11px] font-mono font-black text-purple-900 dark:text-purple-200 flex items-center gap-1">
+                        <HiPhone className="w-3 h-3 text-purple-600" />
+                        <span>{activeFamily ? activeFamily.phone : 'Helpline: 112'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddFamilyInline(!showAddFamilyInline)}
+                        className="text-[10px] font-bold text-purple-700 dark:text-purple-300 hover:underline ml-1 cursor-pointer"
+                      >
+                        {activeFamily ? '+ Change / Add' : '+ Add Number'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1-Tap Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {activeFamily && (
+                    <>
                       <a
                         href={`tel:${activeFamily.phone}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDispatchContact('Family Emergency', activeFamily);
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95"
+                        onClick={() => handleDispatchContact('Family Emergency', activeFamily)}
+                        className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95"
                         title="Direct Phone Call"
                       >
                         <HiPhone className="w-3.5 h-3.5" />
-                        <span>Call</span>
+                        <span className="hidden sm:inline">Call</span>
                       </a>
-
                       <button
                         type="button"
                         onClick={() => handleDispatchContact('Family Emergency', activeFamily)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg shadow-xs transition active:scale-95 cursor-pointer"
-                        title="WhatsApp SOS Alert"
+                        className="px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold hidden md:inline-flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
+                        title="Send SOS with GPS to WhatsApp"
                       >
                         <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">WhatsApp</span>
+                        <span>WhatsApp</span>
                       </button>
-                    </div>
-                  </div>
-
-                  {/* Primary Big Confirm Button for selected family */}
+                    </>
+                  )}
                   <button
                     type="button"
-                    onClick={() => handleDispatchContact('Family Emergency', activeFamily)}
+                    onClick={() => handleDispatchContact('Family Emergency', activeFamily || { name: 'Helpline 112', phone: '112' })}
                     disabled={isSending}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
                   >
-                    <HiShieldExclamation className="w-4 h-4 text-white" />
-                    <span>
-                      ALERT {activeFamily.name.toUpperCase()} ({activeFamily.phone})
-                    </span>
+                    <span>🚨</span>
+                    <span>SOS Alert</span>
                   </button>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* ======================================================== */}
-          {/* 2. MEDICAL EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
-          {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'medical') && activeMedical && (
-            <div className="rounded-2xl border-2 border-rose-300 dark:border-rose-900 bg-gradient-to-br from-rose-50/80 via-white to-rose-50/40 dark:from-rose-950/40 dark:via-slate-900 dark:to-rose-950/20 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+            {/* 2. MEDICAL ROW */}
+            {(activeCategoryTab === 'all' || activeCategoryTab === 'medical') && activeMedical && (
+              <div className="p-2 sm:p-2.5 rounded-xl border-2 border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/30 flex items-center justify-between gap-2 transition hover:border-rose-400">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
                     🏥
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-rose-950 dark:text-rose-100 flex items-center gap-1.5">
-                      <span>Medical Emergency</span>
-                      <span className="text-[10px] font-extrabold bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-200 px-2 py-0.5 rounded-full">
-                        Ambulance & Hospital
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase text-rose-700 dark:text-rose-300">
+                        Medical
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-rose-700 dark:text-rose-300">
-                      Dispatches medical distress with GPS coordinates & triggers call
-                    </p>
-                  </div>
-                </div>
-              </div>
+                      <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                        {activeMedical.name}
+                      </span>
+                      {activeMedical.designation && (
+                        <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.2 rounded truncate max-w-[150px]">
+                          {activeMedical.designation}
+                        </span>
+                      )}
 
-              {/* SELECTION BAR IF MULTIPLE MEDICAL CONTACTS */}
-              {medicalList.length > 1 && (
-                <div className="p-2 bg-rose-100/60 dark:bg-rose-950/50 rounded-xl border border-rose-200 dark:border-rose-800 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-rose-900 dark:text-rose-200">
-                    Select 1:
-                  </span>
-                  {medicalList.map((m) => {
-                    const isSelected = activeMedical.id === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => updatePreference('medical', m.id)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-rose-600 text-white shadow-xs ring-1 ring-rose-400'
-                            : 'bg-white dark:bg-slate-800 text-rose-900 dark:text-rose-200 hover:bg-rose-50'
-                        }`}
-                      >
-                        {isSelected ? '✓ ' : ''}{m.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      {/* Multi-medical selection pill (Choose only 1) */}
+                      {medicalList.length > 1 && (
+                        <div className="inline-flex items-center gap-1 ml-1 flex-wrap">
+                          <span className="text-[9px] text-rose-600 font-bold">Select 1:</span>
+                          {medicalList.map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => updatePreference('medical', m.id)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold transition cursor-pointer ${
+                                activeMedical.id === m.id
+                                  ? 'bg-rose-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-rose-900 dark:text-rose-200 border border-rose-300'
+                              }`}
+                            >
+                              {activeMedical.id === m.id ? '✓ ' : ''}{m.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-              {/* SINGLE ACTIVE MEDICAL CONTACT WITH NUMBER BELOW */}
-              <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
-                      {activeMedical.name}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                      {activeMedical.designation || 'Emergency Medical Responder'}
-                    </p>
-
-                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs sm:text-sm font-mono font-black text-rose-900 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-950 px-3 py-1 rounded-xl border border-rose-300 dark:border-rose-800 flex items-center gap-2">
-                        <HiPhone className="w-4 h-4 text-rose-600" />
+                    {/* PHONE NUMBER CLEARLY DISPLAYED BELOW NAME */}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] font-mono font-black text-rose-900 dark:text-rose-200 flex items-center gap-1">
+                        <HiPhone className="w-3 h-3 text-rose-600" />
                         <span>{activeMedical.phone}</span>
                       </span>
                     </div>
                   </div>
+                </div>
 
+                {/* 1-Tap Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <a
                     href={`tel:${activeMedical.phone}`}
                     onClick={() => handleDispatchContact('Medical Emergency', activeMedical)}
-                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95"
+                    title="Direct Call Ambulance / Hospital"
                   >
                     <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Now</span>
+                    <span className="hidden sm:inline">Call</span>
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchContact('Medical Emergency', activeMedical)}
+                    disabled={isSending}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
+                  >
+                    <span>🚨</span>
+                    <span>SOS Alert</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDispatchContact('Medical Emergency', activeMedical)}
-                  disabled={isSending}
-                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  <HiPhone className="w-4 h-4" />
-                  <span>ALERT & CALL {activeMedical.name.toUpperCase()} ({activeMedical.phone})</span>
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ======================================================== */}
-          {/* 3. POLICE EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
-          {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'police') && activePolice && (
-            <div className="rounded-2xl border-2 border-blue-300 dark:border-blue-900 bg-gradient-to-br from-blue-50/80 via-white to-blue-50/40 dark:from-blue-950/40 dark:via-slate-900 dark:to-blue-950/20 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+            {/* 3. POLICE ROW */}
+            {(activeCategoryTab === 'all' || activeCategoryTab === 'police') && activePolice && (
+              <div className="p-2 sm:p-2.5 rounded-xl border-2 border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 flex items-center justify-between gap-2 transition hover:border-blue-400">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
                     🚓
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-blue-950 dark:text-blue-100 flex items-center gap-1.5">
-                      <span>Police & Intruder Emergency</span>
-                      <span className="text-[10px] font-extrabold bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200 px-2 py-0.5 rounded-full">
-                        Law & Order
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase text-blue-700 dark:text-blue-300">
+                        Police
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-blue-700 dark:text-blue-300">
-                      Alerts police station with GPS location and triggers direct call
-                    </p>
-                  </div>
-                </div>
-              </div>
+                      <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                        {activePolice.name}
+                      </span>
+                      {activePolice.designation && (
+                        <span className="text-[10px] font-bold text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.2 rounded truncate max-w-[150px]">
+                          {activePolice.designation}
+                        </span>
+                      )}
 
-              {/* SELECTION BAR IF MULTIPLE POLICE CONTACTS */}
-              {policeList.length > 1 && (
-                <div className="p-2 bg-blue-100/60 dark:bg-blue-950/50 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-blue-900 dark:text-blue-200">
-                    Select 1:
-                  </span>
-                  {policeList.map((p) => {
-                    const isSelected = activePolice.id === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => updatePreference('police', p.id)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
-                            : 'bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-200 hover:bg-blue-50'
-                        }`}
-                      >
-                        {isSelected ? '✓ ' : ''}{p.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      {/* Multi-police selection pill (Choose only 1) */}
+                      {policeList.length > 1 && (
+                        <div className="inline-flex items-center gap-1 ml-1 flex-wrap">
+                          <span className="text-[9px] text-blue-600 font-bold">Select 1:</span>
+                          {policeList.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => updatePreference('police', p.id)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold transition cursor-pointer ${
+                                activePolice.id === p.id
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-200 border border-blue-300'
+                              }`}
+                            >
+                              {activePolice.id === p.id ? '✓ ' : ''}{p.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-              {/* SINGLE ACTIVE POLICE CONTACT WITH NUMBER BELOW */}
-              <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-slate-900 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
-                      {activePolice.name}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                      {activePolice.designation || 'Police Station Control Room'}
-                    </p>
-
-                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs sm:text-sm font-mono font-black text-blue-900 dark:text-blue-200 bg-blue-100/80 dark:bg-blue-950 px-3 py-1 rounded-xl border border-blue-300 dark:border-blue-800 flex items-center gap-2">
-                        <HiPhone className="w-4 h-4 text-blue-600" />
+                    {/* PHONE NUMBER CLEARLY DISPLAYED BELOW NAME */}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] font-mono font-black text-blue-900 dark:text-blue-200 flex items-center gap-1">
+                        <HiPhone className="w-3 h-3 text-blue-600" />
                         <span>{activePolice.phone}</span>
                       </span>
                     </div>
                   </div>
+                </div>
 
+                {/* 1-Tap Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <a
                     href={`tel:${activePolice.phone}`}
                     onClick={() => handleDispatchContact('Theft / Intruder', activePolice)}
-                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95"
+                    title="Direct Call Police Station"
                   >
                     <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Now</span>
+                    <span className="hidden sm:inline">Call</span>
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchContact('Theft / Intruder', activePolice)}
+                    disabled={isSending}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
+                  >
+                    <span>🚨</span>
+                    <span>SOS Alert</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDispatchContact('Theft / Intruder', activePolice)}
-                  disabled={isSending}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  <HiPhone className="w-4 h-4" />
-                  <span>ALERT & CALL {activePolice.name.toUpperCase()} ({activePolice.phone})</span>
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ======================================================== */}
-          {/* 4. COMMUNITY RESIDENT RESPONDER / SECURITY (ONLY 1 SHOWN) */}
-          {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'resident') && activeResident && (
-            <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-900 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 dark:from-amber-950/40 dark:via-slate-900 dark:to-amber-950/20 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+            {/* 4. COMMUNITY RESPONDERS / SECURITY ROW */}
+            {(activeCategoryTab === 'all' || activeCategoryTab === 'resident') && activeResident && (
+              <div className="p-2 sm:p-2.5 rounded-xl border-2 border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between gap-2 transition hover:border-amber-400">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
                     🏡
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-amber-950 dark:text-amber-100 flex items-center gap-1.5">
-                      <span>Community Resident Responder</span>
-                      <span className="text-[10px] font-extrabold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full">
-                        Gate Security & Neighbors
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-300">
+                        Responders
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                      Alerts layout security personnel and association committee
-                    </p>
-                  </div>
-                </div>
-              </div>
+                      <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                        {activeResident.name}
+                      </span>
+                      {activeResident.designation && (
+                        <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.2 rounded truncate max-w-[150px]">
+                          {activeResident.designation}
+                        </span>
+                      )}
 
-              {/* SELECTION BAR IF MULTIPLE RESIDENT RESPONDERS */}
-              {residentList.length > 1 && (
-                <div className="p-2 bg-amber-100/60 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-amber-900 dark:text-amber-200">
-                    Select 1:
-                  </span>
-                  {residentList.map((r) => {
-                    const isSelected = activeResident.id === r.id;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => updatePreference('resident', r.id)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400'
-                            : 'bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-200 hover:bg-amber-50'
-                        }`}
-                      >
-                        {isSelected ? '✓ ' : ''}{r.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      {/* Multi-responder selection pill (Choose only 1) */}
+                      {residentList.length > 1 && (
+                        <div className="inline-flex items-center gap-1 ml-1 flex-wrap">
+                          <span className="text-[9px] text-amber-600 font-bold">Select 1:</span>
+                          {residentList.map((r) => (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => updatePreference('resident', r.id)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold transition cursor-pointer ${
+                                activeResident.id === r.id
+                                  ? 'bg-amber-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-200 border border-amber-300'
+                              }`}
+                            >
+                              {activeResident.id === r.id ? '✓ ' : ''}{r.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-              {/* SINGLE ACTIVE RESIDENT RESPONDER WITH NUMBER BELOW */}
-              <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
-                      {activeResident.name}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                      {activeResident.designation || 'Association Security Responder'}
-                    </p>
-
-                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs sm:text-sm font-mono font-black text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950 px-3 py-1 rounded-xl border border-amber-300 dark:border-amber-800 flex items-center gap-2">
-                        <HiPhone className="w-4 h-4 text-amber-600" />
+                    {/* PHONE NUMBER CLEARLY DISPLAYED BELOW NAME */}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] font-mono font-black text-amber-900 dark:text-amber-200 flex items-center gap-1">
+                        <HiPhone className="w-3 h-3 text-amber-600" />
                         <span>{activeResident.phone}</span>
                       </span>
                     </div>
                   </div>
+                </div>
 
+                {/* 1-Tap Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <a
                     href={`tel:${activeResident.phone}`}
                     onClick={() => handleDispatchContact('Community Emergency', activeResident)}
-                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95"
+                    title="Direct Call Security Gate"
                   >
                     <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Now</span>
+                    <span className="hidden sm:inline">Call</span>
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchContact('Community Emergency', activeResident)}
+                    disabled={isSending}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
+                  >
+                    <span>🚨</span>
+                    <span>SOS Alert</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDispatchContact('Community Emergency', activeResident)}
-                  disabled={isSending}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  <HiPhone className="w-4 h-4" />
-                  <span>ALERT & CALL {activeResident.name.toUpperCase()} ({activeResident.phone})</span>
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ======================================================== */}
-          {/* 5. FIRE & RESCUE EMERGENCY (ONLY 1 SELECTED CONTACT SHOWN) */}
-          {/* ======================================================== */}
-          {(activeCategoryTab === 'all' || activeCategoryTab === 'fire') && activeFire && (
-            <div className="rounded-2xl border-2 border-orange-300 dark:border-orange-900 bg-gradient-to-br from-orange-50/80 via-white to-orange-50/40 dark:from-orange-950/40 dark:via-slate-900 dark:to-orange-950/20 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
+            {/* 5. FIRE ROW */}
+            {(activeCategoryTab === 'all' || activeCategoryTab === 'fire') && activeFire && (
+              <div className="p-2 sm:p-2.5 rounded-xl border-2 border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/30 flex items-center justify-between gap-2 transition hover:border-orange-400">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
                     🔥
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-orange-950 dark:text-orange-100 flex items-center gap-1.5">
-                      <span>Fire & Rescue Emergency</span>
-                      <span className="text-[10px] font-extrabold bg-orange-200 dark:bg-orange-900 text-orange-900 dark:text-orange-200 px-2 py-0.5 rounded-full">
-                        Fire Station 101
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase text-orange-700 dark:text-orange-300">
+                        Fire
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-orange-700 dark:text-orange-300">
-                      Immediate fire control dispatch with address details
-                    </p>
-                  </div>
-                </div>
-              </div>
+                      <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                        {activeFire.name}
+                      </span>
+                      {activeFire.designation && (
+                        <span className="text-[10px] font-bold text-orange-800 dark:text-orange-200 bg-orange-100 dark:bg-orange-900/60 px-1.5 py-0.2 rounded truncate max-w-[150px]">
+                          {activeFire.designation}
+                        </span>
+                      )}
 
-              {/* SELECTION BAR IF MULTIPLE FIRE CONTACTS */}
-              {fireList.length > 1 && (
-                <div className="p-2 bg-orange-100/60 dark:bg-orange-950/50 rounded-xl border border-orange-200 dark:border-orange-800 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-orange-900 dark:text-orange-200">
-                    Select 1:
-                  </span>
-                  {fireList.map((f) => {
-                    const isSelected = activeFire.id === f.id;
-                    return (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => updatePreference('fire', f.id)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-orange-600 text-white shadow-xs ring-1 ring-orange-400'
-                            : 'bg-white dark:bg-slate-800 text-orange-900 dark:text-orange-200 hover:bg-orange-50'
-                        }`}
-                      >
-                        {isSelected ? '✓ ' : ''}{f.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      {/* Multi-fire selection pill (Choose only 1) */}
+                      {fireList.length > 1 && (
+                        <div className="inline-flex items-center gap-1 ml-1 flex-wrap">
+                          <span className="text-[9px] text-orange-600 font-bold">Select 1:</span>
+                          {fireList.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => updatePreference('fire', f.id)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold transition cursor-pointer ${
+                                activeFire.id === f.id
+                                  ? 'bg-orange-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-orange-900 dark:text-orange-200 border border-orange-300'
+                              }`}
+                            >
+                              {activeFire.id === f.id ? '✓ ' : ''}{f.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-              {/* SINGLE ACTIVE FIRE CONTACT WITH NUMBER BELOW */}
-              <div className="p-3.5 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-white dark:bg-slate-900 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-white">
-                      {activeFire.name}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                      {activeFire.designation || 'Fire & Rescue Department'}
-                    </p>
-
-                    {/* PHONE NUMBER SHOWN PROMINENTLY BELOW */}
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs sm:text-sm font-mono font-black text-orange-900 dark:text-orange-200 bg-orange-100/80 dark:bg-orange-950 px-3 py-1 rounded-xl border border-orange-300 dark:border-orange-800 flex items-center gap-2">
-                        <HiPhone className="w-4 h-4 text-orange-600" />
+                    {/* PHONE NUMBER CLEARLY DISPLAYED BELOW NAME */}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] font-mono font-black text-orange-900 dark:text-orange-200 flex items-center gap-1">
+                        <HiPhone className="w-3 h-3 text-orange-600" />
                         <span>{activeFire.phone}</span>
                       </span>
                     </div>
                   </div>
+                </div>
 
+                {/* 1-Tap Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <a
                     href={`tel:${activeFire.phone}`}
                     onClick={() => handleDispatchContact('Fire Incident', activeFire)}
-                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95"
+                    title="Direct Call Fire Station"
                   >
                     <HiPhone className="w-3.5 h-3.5" />
-                    <span>Call Now</span>
+                    <span className="hidden sm:inline">Call</span>
                   </a>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDispatchContact('Fire Incident', activeFire)}
-                  disabled={isSending}
-                  className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-extrabold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  <HiPhone className="w-4 h-4" />
-                  <span>ALERT & CALL {activeFire.name.toUpperCase()} ({activeFire.phone})</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* 6. OTHER EMERGENCY (IF CONFIGURED) */}
-          {/* ======================================================== */}
-          {activeOther && (
-            <div className="rounded-2xl border-2 border-purple-300 dark:border-purple-900 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-xs flex-shrink-0">
-                  ⚠️
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-purple-950 dark:text-purple-100">
-                    Other Emergency Service
-                  </h3>
-                  <p className="text-[11px] text-purple-700 dark:text-purple-300">
-                    {activeOther.name} • {activeOther.designation}
-                  </p>
-                  <p className="font-mono text-xs font-black text-purple-900 dark:text-purple-200 mt-1">
-                    📞 {activeOther.phone}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchContact('Fire Incident', activeFire)}
+                    disabled={isSending}
+                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
+                  >
+                    <span>🚨</span>
+                    <span>SOS Alert</span>
+                  </button>
                 </div>
               </div>
+            )}
+          </div>
 
-              <button
-                type="button"
-                onClick={() => handleDispatchContact('Other Emergency', activeOther)}
-                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition"
-              >
-                Call & Alert ({activeOther.phone})
-              </button>
-            </div>
-          )}
-
-          {/* Quick Speed-Dial Footer for Android & Mobile */}
-          <div className="pt-3 border-t border-gray-200 dark:border-slate-800">
-            <p className="text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-2">
-              National Emergency Speed Dial (1-Tap Instant Call):
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Speed-Dial Footer (Compact 1-row) */}
+          <div className="pt-1.5 border-t border-gray-200 dark:border-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
+            <span className="text-[10px] font-black uppercase text-gray-500 dark:text-gray-400">
+              ⚡ Instant Helpline:
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 justify-end">
               <a
                 href="tel:100"
-                className="py-2.5 px-3 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                className="py-1 px-2 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg font-black text-[10px] flex items-center gap-1 active:scale-95 transition"
               >
-                <HiPhone className="w-3.5 h-3.5" />
+                <HiPhone className="w-3 h-3" />
                 <span>100 (Police)</span>
               </a>
               <a
                 href="tel:108"
-                className="py-2.5 px-3 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                className="py-1 px-2 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg font-black text-[10px] flex items-center gap-1 active:scale-95 transition"
               >
-                <HiPhone className="w-3.5 h-3.5" />
+                <HiPhone className="w-3 h-3" />
                 <span>108 (Ambulance)</span>
               </a>
               <a
                 href="tel:101"
-                className="py-2.5 px-3 bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                className="py-1 px-2 bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-lg font-black text-[10px] flex items-center gap-1 active:scale-95 transition"
               >
-                <HiPhone className="w-3.5 h-3.5" />
+                <HiPhone className="w-3 h-3" />
                 <span>101 (Fire)</span>
               </a>
               <a
                 href="tel:112"
-                className="py-2.5 px-3 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                className="py-1 px-2 bg-red-600 text-white rounded-lg font-black text-[10px] flex items-center gap-1 active:scale-95 transition shadow-xs"
               >
-                <HiPhone className="w-3.5 h-3.5" />
+                <HiPhone className="w-3 h-3" />
                 <span>112 (Helpline)</span>
               </a>
             </div>
