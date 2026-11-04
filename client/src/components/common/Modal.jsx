@@ -34,11 +34,11 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'sm:max-w-md',
-    md: 'sm:max-w-lg',
-    lg: 'sm:max-w-2xl',
-    xl: 'sm:max-w-4xl',
-    full: 'sm:max-w-5xl',
+    sm: 'max-w-sm sm:max-w-md',
+    md: 'max-w-md sm:max-w-lg',
+    lg: 'max-w-lg sm:max-w-2xl',
+    xl: 'max-w-xl sm:max-w-4xl',
+    full: 'max-w-2xl sm:max-w-5xl',
   };
 
   const handleBackdropClick = (e) => {
@@ -50,28 +50,23 @@ export default function Modal({
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-200"
       aria-modal="true"
       role="dialog"
     >
-      {/* Mobile: slides from bottom; Tablet+: centered */}
+      {/* Centered on both mobile and laptop */}
       <div
         className={`w-full ${sizeClasses[size] || sizeClasses.md}
           bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100
-          rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden
-          transform transition-all duration-300
-          max-h-[92vh] sm:max-h-[90vh]
+          rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden
+          transform transition-all duration-200
+          max-h-[90vh]
           flex flex-col
-          animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300`}
+          animate-in zoom-in-95 duration-200`}
       >
-        {/* Mobile drag handle */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-300 dark:bg-slate-600 rounded-full" />
-        </div>
-
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-5 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/60 flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/60 flex-shrink-0">
             {title ? (
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-tight pr-2">
                 {title}
@@ -92,14 +87,14 @@ export default function Modal({
           </div>
         )}
 
-        {/* Body — scrollable */}
-        <div className="px-5 py-4 sm:px-6 sm:py-4 overflow-y-auto flex-1">
+        {/* Body — scrollable only when necessary */}
+        <div className="px-4 py-3 sm:px-6 sm:py-4 overflow-y-auto flex-1">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-5 py-3.5 sm:px-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-800/80 flex-shrink-0">
+          <div className="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-800/80 flex-shrink-0">
             {footer}
           </div>
         )}

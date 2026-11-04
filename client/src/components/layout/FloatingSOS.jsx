@@ -271,20 +271,15 @@ export default function FloatingSOS() {
       }
     }
 
-    // 5. Trigger Backend SOS Record
-    const alertNote = [
-      `Emergency: ${emergencyType}`,
-      `Action: ${actionType.toUpperCase()}`,
-      `Responder: ${targetName} (${targetPhone})`,
-      `Address: ${residentAddress}`,
-      `Map: ${mapsLink}`,
-    ].join(' | ');
-
-    try {
-      await triggerSOS(emergencyType, alertNote);
-    } catch (err) {
+    // 5. Record SOS Alert on Backend without activating siren blinking
+    api.post('/sos/trigger', {
+      emergency_type: emergencyType,
+      notes: `${actionType.toUpperCase()} dispatched to ${targetName} (${targetPhone})`,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    }).catch((err) => {
       console.warn('Backend SOS log error:', err);
-    }
+    });
 
     // 6. Close the contacts chooser modal & open the "Emergency Alert Sent Successfully!" popup!
     setShowTypeSelector(false);
@@ -304,14 +299,11 @@ export default function FloatingSOS() {
             type="button"
             onClick={() => {
               if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+              if (isTriggered) resetSOS();
               setShowTypeSelector(true);
             }}
             disabled={isSending}
-            className={`relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center font-black text-white shadow-2xl select-none focus:outline-none cursor-pointer transform hover:scale-105 active:scale-95 transition-all duration-200 touch-manipulation ${
-              isTriggered
-                ? 'animate-siren bg-red-600 ring-4 sm:ring-8 ring-red-400'
-                : 'bg-red-600 hover:bg-red-700 ring-2 sm:ring-4 ring-white/60 dark:ring-red-400/50'
-            }`}
+            className="relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center font-black text-white shadow-2xl select-none focus:outline-none cursor-pointer transform hover:scale-105 active:scale-95 transition-all duration-200 touch-manipulation bg-red-600 hover:bg-red-700 ring-2 sm:ring-4 ring-white/60 dark:ring-red-400/50"
             aria-label="Emergency SOS"
             title="Click for Emergency Contacts"
           >
@@ -719,9 +711,23 @@ export default function FloatingSOS() {
               </div>
             )}
 
-            {/* Redial & Dismiss Actions */}
+            {/* Action Buttons in Success Popup */}
             <div className="flex items-center gap-2 pt-1">
-              {dispatchedContact && (
+              {dispatchedContact?.actionType === 'whatsapp' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const formattedWa = formatWaPhone(dispatchedContact?.phone);
+                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residentAddress)}`;
+                    const msg = encodeURIComponent(`🚨 *EMERGENCY SOS DISTRESS ALERT!*\\nImmediate help requested!\\nLocation: ${residentAddress}\\nLive GPS: ${mapsLink}`);
+                    window.open(`https://wa.me/${formattedWa || ''}?text=${msg}`, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="flex-1 py-2.5 px-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                >
+                  <HiChatBubbleOvalLeftEllipsis className="w-4 h-4" />
+                  <span>WhatsApp Again</span>
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={() => {
