@@ -719,7 +719,7 @@ export default function FloatingSOS() {
                   onClick={() => {
                     const formattedWa = formatWaPhone(dispatchedContact?.phone);
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residentAddress)}`;
-                    const msg = encodeURIComponent(`🚨 *EMERGENCY SOS DISTRESS ALERT!*\\nImmediate help requested!\\nLocation: ${residentAddress}\\nLive GPS: ${mapsLink}`);
+                    const msg = encodeURIComponent(`🚨 *EMERGENCY SOS DISTRESS ALERT!*\nImmediate help requested!\nLocation: ${residentAddress}\nLive GPS: ${mapsLink}`);
                     window.open(`https://wa.me/${formattedWa || ''}?text=${msg}`, '_blank', 'noopener,noreferrer');
                   }}
                   className="flex-1 py-2.5 px-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
