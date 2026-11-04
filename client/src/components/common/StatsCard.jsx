@@ -13,34 +13,34 @@ export default function StatsCard({
 }) {
   const colorSchemes = {
     blue: {
-      bg: 'bg-blue-50',
-      text: 'text-blue-600',
-      border: 'border-blue-100',
-      badge: 'bg-blue-100 text-blue-800',
+      bg: 'bg-blue-50 dark:bg-blue-950/60',
+      text: 'text-blue-600 dark:text-cyan-400',
+      border: 'border-blue-100 dark:border-blue-900/60',
+      badge: 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200',
     },
     green: {
-      bg: 'bg-green-50',
-      text: 'text-green-600',
-      border: 'border-green-100',
-      badge: 'bg-green-100 text-green-800',
+      bg: 'bg-green-50 dark:bg-emerald-950/60',
+      text: 'text-green-600 dark:text-emerald-400',
+      border: 'border-green-100 dark:border-emerald-900/60',
+      badge: 'bg-green-100 dark:bg-emerald-900/60 text-green-800 dark:text-emerald-200',
     },
     red: {
-      bg: 'bg-red-50',
-      text: 'text-red-600',
-      border: 'border-red-100',
-      badge: 'bg-red-100 text-red-800',
+      bg: 'bg-red-50 dark:bg-rose-950/60',
+      text: 'text-red-600 dark:text-rose-400',
+      border: 'border-red-100 dark:border-rose-900/60',
+      badge: 'bg-red-100 dark:bg-rose-900/60 text-red-800 dark:text-rose-200',
     },
     yellow: {
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-600',
-      border: 'border-yellow-100',
-      badge: 'bg-yellow-100 text-yellow-800',
+      bg: 'bg-yellow-50 dark:bg-amber-950/60',
+      text: 'text-yellow-600 dark:text-amber-400',
+      border: 'border-yellow-100 dark:border-amber-900/60',
+      badge: 'bg-yellow-100 dark:bg-amber-900/60 text-yellow-800 dark:text-amber-200',
     },
     purple: {
-      bg: 'bg-purple-50',
-      text: 'text-purple-600',
-      border: 'border-purple-100',
-      badge: 'bg-purple-100 text-purple-800',
+      bg: 'bg-purple-50 dark:bg-purple-950/60',
+      text: 'text-purple-600 dark:text-purple-400',
+      border: 'border-purple-100 dark:border-purple-900/60',
+      badge: 'bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200',
     },
   };
 
@@ -67,10 +67,10 @@ export default function StatsCard({
 
         {change !== undefined && change !== null && (
           <div
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
               changeType === 'increase'
-                ? 'bg-emerald-50 text-emerald-700'
-                : 'bg-rose-50 text-rose-700'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
             }`}
           >
             {changeType === 'increase' ? (

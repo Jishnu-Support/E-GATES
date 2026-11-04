@@ -217,13 +217,13 @@ export default function MemberComplaints() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
             <HiExclamationCircle className="w-7 h-7 text-amber-500" />
             My Grievance Tickets
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Report maintenance issues, street lighting faults, water distribution issues, and track admin resolution.
           </p>
         </div>
@@ -240,7 +240,7 @@ export default function MemberComplaints() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
         {[
           { id: 'all', label: `All Tickets (${complaints.length})` },
           { id: 'open', label: 'Open' },
@@ -254,7 +254,7 @@ export default function MemberComplaints() {
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               statusFilter === tab.id
                 ? 'bg-primary-600 text-white shadow-sm'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
             }`}
           >
             {tab.label}
@@ -264,7 +264,7 @@ export default function MemberComplaints() {
 
       {/* Complaints List Cards */}
       {loading ? (
-        <div className="py-24 bg-white rounded-2xl border border-gray-100 text-center">
+        <div className="py-24 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 text-center">
           <LoadingSpinner message="Loading your grievances..." />
         </div>
       ) : filteredComplaints.length === 0 ? (
@@ -281,12 +281,12 @@ export default function MemberComplaints() {
             return (
               <div
                 key={comp.id}
-                className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-primary-300 transition"
+                className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-primary-300 dark:hover:border-primary-700 transition"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 rounded border border-transparent dark:border-slate-700">
                         {comp.category || 'General'}
                       </span>
                       {getPriorityBadge(comp.priority)}
@@ -297,11 +297,11 @@ export default function MemberComplaints() {
                   <div>
                     <h3
                       onClick={() => handleOpenDetail(comp)}
-                      className="text-base font-bold text-gray-900 cursor-pointer hover:text-primary-600 transition"
+                      className="text-base font-bold text-gray-900 dark:text-white cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 transition"
                     >
                       {comp.title}
                     </h3>
-                    <p className="text-xs text-gray-600 line-clamp-3 mt-1 whitespace-pre-wrap">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-3 mt-1 whitespace-pre-wrap">
                       {comp.description}
                     </p>
                   </div>
@@ -316,7 +316,7 @@ export default function MemberComplaints() {
                             title: `Ticket #${comp.id} - ${comp.title} Proof`,
                           })
                         }
-                        className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:underline font-semibold bg-primary-50/70 hover:bg-primary-100/70 px-2.5 py-1 rounded-lg border border-primary-200/60 transition"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary-600 dark:text-cyan-400 hover:text-primary-700 hover:underline font-semibold bg-primary-50/70 dark:bg-primary-950/40 hover:bg-primary-100/70 px-2.5 py-1 rounded-lg border border-primary-200/60 dark:border-primary-800 transition"
                       >
                         <HiPaperClip className="w-3.5 h-3.5" />
                         <span>View Attachment Proof</span>
@@ -325,15 +325,15 @@ export default function MemberComplaints() {
                   )}
 
                   {comp.notes && (
-                    <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs text-blue-900">
-                      <span className="font-bold block text-[10px] uppercase text-blue-700 mb-0.5">Admin Response:</span>
+                    <div className="bg-blue-50/70 dark:bg-blue-950/30 p-2.5 rounded-xl border border-blue-100 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200">
+                      <span className="font-bold block text-[10px] uppercase text-blue-700 dark:text-blue-300 mb-0.5">Admin Response:</span>
                       {comp.notes}
                     </div>
                   )}
                 </div>
 
                 {/* Bottom Card Bar */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
                   <span>
                     Filed: {comp.created_at ? format(new Date(comp.created_at), 'dd MMM yyyy') : '—'}
                   </span>
@@ -341,7 +341,7 @@ export default function MemberComplaints() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleOpenDetail(comp)}
-                      className="text-xs font-semibold text-primary-600 hover:underline px-2 py-1"
+                      className="text-xs font-semibold text-primary-600 dark:text-cyan-400 hover:underline px-2 py-1"
                     >
                       Details
                     </button>
@@ -349,7 +349,7 @@ export default function MemberComplaints() {
                       <>
                         <button
                           onClick={() => handleOpenEdit(comp)}
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition"
                           title="Edit Grievance"
                         >
                           <HiPencilSquare className="w-4 h-4" />
@@ -359,7 +359,7 @@ export default function MemberComplaints() {
                             setComplaintToDelete(comp);
                             setIsDeleteConfirmOpen(true);
                           }}
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition"
                           title="Withdraw Grievance"
                         >
                           <HiTrash className="w-4 h-4" />
@@ -383,7 +383,7 @@ export default function MemberComplaints() {
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
               Complaint Subject / Title *
             </label>
             <input
@@ -392,19 +392,19 @@ export default function MemberComplaints() {
               placeholder="e.g. Streetlamp not working in 2nd Cross Street"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
                 Category *
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               >
                 <option value="Water Supply">Water Supply</option>
                 <option value="Street Lights">Street Lights</option>
@@ -417,13 +417,13 @@ export default function MemberComplaints() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               >
                 <option value="low">Low (General Maintenance)</option>
                 <option value="medium">Medium (Standard)</option>
@@ -434,7 +434,7 @@ export default function MemberComplaints() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
               Description of the Issue *
             </label>
             <textarea
@@ -443,7 +443,7 @@ export default function MemberComplaints() {
               placeholder="Describe the exact location, timing, or nature of the problem..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
@@ -490,7 +490,7 @@ export default function MemberComplaints() {
       >
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
               Title *
             </label>
             <input
@@ -498,19 +498,19 @@ export default function MemberComplaints() {
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
                 Category
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               >
                 <option value="Water Supply">Water Supply</option>
                 <option value="Street Lights">Street Lights</option>
@@ -522,13 +522,13 @@ export default function MemberComplaints() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
                 Priority
               </label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -539,7 +539,7 @@ export default function MemberComplaints() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
               Description *
             </label>
             <textarea
@@ -547,7 +547,7 @@ export default function MemberComplaints() {
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
           </div>
 
@@ -594,10 +594,10 @@ export default function MemberComplaints() {
       >
         {selectedComplaint && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
               <div>
-                <span className="text-[10px] uppercase font-bold text-gray-500 block">Category</span>
-                <span className="text-sm font-bold text-gray-900">{selectedComplaint.category}</span>
+                <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 block">Category</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedComplaint.category}</span>
               </div>
               <div className="flex items-center gap-2">
                 {getPriorityBadge(selectedComplaint.priority)}
@@ -606,8 +606,8 @@ export default function MemberComplaints() {
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-gray-900">{selectedComplaint.title}</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">{selectedComplaint.title}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Filed on:{' '}
                 {selectedComplaint.created_at
                   ? format(new Date(selectedComplaint.created_at), 'dd MMM yyyy, hh:mm a')
@@ -615,18 +615,18 @@ export default function MemberComplaints() {
               </p>
             </div>
 
-            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
+            <div className="bg-gray-50 dark:bg-slate-800 p-3.5 rounded-xl border border-gray-100 dark:border-slate-700 text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
               {selectedComplaint.description}
             </div>
 
             {selectedComplaint.attachment && (
-              <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200">
-                <span className="text-[10px] uppercase font-bold text-gray-500 block mb-2">Attachment Proof</span>
+              <div className="bg-gray-50 dark:bg-slate-800 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700">
+                <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 block mb-2">Attachment Proof</span>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <img
                     src={resolveFileUrl(selectedComplaint.attachment)}
                     alt="Complaint Attachment"
-                    className="w-24 h-24 object-cover rounded-lg border border-gray-300 shadow-sm cursor-pointer hover:opacity-90 transition"
+                    className="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-slate-600 shadow-sm cursor-pointer hover:opacity-90 transition"
                     onClick={() =>
                       setPreviewProof({
                         url: resolveFileUrl(selectedComplaint.attachment),
@@ -646,7 +646,7 @@ export default function MemberComplaints() {
                           title: `Ticket #${selectedComplaint.id} - ${selectedComplaint.title}`,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:underline font-semibold"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary-600 dark:text-cyan-400 hover:text-primary-700 hover:underline font-semibold"
                     >
                       <HiEye className="w-4 h-4" />
                       <span>Preview Attachment Proof</span>
@@ -656,7 +656,7 @@ export default function MemberComplaints() {
                         href={resolveFileUrl(selectedComplaint.attachment)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 hover:underline"
                       >
                         <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
                         <span>Open in New Tab</span>
@@ -668,19 +668,19 @@ export default function MemberComplaints() {
             )}
 
             {selectedComplaint.notes && (
-              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-900">
-                <span className="font-bold block text-[11px] uppercase text-emerald-800 mb-1">
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200">
+                <span className="font-bold block text-[11px] uppercase text-emerald-800 dark:text-emerald-300 mb-1">
                   Administrator Response & Resolution Notes:
                 </span>
                 <p>{selectedComplaint.notes}</p>
               </div>
             )}
 
-            <div className="flex justify-end pt-3 border-t border-gray-100">
+            <div className="flex justify-end pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Close
               </button>

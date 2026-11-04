@@ -528,15 +528,15 @@ export default function MemberDashboard() {
 
         {/* Upcoming Events (Top 2) & Quick Links */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <HiCalendar className="w-5 h-5 text-green-600" />
-                <h2 className="text-base font-bold text-gray-900">Upcoming Events</h2>
+                <HiCalendar className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
               </div>
               <button
                 onClick={() => navigate('/member/events')}
-                className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                className="text-xs font-semibold text-primary-600 dark:text-cyan-400 hover:text-primary-700 dark:hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
               >
                 Calendar &rarr;
               </button>
@@ -544,7 +544,7 @@ export default function MemberDashboard() {
 
             <div className="space-y-3">
               {upcomingEvents.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">
+                <div className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
                   No upcoming events scheduled.
                 </div>
               ) : (
@@ -552,14 +552,14 @@ export default function MemberDashboard() {
                   <div
                     key={evt.id}
                     onClick={() => navigate('/member/events')}
-                    className="p-3 bg-gray-50 hover:bg-primary-50/50 cursor-pointer rounded-xl border border-gray-100 transition"
+                    className="p-3 bg-gray-50 dark:bg-slate-800/80 hover:bg-primary-50/50 dark:hover:bg-slate-800 cursor-pointer rounded-xl border border-gray-100 dark:border-slate-700/80 transition"
                     title="Click to view event on calendar"
                   >
-                    <span className="text-[11px] font-bold text-primary-700 block">
+                    <span className="text-[11px] font-bold text-primary-700 dark:text-cyan-400 block">
                       {evt.event_date ? format(new Date(evt.event_date), 'dd MMM yyyy, hh:mm a') : 'TBD'}
                     </span>
-                    <h4 className="text-xs font-bold text-gray-900 mt-0.5">{evt.title}</h4>
-                    <p className="text-[11px] text-gray-500 mt-0.5">📍 {evt.location || 'Layout Grounds'}</p>
+                    <h4 className="text-xs font-bold text-gray-900 dark:text-white mt-0.5">{evt.title}</h4>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">📍 {evt.location || 'Layout Grounds'}</p>
                   </div>
                 ))
               )}
@@ -567,54 +567,54 @@ export default function MemberDashboard() {
           </div>
 
           {/* Quick Links Card */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-100 dark:border-slate-800 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3">
               Quick Shortcuts
             </h3>
             <div className="space-y-2 text-xs">
               <button
                 onClick={() => navigate('/member/events')}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition"
+                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold transition cursor-pointer"
               >
                 <span className="flex items-center gap-2">
-                  <HiCalendar className="w-4 h-4 text-green-600" />
+                  <HiCalendar className="w-4 h-4 text-green-600 dark:text-green-400" />
                   <span>Community Events & Calendar</span>
                 </span>
                 <HiArrowRight className="w-3.5 h-3.5 text-gray-400" />
               </button>
               <button
                 onClick={() => navigate('/member/voting')}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition"
+                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold transition cursor-pointer"
               >
                 <span className="flex items-center gap-2">
-                  <HiChartBarSquare className="w-4 h-4 text-purple-600" />
+                  <HiChartBarSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <span>Vote in Active Polls</span>
                 </span>
                 <HiArrowRight className="w-3.5 h-3.5 text-gray-400" />
               </button>
               <button
                 onClick={() => setIsDocumentsModalOpen(true)}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition"
+                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold transition cursor-pointer"
               >
                 <span className="flex items-center gap-2">
-                  <HiDocumentText className="w-4 h-4 text-blue-600" />
+                  <HiDocumentText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>View Community Documents</span>
                 </span>
                 <HiArrowRight className="w-3.5 h-3.5 text-gray-400" />
               </button>
               <button
                 onClick={() => navigate('/member/complaints')}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition"
+                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold transition cursor-pointer"
               >
                 <span className="flex items-center gap-2">
-                  <HiChatBubbleLeftRight className="w-4 h-4 text-amber-600" />
+                  <HiChatBubbleLeftRight className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>File a Grievance</span>
                 </span>
                 <HiArrowRight className="w-3.5 h-3.5 text-gray-400" />
               </button>
               <button
                 onClick={() => navigate('/member/profile')}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition"
+                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold transition cursor-pointer"
               >
                 <span>My Profile & Proofs</span>
                 <HiArrowRight className="w-3.5 h-3.5 text-gray-400" />
@@ -770,7 +770,7 @@ export default function MemberDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View / Open"
-                          className="p-2 text-gray-500 hover:text-primary-600 hover:bg-white rounded-lg border border-gray-200 shadow-sm transition"
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm transition"
                         >
                           <HiEye className="w-4 h-4" />
                         </a>

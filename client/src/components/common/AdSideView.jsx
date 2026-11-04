@@ -320,7 +320,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
           Positioned at bottom-28 sm:bottom-32 so it NEVER overlaps
           with the top-right profile dropdown or bottom SOS button
           ══════════════════════════════════════════════════════════ */}
-      <div className="block xl:hidden fixed right-0 bottom-28 sm:bottom-32 z-30 select-none">
+      <div className="block xl:hidden fixed right-0 bottom-36 sm:bottom-40 z-30 select-none">
         <button
           type="button"
           onClick={() => {

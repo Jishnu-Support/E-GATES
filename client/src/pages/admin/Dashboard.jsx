@@ -490,16 +490,16 @@ export default function AdminDashboard() {
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* ==================== LEFT HALF: DAILY NEWS & NOTICES ==================== */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-cyan-400 flex items-center justify-center">
                   <HiNewspaper className="w-5 h-5" />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900">Daily News & Notice Board</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Daily News & Notice Board</h2>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Official announcements, notices, and updates published to residents
               </p>
             </div>
@@ -507,7 +507,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/admin/news')}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl transition shadow-sm cursor-pointer"
               >
                 <HiPlus className="w-3.5 h-3.5" />
                 <span>Post Notice</span>
@@ -522,10 +522,10 @@ export default function AdminDashboard() {
                 <button
                   key={cat}
                   onClick={() => setNewsCategory(cat)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition cursor-pointer ${
                     newsCategory === cat
                       ? 'bg-primary-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {cat === 'all' ? 'All' : cat}
@@ -540,15 +540,15 @@ export default function AdminDashboard() {
                 placeholder="Search notices..."
                 value={newsSearch}
                 onChange={(e) => setNewsSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-1.5 text-xs border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
           </div>
 
           {/* News Feed Stream */}
-          <div className="space-y-3 max-h-[750px] overflow-y-auto pr-1 divide-y divide-gray-100">
+          <div className="space-y-3 max-h-[750px] overflow-y-auto pr-1 divide-y divide-gray-100 dark:divide-slate-800">
             {filteredNews.length === 0 ? (
-              <div className="py-16 text-center text-xs text-gray-400">
+              <div className="py-16 text-center text-xs text-gray-400 dark:text-gray-500">
                 No news or notices published matching your filter. Click "+ Post Notice" to publish.
               </div>
             ) : (
@@ -561,17 +561,17 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         {news.is_pinned && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                             <HiBookmark className="w-3 h-3 text-amber-600" /> Pinned
                           </span>
                         )}
                         <span
                           className={`inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                             isUrgent
-                              ? 'bg-red-100 text-red-800 border border-red-200'
+                              ? 'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-800'
                               : isMeeting
-                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                              : 'bg-gray-100 text-gray-700'
+                              ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-cyan-300 border border-blue-200 dark:border-blue-800'
+                              : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700'
                           }`}
                         >
                           {news.category || 'General'}
@@ -583,11 +583,11 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-gray-900 hover:text-primary-600 transition">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-cyan-400 transition">
                       {news.title}
                     </h3>
 
-                    <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                       {news.content}
                     </p>
 
@@ -652,14 +652,14 @@ export default function AdminDashboard() {
         {/* ==================== RIGHT HALF: 3 STACKED SECTIONS ==================== */}
         <div className="space-y-6">
           {/* SECTION 1: ACTIVE MEMBERS DIRECTORY */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-100 dark:border-slate-800 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-cyan-400 flex items-center justify-center">
                   <HiUsers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                     Active Members Directory ({membersList.length})
                   </h3>
                 </div>
@@ -667,7 +667,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={() => navigate('/admin/users')}
-                className="text-xs font-bold text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
+                className="text-xs font-bold text-primary-600 dark:text-cyan-400 hover:text-primary-800 dark:hover:text-cyan-300 inline-flex items-center gap-1 cursor-pointer"
               >
                 Manage Users &rarr;
               </button>
@@ -681,26 +681,26 @@ export default function AdminDashboard() {
                 placeholder="Search member by name, door no, phone..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
 
             {/* Members Quick List */}
-            <div className="space-y-2 max-h-56 overflow-y-auto divide-y divide-gray-50">
+            <div className="space-y-2 max-h-56 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800">
               {filteredActiveMembers.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">
+                <div className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
                   No active members matching "{memberSearch}"
                 </div>
               ) : (
                 filteredActiveMembers.slice(0, 5).map((m) => (
                   <div key={m.id} className="pt-2 first:pt-0 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center font-bold text-xs">
+                      <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-cyan-400 flex items-center justify-center font-bold text-xs">
                         {m.name.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-gray-900">{m.name}</h4>
-                        <p className="text-[11px] text-gray-500">
+                        <h4 className="text-xs font-bold text-gray-900 dark:text-white">{m.name}</h4>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
                           Door #{m.door_no || 'N/A'} • {m.street || 'Layout'}
                         </p>
                       </div>
@@ -709,11 +709,11 @@ export default function AdminDashboard() {
                     <div className="text-right">
                       <a
                         href={`tel:${m.phone}`}
-                        className="text-xs font-semibold text-primary-600 hover:underline flex items-center gap-1 justify-end"
+                        className="text-xs font-semibold text-primary-600 dark:text-cyan-400 hover:underline flex items-center gap-1 justify-end"
                       >
                         <HiPhone className="w-3 h-3" /> {m.phone || 'N/A'}
                       </a>
-                      <span className="text-[10px] text-green-700 bg-green-50 px-1.5 py-0.2 rounded font-medium">
+                      <span className="text-[10px] text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/60 px-1.5 py-0.2 rounded font-medium border border-green-200 dark:border-green-800/60">
                         Approved Resident
                       </span>
                     </div>
@@ -726,7 +726,7 @@ export default function AdminDashboard() {
               <div className="pt-1 text-center">
                 <button
                   onClick={() => openModal('members')}
-                  className="text-xs text-primary-600 hover:text-primary-800 font-semibold"
+                  className="text-xs text-primary-600 dark:text-cyan-400 hover:text-primary-800 font-semibold cursor-pointer"
                 >
                   + View {filteredActiveMembers.length - 5} more members
                 </button>
@@ -834,14 +834,14 @@ export default function AdminDashboard() {
           </div>
 
           {/* SECTION 3: COMMUNITY EVENTS & FESTIVALS */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-gray-100 dark:border-slate-800 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-emerald-950/60 text-green-600 dark:text-emerald-400 flex items-center justify-center">
                   <HiCalendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                     Upcoming Events & Festivals
                   </h3>
                 </div>
@@ -850,7 +850,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate('/admin/events')}
-                  className="text-xs font-bold text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
+                  className="text-xs font-bold text-primary-600 dark:text-cyan-400 hover:text-primary-800 dark:hover:text-cyan-300 inline-flex items-center gap-1 cursor-pointer"
                 >
                   Full 12M Calendar &rarr;
                 </button>
@@ -858,28 +858,28 @@ export default function AdminDashboard() {
             </div>
 
             {/* Events List */}
-            <div className="space-y-2.5 max-h-56 overflow-y-auto divide-y divide-gray-50">
+            <div className="space-y-2.5 max-h-56 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800">
               {upcomingEvents.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">
+                <div className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
                   No upcoming community events or festivals scheduled.
                 </div>
               ) : (
                 upcomingEvents.slice(0, 4).map((evt) => (
                   <div key={evt.id} className="pt-2 first:pt-0 flex items-start justify-between gap-3">
                     <div className="space-y-0.5">
-                      <span className="text-[11px] font-bold text-primary-700 block">
+                      <span className="text-[11px] font-bold text-primary-700 dark:text-cyan-400 block">
                         {evt.event_date ? format(new Date(evt.event_date), 'dd MMM yyyy, hh:mm a') : 'TBD'}
                       </span>
-                      <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{evt.title}</h4>
-                      <p className="text-[11px] text-gray-500 flex items-center gap-1">
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">{evt.title}</h4>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
                         <HiMapPin className="w-3 h-3 text-red-500" />
-                        {evt.location || 'Community Grounds'}
+                        <span>{evt.location || 'Community Grounds'}</span>
                       </p>
                     </div>
 
                     <button
                       onClick={() => navigate('/admin/events')}
-                      className="text-[11px] text-primary-600 font-semibold hover:underline flex-shrink-0 pt-1"
+                      className="text-[11px] text-primary-600 dark:text-cyan-400 font-semibold hover:underline flex-shrink-0 pt-1 cursor-pointer"
                     >
                       Details &rarr;
                     </button>

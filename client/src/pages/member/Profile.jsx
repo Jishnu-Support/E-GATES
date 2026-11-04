@@ -935,7 +935,7 @@ export default function Profile() {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto pb-10">
       {/* Top Banner & Profile Avatar Card */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 relative overflow-hidden">
         {/* Background glow decoration */}
         <div
           className={`absolute top-0 right-0 w-64 h-64 rounded-full filter blur-3xl opacity-10 pointer-events-none ${
@@ -947,8 +947,8 @@ export default function Profile() {
           <div
             className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl text-white font-extrabold text-2xl sm:text-3xl flex items-center justify-center flex-shrink-0 shadow-lg ring-4 overflow-hidden relative ${
               isAdmin
-                ? 'bg-gradient-to-tr from-purple-600 to-indigo-700 ring-purple-100'
-                : 'bg-gradient-to-tr from-primary-600 to-teal-600 ring-primary-100'
+                ? 'bg-gradient-to-tr from-purple-600 to-indigo-700 ring-purple-100 dark:ring-purple-900/60'
+                : 'bg-gradient-to-tr from-primary-600 to-teal-600 ring-primary-100 dark:ring-teal-900/60'
             }`}
           >
             {profileData.profile_photo ? (
@@ -978,7 +978,7 @@ export default function Profile() {
             onClick={() => photoInputRef.current?.click()}
             disabled={uploadingPhoto}
             title="Change Profile Photo"
-            className="absolute -bottom-1 -right-1 p-2 bg-white text-gray-700 hover:text-primary-600 dark:bg-slate-800 dark:text-gray-200 rounded-full shadow-md border border-gray-200 dark:border-slate-700 transition transform hover:scale-110 active:scale-95 focus:outline-none"
+            className="absolute -bottom-1 -right-1 p-2 bg-white text-gray-700 hover:text-primary-600 dark:bg-slate-800 dark:text-gray-200 rounded-full shadow-md border border-gray-200 dark:border-slate-700 transition transform hover:scale-110 active:scale-95 focus:outline-none cursor-pointer"
           >
             <HiCamera className="w-4 h-4" />
           </button>
@@ -993,7 +993,7 @@ export default function Profile() {
 
         <div className="flex-1 text-center sm:text-left space-y-2 w-full">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               {profileData.name}
             </h1>
 
@@ -1001,10 +1001,10 @@ export default function Profile() {
             <span
               className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-wider ${
                 profileData.is_main_admin
-                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                   : (isAdmin
-                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                    : 'bg-blue-100 text-blue-800 border border-blue-200')
+                    ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
+                    : 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-cyan-300 border border-blue-200 dark:border-blue-800')
               }`}
             >
               <HiShieldCheck className="w-3.5 h-3.5" />
@@ -1012,7 +1012,7 @@ export default function Profile() {
             </span>
 
             {/* Code Badge */}
-            <span className="font-mono text-[11px] sm:text-xs font-bold text-gray-700 bg-gray-100 border border-gray-200 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full">
+            <span className="font-mono text-[11px] sm:text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full">
               {isSuperAdmin ? 'PLATFORM LEVEL' : `Code: ${profileData.member_code || 'PENDING'}`}
             </span>
 
@@ -1020,24 +1020,24 @@ export default function Profile() {
             <span
               className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full ${
                 profileData.status === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                   : profileData.status === 'pending'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                  : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
               }`}
             >
               {profileData.status === 'approved' ? (
-                <HiCheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <HiCheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               ) : profileData.status === 'pending' ? (
-                <HiClock className="w-3.5 h-3.5 text-amber-600" />
+                <HiClock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               ) : (
-                <HiXCircle className="w-3.5 h-3.5 text-rose-600" />
+                <HiXCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
               )}
               <span className="capitalize">{profileData.status || 'Active'}</span>
             </span>
           </div>
 
-          <div className="flex items-center justify-center sm:justify-start text-xs sm:text-sm text-gray-600 font-medium pt-0.5">
+          <div className="flex items-center justify-center sm:justify-start text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium pt-0.5">
             <span className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
               <HiBuildingOffice2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="break-words">
@@ -1046,7 +1046,7 @@ export default function Profile() {
             </span>
           </div>
 
-          <p className="text-[11px] sm:text-xs text-gray-400">
+          <p className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500">
             Registered on:{' '}
             {profileData.created_at
               ? new Date(profileData.created_at).toLocaleDateString('en-IN', {
