@@ -14,7 +14,7 @@ const { validate } = require('../middleware/validate');
 router.post(
   '/',
   authenticate,
-  authorize('super_admin', 'admin'),
+  authorize('super_admin', 'admin', 'member'),
   [
     body('title').trim().notEmpty().withMessage('Event title is required'),
     body('event_date').notEmpty().withMessage('Event date is required'),
