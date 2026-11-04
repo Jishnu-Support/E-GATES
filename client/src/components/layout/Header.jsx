@@ -130,7 +130,7 @@ export default function Header({ onMenuToggle, associationName }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-sm min-h-[3.75rem] sm:min-h-[5rem] py-1.5 sm:py-2 flex items-center justify-between px-2.5 sm:px-6 transition-colors duration-200">
+    <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-sm min-h-[3.75rem] sm:min-h-[5rem] py-1.5 sm:py-2 flex items-center justify-between px-2.5 sm:px-6 transition-colors duration-200">
       {/* Left: Mobile Hamburger & Logo Branding */}
       <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
         <button
@@ -280,75 +280,82 @@ export default function Header({ onMenuToggle, associationName }) {
 
           {/* User Dropdown */}
           {userMenuOpen && (
-            <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-800 py-1.5 z-50">
-              <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center font-bold text-xs ring-2 ring-primary-500/20 flex-shrink-0">
-                    {user?.profile_photo ? (
-                      <img
-                        src={resolveFileUrl(user.profile_photo)}
-                        alt={user?.name || 'User'}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    ) : (
-                      user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'
+            <>
+              {/* Mobile backdrop overlay to prevent background overlap/clutter */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] md:hidden"
+                onClick={() => setUserMenuOpen(false)}
+              />
+              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center font-bold text-xs ring-2 ring-primary-500/20 flex-shrink-0">
+                      {user?.profile_photo ? (
+                        <img
+                          src={resolveFileUrl(user.profile_photo)}
+                          alt={user?.name || 'User'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      ) : (
+                        user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{user?.name}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email || user?.phone}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <HiCheckBadge className="w-3.5 h-3.5" />
+                    <span className="capitalize">
+                      {user?.is_main_admin
+                        ? 'Main Association Admin'
+                        : (user?.role === 'admin'
+                          ? 'Layout Admin'
+                          : (user?.role?.replace('_', ' ')))}
+                    </span>
+                    {user?.member_code && (
+                      <span className="text-gray-400 font-mono">#{user.member_code}</span>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{user?.name}</p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email || user?.phone}</p>
-                  </div>
                 </div>
-                <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                  <HiCheckBadge className="w-3.5 h-3.5" />
-                  <span className="capitalize">
-                    {user?.is_main_admin
-                      ? 'Main Association Admin'
-                      : (user?.role === 'admin'
-                        ? 'Layout Admin'
-                        : (user?.role?.replace('_', ' ')))}
-                  </span>
-                  {user?.member_code && (
-                    <span className="text-gray-400 font-mono">#{user.member_code}</span>
-                  )}
+
+                <div className="py-1">
+                  <Link
+                    to={getProfilePath()}
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                  >
+                    <HiUser className="w-4 h-4 text-gray-400" />
+                    <span>{t('nav_profile')}</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setShowIdCard(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition text-left cursor-pointer"
+                  >
+                    <HiIdentification className="w-4 h-4 text-primary-500" />
+                    <span>Digital ID Card</span>
+                  </button>
+                </div>
+
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition text-left cursor-pointer"
+                  >
+                    <HiArrowRightOnRectangle className="w-4 h-4 text-red-500" />
+                    <span>{t('auth_logout')}</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="py-1">
-                <Link
-                  to={getProfilePath()}
-                  onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
-                >
-                  <HiUser className="w-4 h-4 text-gray-400" />
-                  <span>{t('nav_profile')}</span>
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    setShowIdCard(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition text-left"
-                >
-                  <HiIdentification className="w-4 h-4 text-primary-500" />
-                  <span>Digital ID Card</span>
-                </button>
-              </div>
-
-              <div className="border-t border-gray-100 dark:border-slate-800 pt-1">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition text-left"
-                >
-                  <HiArrowRightOnRectangle className="w-4 h-4 text-red-500" />
-                  <span>{t('auth_logout')}</span>
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>

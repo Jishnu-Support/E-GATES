@@ -316,28 +316,27 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
       </aside>
 
       {/* ══════════════════════════════════════════════════════════
-          2. MOBILE FLOATING TAB — vertically centred on right edge
-          Positioned at 42% from top (clear of header + SOS button)
+          2. MOBILE FLOATING TAB — safely positioned at lower right
+          Positioned at bottom-28 sm:bottom-32 so it NEVER overlaps
+          with the top-right profile dropdown or bottom SOS button
           ══════════════════════════════════════════════════════════ */}
-      <div
-        className="block xl:hidden fixed right-0 z-30"
-        style={{ top: '42%', transform: 'translateY(-50%)' }}
-      >
+      <div className="block xl:hidden fixed right-0 bottom-28 sm:bottom-32 z-30 select-none">
         <button
           type="button"
           onClick={() => {
             if (navigator.vibrate) navigator.vibrate(60);
             setMobileDrawerOpen(true);
           }}
-          className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-3 px-2.5 rounded-l-2xl shadow-xl border-y border-l border-amber-400 flex flex-col items-center gap-1.5 cursor-pointer touch-manipulation transition focus:outline-none"
-          aria-label="Open sponsored deals and ads"
+          className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black py-2.5 px-2 rounded-l-2xl shadow-xl border-y border-l border-amber-400 flex flex-col items-center gap-1 cursor-pointer touch-manipulation transition focus:outline-none"
+          aria-label="Open community ads and offers"
+          title="Community Ads & Offers"
         >
           <span className="text-base leading-none">📢</span>
           <span
-            className="text-[9px] font-black uppercase"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.12em' }}
+            className="text-[9px] font-black uppercase tracking-widest"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
           >
-            Deals
+            Ads
           </span>
           <span className="w-4 h-4 rounded-full bg-slate-950 text-amber-300 text-[9px] flex items-center justify-center font-bold leading-none">
             {activeAds.length}
@@ -369,10 +368,10 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                 <span className="text-xl">📢</span>
                 <div>
                   <h3 className="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wide">
-                    Local Deals & Ads
+                    Local Ads & Offers
                   </h3>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    {activeAds.length} Community Sponsored Offers
+                    {activeAds.length} Community Sponsored Ads
                   </p>
                 </div>
               </div>
@@ -380,7 +379,7 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                 type="button"
                 onClick={() => setMobileDrawerOpen(false)}
                 className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer flex-shrink-0"
-                aria-label="Close deals drawer"
+                aria-label="Close ads drawer"
               >
                 <HiXMark className="w-5 h-5" />
               </button>
@@ -392,19 +391,35 @@ export default function AdSideView({ panel = 'member', associationId = null, cla
                 <MobileAdCard key={ad.id || idx} ad={ad} idx={idx} />
               ))}
 
-              {/* Promote footer */}
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-1.5">
+              {/* Promote / Change Ad footer */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-2">
                 <p className="text-xs font-black text-amber-800 dark:text-amber-300 flex items-center justify-center gap-1">
                   <HiMegaphone className="w-4 h-4 text-amber-600" />
-                  Promote Your Shop Here
+                  Post or Change Your Community Ad
                 </p>
-                {user?.role === 'vendor' && (
+                {user?.role === 'vendor' ? (
                   <button
                     type="button"
                     onClick={() => { navigate('/vendor/ads'); setMobileDrawerOpen(false); }}
                     className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition cursor-pointer"
                   >
-                    + Post Your Ad Now
+                    Manage & Change Ads
+                  </button>
+                ) : user?.role === 'super_admin' ? (
+                  <button
+                    type="button"
+                    onClick={() => { navigate('/super-admin/ads'); setMobileDrawerOpen(false); }}
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition cursor-pointer"
+                  >
+                    Manage All Layout Ads
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { navigate('/vendor/register'); setMobileDrawerOpen(false); }}
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition cursor-pointer"
+                  >
+                    + Register Shop to Post Ads
                   </button>
                 )}
               </div>

@@ -43,6 +43,8 @@ export default function Marketplace() {
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [orderPlacedInfo, setOrderPlacedInfo] = useState(null);
+  const [showOrderSuccessModal, setShowOrderSuccessModal] = useState(false);
 
   // Persist cart to localStorage
   useEffect(() => {
@@ -227,7 +229,37 @@ ${itemsFormatted}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 Please confirm availability and approximate delivery time. Thank you!`;
 
-    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    // 1. Construct WhatsApp URL and launch
+    const waUrl = `https://wa.me/${intlPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+    // 2. Save snapshot of placed order for success modal display
+    setOrderPlacedInfo({
+      shop_name: group.shop_name,
+      shop_phone: group.shop_phone,
+      intlPhone,
+      items: [...group.items],
+      total: groupTotal,
+      waUrl,
+    });
+
+    // 3. Clear ordered items from the cart and localStorage so next time is completely fresh!
+    setCart((prev) => {
+      const copy = { ...prev };
+      group.items.forEach((it) => {
+        delete copy[it.product.id];
+      });
+      try {
+        localStorage.setItem('egates_marketplace_cart', JSON.stringify(copy));
+      } catch (e) {
+        console.warn('Could not update cart in storage:', e);
+      }
+      return copy;
+    });
+
+    // 4. Close cart drawer and open celebratory Order Placed Successfully popup!
+    setIsCartOpen(false);
+    setShowOrderSuccessModal(true);
   };
 
   // Single product WhatsApp enquiry
@@ -860,6 +892,110 @@ Please confirm availability and approximate delivery time. Thank you!`;
           )}
         </div>
       </Modal>
+
+      {/* ══════════════════════════════════════════════════════════
+          ORDER PLACED SUCCESSFULLY CONFIRMATION MODAL
+          ══════════════════════════════════════════════════════════ */}
+      {showOrderSuccessModal && orderPlacedInfo && (
+        <Modal
+          isOpen={showOrderSuccessModal}
+          onClose={() => {
+            setShowOrderSuccessModal(false);
+            setOrderPlacedInfo(null);
+          }}
+          title="🎉 Order Placed Successfully"
+          size="md"
+        >
+          <div className="text-center py-4 px-2 space-y-4">
+            {/* Animated Celebration Icon */}
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
+              <div className="relative w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-3xl font-black shadow-lg">
+                ✓
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">
+                Your Order Has Been Placed!
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">
+                Your order details have been forwarded to{' '}
+                <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                  {orderPlacedInfo.shop_name}
+                </span>{' '}
+                via WhatsApp.
+              </p>
+            </div>
+
+            {/* Order Summary Box */}
+            <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 text-left space-y-2 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-slate-700">
+                <span className="text-[11px] font-bold text-gray-500 uppercase">
+                  Shop / Merchant
+                </span>
+                <span className="font-extrabold text-gray-900 dark:text-white">
+                  🏪 {orderPlacedInfo.shop_name}
+                </span>
+              </div>
+
+              {/* Items Summary */}
+              <div className="space-y-1 py-1 max-h-36 overflow-y-auto no-scrollbar">
+                {orderPlacedInfo.items.map((it, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[200px]">
+                      {it.product.name} × {it.quantity} {it.product.unit || 'pcs'}
+                    </span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      ₹{((parseFloat(it.product.discount_price || it.product.price) || 0) * it.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between text-sm">
+                <span className="font-extrabold text-gray-800 dark:text-gray-200">
+                  Total Order Amount:
+                </span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400 text-base">
+                  ₹{orderPlacedInfo.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300">
+              ✨ Cart is now clear! You can freely add fresh items for your next order.
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (orderPlacedInfo.waUrl) {
+                    window.open(orderPlacedInfo.waUrl, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+                className="flex-1 py-2.5 px-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                <span>💬</span>
+                <span>Re-open WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOrderSuccessModal(false);
+                  setOrderPlacedInfo(null);
+                }}
+                className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                <span>Done / Order Fresh Items</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
