@@ -338,6 +338,7 @@ exports.create = async (req, res, next) => {
     }
 
     const parsedAmount = parseFloat(payment_amount) || 999;
+    const initialPaymentDate = (initialPaymentStatus === 'paid') ? new Date().toISOString() : null;
 
     const insertQuery = `
       INSERT INTO advertisements (
@@ -376,9 +377,7 @@ exports.create = async (req, res, next) => {
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
         $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-        $21, $22, $23, $24, $25, $26,
-        CASE WHEN $24 = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END,
-        $27,
+        $21, $22, $23, $24, $25, $26, $27, $28,
         0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       RETURNING *
@@ -411,10 +410,39 @@ exports.create = async (req, res, next) => {
       initialPaymentStatus,
       payment_reference ? payment_reference.trim() : null,
       parsedAmount,
+      initialPaymentDate,
       agent_id ? parseInt(agent_id, 10) : (req.user.agent_id || null),
     ];
 
-    const result = await pool.query(insertQuery, values);
+    let result;
+    try {
+      result = await pool.query(insertQuery, values);
+    } catch (dbErr) {
+      if (dbErr.message && (dbErr.message.includes('does not exist') || dbErr.message.includes('column') || dbErr.message.includes('inconsistent types'))) {
+        console.warn('[Auto-Migration]: Ensuring advertisements columns exist in database...');
+        await pool.query(`
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_city VARCHAR(100);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_district VARCHAR(100);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_state VARCHAR(100) DEFAULT 'Tamil Nadu';
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS pricing_plan VARCHAR(50) DEFAULT 'single_ad';
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'unpaid';
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_amount NUMERIC(10,2) DEFAULT 0;
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_date TIMESTAMPTZ;
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_proof VARCHAR(500);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS agent_id INTEGER;
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT 'image';
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS video_url VARCHAR(500);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS distance VARCHAR(50);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS location_name VARCHAR(255);
+          ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS store_url VARCHAR(500);
+        `).catch((migErr) => console.warn('[Auto-Migration Warn]:', migErr.message));
+
+        result = await pool.query(insertQuery, values);
+      } else {
+        throw dbErr;
+      }
+    }
     const newAd = result.rows[0];
 
     // If submitted by Advertiser or Vendor, notify Super Admin
@@ -430,7 +458,7 @@ exports.create = async (req, res, next) => {
             [
               sa.id,
               `New ${roleLabel} Ad Posted`,
-              `${roleLabel} "${senderName}" submitted ad "${title.trim()}" (Target: ${targetDistrict || 'All'}/${targetCity || 'All'}).`,
+              `${roleLabel} "${senderName}" submitted ad "${title.trim()}" (Target: ${target_district || 'All'}/${target_city || 'All'}).`,
               'info',
               '/super-admin/approvals'
             ]
