@@ -60,12 +60,16 @@ const formatViews = (count) => {
 const resolveImageUrl = (img) => {
   if (!img) return '';
   if (img.startsWith('http://') || img.startsWith('https://')) return img;
+  if (img.startsWith('/uploads/')) return img;
+  if (img.startsWith('uploads/')) return '/' + img;
   return getFileUrl(img);
 };
 
 const resolveVideoUrl = (video) => {
   if (!video) return '/ads/sample-ad-video.mp4';
   if (video.startsWith('http://') || video.startsWith('https://') || video.startsWith('/ads/')) return video;
+  if (video.startsWith('/uploads/')) return video;
+  if (video.startsWith('uploads/')) return '/' + video;
   return getFileUrl(video);
 };
 
@@ -98,12 +102,14 @@ export function useActiveAds(panel = 'member', associationId = null) {
     return () => { isMounted = false; };
   }, [panel, associationId]);
 
-  const pictureAds = ads.filter(
-    (a) => a.media_type !== 'video' && !a.video_url
-  );
-  const videoAds = ads.filter(
-    (a) => a.media_type === 'video' || Boolean(a.video_url)
-  );
+  const isVideoAd = (a) =>
+    a.media_type === 'video' ||
+    Boolean(a.video_url) ||
+    a.ad_type === 'video' ||
+    (typeof a.pricing_plan === 'string' && a.pricing_plan.includes('video'));
+
+  const pictureAds = ads.filter((a) => !isVideoAd(a));
+  const videoAds = ads.filter((a) => isVideoAd(a));
 
   return {
     pictureAds: pictureAds.length > 0 ? pictureAds : DEFAULT_PICTURE_ADS,

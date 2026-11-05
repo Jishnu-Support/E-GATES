@@ -19,9 +19,18 @@ import {
   HiXMark,
   HiQrCode,
 } from 'react-icons/hi2';
-import api from '../../services/api';
+import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
+
+
+const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/ads/')) return url;
+  if (url.startsWith('/uploads/')) return url;
+  if (url.startsWith('uploads/')) return '/' + url;
+  return getFileUrl(url);
+};
 
 export default function AdvertiserDashboard() {
   const { user } = useAuth();
@@ -109,8 +118,19 @@ export default function AdvertiserDashboard() {
       setPosting(true);
       const formData = new FormData();
       Object.keys(adForm).forEach((k) => formData.append(k, adForm[k]));
+
+      // Standardize field names for server
+      formData.append('media_type', adForm.ad_type);
+      formData.append('target_panel', adForm.placement);
+      formData.append('action_type', adForm.cta_type);
+      formData.append('action_url', adForm.cta_type === 'link' ? (adForm.cta_link || '') : (adForm.cta_phone || ''));
+      formData.append('pricing_plan', `ad_${adForm.ad_type}_${adForm.duration_type}`);
+
       if (bannerFile) formData.append('banner_image', bannerFile);
       if (videoFile) formData.append('video_file', videoFile);
+      if (adForm.ad_type === 'video' && !videoFile) {
+        formData.append('video_url', adForm.video_url || '/ads/sample-ad-video.mp4');
+      }
 
       const res = await api.post('/ads', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -186,6 +206,20 @@ export default function AdvertiserDashboard() {
       toast.error(err.response?.data?.message || 'Failed to process ad payment');
     } finally {
       setSubmittingPayment(false);
+    }
+  };
+
+  // 1-Click Convert or Upgrade Ad to Video Ad
+  const handleQuickSetVideo = async (adId) => {
+    try {
+      await api.put(`/ads/${adId}`, {
+        media_type: 'video',
+        video_url: '/ads/sample-ad-video.mp4',
+      });
+      toast.success('Ad upgraded to Video Ad with live streaming playback!');
+      fetchAds();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update ad media');
     }
   };
 
@@ -311,10 +345,30 @@ export default function AdvertiserDashboard() {
                 <div>
                   {/* Media Banner or Video */}
                   <div className="relative bg-slate-950 h-44 flex items-center justify-center overflow-hidden">
-                    {ad.banner_image ? (
-                      <img src={ad.banner_image} alt={ad.title} className="w-full h-full object-cover" />
-                    ) : ad.video_url ? (
-                      <video src={ad.video_url} className="w-full h-full object-cover" controls />
+                    {(ad.media_type === 'video' || ad.video_url || ad.ad_type === 'video' || (ad.pricing_plan && ad.pricing_plan.includes('video'))) ? (
+                      <div className="relative w-full h-full flex items-center justify-center bg-black">
+                        <video
+                          src={resolveMediaUrl(ad.video_url || '/ads/sample-ad-video.mp4')}
+                          poster={resolveMediaUrl(ad.banner_image)}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-rose-600 to-orange-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md pointer-events-none z-10 shadow">
+                          🎬 Video Ad
+                        </div>
+                      </div>
+                    ) : ad.banner_image ? (
+                      <img
+                        src={resolveMediaUrl(ad.banner_image)}
+                        alt={ad.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
                     ) : (
                       <span className="text-xs text-slate-500 font-bold">No Media Preview</span>
                     )}
@@ -349,7 +403,14 @@ export default function AdvertiserDashboard() {
                       {ad.title}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      Placement: <strong className="capitalize">{ad.placement}</strong> • Type: {ad.ad_type || 'image'}
+                      Placement: <strong className="capitalize">{ad.target_panel || ad.placement || 'all'}</strong> • Type:{' '}
+                      <span className={`font-black uppercase px-1.5 py-0.5 rounded text-[10px] ${
+                        (ad.media_type === 'video' || ad.video_url || (ad.pricing_plan && ad.pricing_plan.includes('video')))
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                      }`}>
+                        {(ad.media_type === 'video' || ad.video_url || (ad.pricing_plan && ad.pricing_plan.includes('video'))) ? 'video' : 'image'}
+                      </span>
                     </p>
 
                     {/* Stats */}
@@ -378,17 +439,30 @@ export default function AdvertiserDashboard() {
                       <span>Pay ₹999 for Slot</span>
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(ad.id)}
-                      className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer ${
-                        ad.status === 'active'
-                          ? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-                          : 'bg-emerald-600 text-white hover:bg-emerald-500'
-                      }`}
-                    >
-                      {ad.status === 'active' ? 'Pause Ad' : 'Resume Ad'}
-                    </button>
+                    <div className="flex items-center gap-2 w-full">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(ad.id)}
+                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer ${
+                          ad.status === 'active'
+                            ? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-500'
+                        }`}
+                      >
+                        {ad.status === 'active' ? 'Pause Ad' : 'Resume Ad'}
+                      </button>
+
+                      {ad.media_type !== 'video' && !ad.video_url && (
+                        <button
+                          type="button"
+                          onClick={() => handleQuickSetVideo(ad.id)}
+                          className="py-2 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20 transition cursor-pointer whitespace-nowrap"
+                          title="Convert this ad to Video Ad playback"
+                        >
+                          🎬 Make Video
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -642,18 +716,40 @@ export default function AdvertiserDashboard() {
                   )}
                 </div>
               ) : (
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Video File * (MP4 / WebM, max 100MB)
-                  </label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Video Media * (MP4 / WebM, max 100MB)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdForm({ ...adForm, video_url: '/ads/sample-ad-video.mp4' });
+                        setVideoPreview('/ads/sample-ad-video.mp4');
+                      }}
+                      className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                    >
+                      + Use Demo Video
+                    </button>
+                  </div>
                   <input
                     type="file"
                     accept="video/*"
                     onChange={handleVideoChange}
-                    className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 dark:file:bg-slate-800 file:text-rose-700 dark:file:text-rose-300 cursor-pointer"
+                    className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 dark:file:bg-slate-800 file:text-rose-700 dark:file:text-rose-300 cursor-pointer w-full"
                   />
-                  {videoPreview && (
-                    <video src={videoPreview} className="w-full h-24 object-cover rounded-xl mt-2 border" controls />
+                  {(videoPreview || adForm.video_url) && (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-black">
+                      <video
+                        src={videoPreview || resolveMediaUrl(adForm.video_url)}
+                        className="w-full h-32 object-cover"
+                        controls
+                        playsInline
+                      />
+                      <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                        ✓ Video Preview Ready
+                      </span>
+                    </div>
                   )}
                 </div>
               )}

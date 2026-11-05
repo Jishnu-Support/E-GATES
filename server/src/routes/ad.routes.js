@@ -69,6 +69,14 @@ router.get('/', authenticate, authorize('super_admin'), adController.getAll);
  * @desc    Create advertisement or submit vendor/advertiser campaign request
  * @access  Private (Super Admin / Vendor / Advertiser / Agent)
  */
+router.put(
+  '/:id',
+  authenticate,
+  authorize('super_admin', 'vendor', 'advertiser', 'agent'),
+  adMediaUpload,
+  adController.update
+);
+
 router.post(
   '/',
   authenticate,

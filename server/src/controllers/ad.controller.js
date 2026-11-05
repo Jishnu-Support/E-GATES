@@ -255,15 +255,10 @@ exports.create = async (req, res, next) => {
       title,
       tagline,
       description,
-      target_panel = 'both',
-      action_type = 'link',
-      action_url,
-      action_text = 'Learn More',
       association_id,
       start_date,
       end_date,
       priority = 0,
-      media_type = 'image',
       video_url,
       distance,
       location_name,
@@ -277,6 +272,12 @@ exports.create = async (req, res, next) => {
       agent_id,
     } = req.body;
 
+    const media_type = req.body.media_type || req.body.ad_type || (req.body.pricing_plan?.includes('video') ? 'video' : 'image');
+    const target_panel = req.body.target_panel || req.body.placement || 'both';
+    const action_type = req.body.action_type || req.body.cta_type || 'link';
+    const action_url = req.body.action_url || req.body.cta_phone || req.body.cta_link || req.body.store_url || '';
+    const action_text = req.body.action_text || (action_type === 'whatsapp' ? 'Order on WhatsApp' : action_type === 'call' ? 'Call Specialist' : 'Learn More');
+
     if (!title || !title.trim()) {
       return res.status(400).json({
         success: false,
@@ -289,30 +290,31 @@ exports.create = async (req, res, next) => {
     const videoFile = req.files?.video_file?.[0];
 
     let bannerPath = bannerFile
-      ? (bannerFile.path ? bannerFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `uploads/ads/${bannerFile.filename}`)
+      ? (bannerFile.path ? '/' + bannerFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `/uploads/ads/${bannerFile.filename}`)
       : (req.body.banner_image || null);
 
     let finalVideoUrl = videoFile
-      ? (videoFile.path ? videoFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `uploads/ads/${videoFile.filename}`)
+      ? (videoFile.path ? '/' + videoFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `/uploads/ads/${videoFile.filename}`)
       : (video_url ? video_url.trim() : null);
 
-    const isVideo = media_type === 'video' || Boolean(finalVideoUrl);
+    const isVideo = media_type === 'video' || Boolean(finalVideoUrl) || req.body.ad_type === 'video';
     const finalMediaType = isVideo ? 'video' : 'image';
-
-    if (!bannerPath && !isVideo) {
-      return res.status(400).json({
-        success: false,
-        message: 'Ad banner creative image is required for picture ads',
-      });
-    }
-
-    // Default fallback banner if video ad has no separate poster
-    if (!bannerPath && isVideo) {
-      bannerPath = 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80';
-    }
 
     if (isVideo && !finalVideoUrl) {
       finalVideoUrl = '/ads/sample-ad-video.mp4';
+    }
+
+    if (!bannerPath) {
+      bannerPath = isVideo
+        ? 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80'
+        : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    if (bannerPath && !bannerPath.startsWith('http://') && !bannerPath.startsWith('https://') && !bannerPath.startsWith('/')) {
+      bannerPath = '/' + bannerPath;
+    }
+    if (finalVideoUrl && !finalVideoUrl.startsWith('http://') && !finalVideoUrl.startsWith('https://') && !finalVideoUrl.startsWith('/')) {
+      finalVideoUrl = '/' + finalVideoUrl;
     }
 
     const isSuperAdmin = req.user.role === 'super_admin';
@@ -765,6 +767,112 @@ exports.submitPayment = async (req, res, next) => {
         ? 'Ad payment completed! Your advertisement is now active on the portal.'
         : 'Ad payment submitted for verification! It will go live once verified.',
       data: updatedAd,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @desc Update advertisement details or replace media
+ * @route PUT /api/v1/ads/:id
+ * @access Private (Owner or Super Admin)
+ */
+exports.update = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existingRes = await pool.query('SELECT * FROM advertisements WHERE id = $1', [id]);
+    if (existingRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Advertisement not found' });
+    }
+    const ad = existingRes.rows[0];
+
+    // Ownership check
+    if (req.user.role !== 'super_admin' && ad.created_by !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to edit this ad' });
+    }
+
+    const {
+      title,
+      tagline,
+      description,
+      target_panel,
+      placement,
+      action_type,
+      cta_type,
+      action_url,
+      cta_phone,
+      cta_link,
+      action_text,
+      media_type,
+      ad_type,
+      video_url,
+      target_city,
+      target_district,
+      target_state,
+    } = req.body;
+
+    const bannerFile = req.files?.banner_image?.[0] || req.file;
+    const videoFile = req.files?.video_file?.[0];
+
+    let newBanner = bannerFile
+      ? '/' + bannerFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/')
+      : (req.body.banner_image || ad.banner_image);
+
+    let newVideo = videoFile
+      ? '/' + videoFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/')
+      : (video_url !== undefined ? video_url : ad.video_url);
+
+    const resolvedMediaType = media_type || ad_type || (videoFile || newVideo ? 'video' : ad.media_type);
+    if (resolvedMediaType === 'video' && !newVideo) {
+      newVideo = '/ads/sample-ad-video.mp4';
+    }
+
+    const resolvedPanel = target_panel || placement || ad.target_panel;
+    const resolvedActionType = action_type || cta_type || ad.action_type;
+    const resolvedActionUrl = action_url || cta_phone || cta_link || ad.action_url;
+
+    const updateQuery = `
+      UPDATE advertisements
+      SET title = COALESCE($1, title),
+          tagline = COALESCE($2, tagline),
+          description = COALESCE($3, description),
+          target_panel = COALESCE($4, target_panel),
+          action_type = COALESCE($5, action_type),
+          action_url = COALESCE($6, action_url),
+          action_text = COALESCE($7, action_text),
+          media_type = COALESCE($8, media_type),
+          video_url = $9,
+          banner_image = COALESCE($10, banner_image),
+          target_city = COALESCE($11, target_city),
+          target_district = COALESCE($12, target_district),
+          target_state = COALESCE($13, target_state),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $14
+      RETURNING *
+    `;
+
+    const updatedRes = await pool.query(updateQuery, [
+      title ? title.trim() : null,
+      tagline ? tagline.trim() : null,
+      description ? description.trim() : null,
+      resolvedPanel,
+      resolvedActionType,
+      resolvedActionUrl ? resolvedActionUrl.trim() : null,
+      action_text ? action_text.trim() : null,
+      resolvedMediaType,
+      newVideo,
+      newBanner,
+      target_city ? target_city.trim() : null,
+      target_district ? target_district.trim() : null,
+      target_state ? target_state.trim() : null,
+      id
+    ]);
+
+    return res.json({
+      success: true,
+      message: 'Advertisement updated successfully',
+      data: updatedRes.rows[0]
     });
   } catch (err) {
     next(err);
