@@ -1,7 +1,17 @@
 const pool = require('../config/db');
-const bcrypt = require('bcryptjs');
-const { generateAssociationCode } = require('../utils/codeGenerator');
-const { logAudit } = require('../utils/auditLogger');
+const bcrypt = require('bcrypt');
+const { generateAssociationCode } = require('../utils/generateAssociationCode');
+const logAudit = async (userId, action, entityType, entityId, details, ipAddress) => {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log (user_id, action, entity_type, entity_id, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId || null, action, entityType, entityId || null, JSON.stringify(details || {}), ipAddress || null]
+    );
+  } catch (err) {
+    console.error('Audit log error in agent controller:', err.message);
+  }
+};
 
 const agentController = {
   /**
