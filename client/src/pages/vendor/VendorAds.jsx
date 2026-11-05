@@ -35,6 +35,11 @@ export default function VendorAds() {
     title: '',
     tagline: '',
     description: '',
+    media_type: 'image',
+    video_url: '',
+    distance: '',
+    location_name: '',
+    store_url: '',
     target_panel: 'both',
     action_type: 'whatsapp',
     action_url: user?.shop_phone || user?.phone || '',
@@ -91,8 +96,8 @@ export default function VendorAds() {
       return;
     }
 
-    if (!bannerFile) {
-      toast.error('Please upload your banner creative image');
+    if (!bannerFile && form.media_type === 'image') {
+      toast.error('Please upload your banner creative image for picture ads');
       return;
     }
 
@@ -102,11 +107,16 @@ export default function VendorAds() {
       fd.append('title', form.title.trim());
       if (form.tagline) fd.append('tagline', form.tagline.trim());
       if (form.description) fd.append('description', form.description.trim());
+      fd.append('media_type', form.media_type);
+      if (form.video_url) fd.append('video_url', form.video_url.trim());
+      if (form.distance) fd.append('distance', form.distance.trim());
+      if (form.location_name) fd.append('location_name', form.location_name.trim());
+      if (form.store_url) fd.append('store_url', form.store_url.trim());
       fd.append('target_panel', form.target_panel);
       fd.append('action_type', form.action_type);
       if (form.action_url) fd.append('action_url', form.action_url.trim());
       if (form.action_text) fd.append('action_text', form.action_text.trim());
-      fd.append('banner_image', bannerFile);
+      if (bannerFile) fd.append('banner_image', bannerFile);
 
       const res = await api.post('/ads', fd);
       toast.success(res.data?.message || 'Ad request submitted for Super Admin review!');
@@ -126,6 +136,11 @@ export default function VendorAds() {
       title: '',
       tagline: '',
       description: '',
+      media_type: 'image',
+      video_url: '',
+      distance: '',
+      location_name: '',
+      store_url: '',
       target_panel: 'both',
       action_type: 'whatsapp',
       action_url: user?.shop_phone || user?.phone || '',
@@ -367,8 +382,38 @@ export default function VendorAds() {
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-200">
-            💡 <strong>How it works:</strong> Fill in your offer details and upload a banner image. Your campaign request will be reviewed by the Super Admin before being published live to layout residents and admins.
+          {/* Media Format Selector: Picture Ad vs Video Ad */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              Advertisement Format *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, media_type: 'image' })}
+                className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                  form.media_type === 'image'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200'
+                }`}
+              >
+                <span>🖼️ Picture Ad</span>
+                <span className="text-[10px] opacity-80">(Banner Image)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, media_type: 'video' })}
+                className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                  form.media_type === 'video'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200'
+                }`}
+              >
+                <span>🎥 Video Ad</span>
+                <span className="text-[10px] opacity-80">(Video Player)</span>
+              </button>
+            </div>
           </div>
 
           <div>
@@ -380,9 +425,37 @@ export default function VendorAds() {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Fresh Farm Milk & Paneer - 10% OFF this month"
+              placeholder={form.media_type === 'video' ? 'e.g. Organic Home Garden Plants & Landscaping' : 'e.g. Fresh Farm Milk & Paneer - 10% OFF this month'}
               className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Store Location / Area
+              </label>
+              <input
+                type="text"
+                value={form.location_name}
+                onChange={(e) => setForm({ ...form, location_name: e.target.value })}
+                placeholder="e.g. Perandapalli, Hosur"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Distance Badge (Optional)
+              </label>
+              <input
+                type="text"
+                value={form.distance}
+                onChange={(e) => setForm({ ...form, distance: e.target.value })}
+                placeholder="e.g. 3.4 km"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -398,10 +471,35 @@ export default function VendorAds() {
             />
           </div>
 
+          {/* Video URL (if Video Ad) */}
+          {form.media_type === 'video' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                  Video URL / Stream Link (MP4, WebM) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, video_url: '/ads/sample-ad-video.mp4' })}
+                  className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                >
+                  Use Sample Nature Video
+                </button>
+              </div>
+              <input
+                type="text"
+                value={form.video_url}
+                onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                placeholder="e.g. /ads/sample-ad-video.mp4 or https://domain.com/video.mp4"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
+              />
+            </div>
+          )}
+
           {/* Banner Creative Upload */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              Banner Creative Photo * (Landscape 1200x500 recommended, max 15MB)
+              {form.media_type === 'video' ? 'Video Poster / Cover Photo (Optional)' : 'Banner Creative Photo * (Landscape 1200x500 recommended, max 15MB)'}
             </label>
             <div className="mt-1 flex items-center gap-4">
               <input
@@ -417,7 +515,7 @@ export default function VendorAds() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs cursor-pointer hover:bg-emerald-100/50 transition"
               >
                 <HiPhoto className="w-5 h-5" />
-                <span>{bannerFile ? 'Change Banner' : 'Upload Banner Creative'}</span>
+                <span>{bannerFile ? 'Change Banner' : form.media_type === 'video' ? 'Upload Poster Photo' : 'Upload Banner Creative'}</span>
               </label>
 
               {bannerFile && (
@@ -539,13 +637,23 @@ export default function VendorAds() {
         title={previewAd?.title || 'Advertisement Banner Preview'}
       >
         <div className="space-y-3">
-          <div className="rounded-xl overflow-hidden bg-slate-950">
-            {previewAd?.banner_image && (
+          <div className="rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+            {previewAd?.media_type === 'video' || previewAd?.video_url ? (
+              <video
+                controls
+                playsInline
+                className="w-full max-h-[380px] object-contain bg-black"
+                src={previewAd.video_url?.startsWith('http') || previewAd.video_url?.startsWith('/ads/') ? previewAd.video_url : getFileUrl(previewAd.video_url)}
+                poster={previewAd.banner_image ? getFileUrl(previewAd.banner_image) : undefined}
+              />
+            ) : previewAd?.banner_image ? (
               <img
                 src={getFileUrl(previewAd.banner_image)}
                 alt={previewAd.title}
                 className="w-full h-auto object-contain max-h-[380px]"
               />
+            ) : (
+              <div className="p-8 text-gray-500 font-bold">No creative media uploaded</div>
             )}
           </div>
           <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl space-y-1">

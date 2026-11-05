@@ -7,7 +7,7 @@ import FloatingSOS from './FloatingSOS';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ScrollingAnnouncement from '../common/ScrollingAnnouncement';
-import AdSideView from '../common/AdSideView';
+import AdSideView, { MobileTopPictureAd, MobileBottomVideoAd } from '../common/AdSideView';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardLayout({ children }) {
@@ -37,21 +37,40 @@ export default function DashboardLayout({ children }) {
           <div className="flex flex-col xl:flex-row gap-5 xl:gap-6 items-start w-full">
 
             {/* Primary Page Content */}
-            <div className="flex-1 min-w-0 w-full">
-              <ErrorBoundary>
-                <Suspense
-                  fallback={
-                    <div className="min-h-[40vh] flex items-center justify-center">
-                      <LoadingSpinner message="Loading page..." />
-                    </div>
-                  }
-                >
-                  {children || <Outlet />}
-                </Suspense>
-              </ErrorBoundary>
+            <div className="flex-1 min-w-0 w-full flex flex-col">
+              {/* MOBILE TOP PICTURE AD: Displayed first at the top on phones (xl:hidden) */}
+              {showAds && (
+                <MobileTopPictureAd
+                  panel={user?.role === 'admin' ? 'admin' : 'member'}
+                  associationId={user?.association_id}
+                />
+              )}
+
+              {/* Core Page Content */}
+              <div className="flex-1 min-w-0 w-full">
+                <ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div className="min-h-[40vh] flex items-center justify-center">
+                        <LoadingSpinner message="Loading page..." />
+                      </div>
+                    }
+                  >
+                    {children || <Outlet />}
+                  </Suspense>
+                </ErrorBoundary>
+              </div>
+
+              {/* MOBILE BOTTOM VIDEO AD: Displayed last at the end of the page on phones (xl:hidden) */}
+              {showAds && (
+                <MobileBottomVideoAd
+                  panel={user?.role === 'admin' ? 'admin' : 'member'}
+                  associationId={user?.association_id}
+                />
+              )}
             </div>
 
-            {/* Global Right-Side Sponsored Ads Rail — desktop only (mobile uses floating tab in AdSideView) */}
+            {/* Global Right-Side Sponsored Ads Rail — Desktop only (Top Picture Ad + Bottom Video Ad) */}
             {showAds && (
               <AdSideView
                 panel={user?.role === 'admin' ? 'admin' : 'member'}

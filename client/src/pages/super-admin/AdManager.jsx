@@ -39,6 +39,11 @@ export default function AdManager() {
     title: '',
     tagline: '',
     description: '',
+    media_type: 'image',
+    video_url: '',
+    distance: '',
+    location_name: '',
+    store_url: '',
     target_panel: 'both',
     action_type: 'link',
     action_url: '',
@@ -115,8 +120,8 @@ export default function AdManager() {
       return;
     }
 
-    if (!bannerFile) {
-      toast.error('Please upload a banner creative image');
+    if (!bannerFile && form.media_type === 'image') {
+      toast.error('Please upload a banner creative image for picture ads');
       return;
     }
 
@@ -126,6 +131,11 @@ export default function AdManager() {
       fd.append('title', form.title.trim());
       if (form.tagline) fd.append('tagline', form.tagline.trim());
       if (form.description) fd.append('description', form.description.trim());
+      fd.append('media_type', form.media_type);
+      if (form.video_url) fd.append('video_url', form.video_url.trim());
+      if (form.distance) fd.append('distance', form.distance.trim());
+      if (form.location_name) fd.append('location_name', form.location_name.trim());
+      if (form.store_url) fd.append('store_url', form.store_url.trim());
       fd.append('target_panel', form.target_panel);
       fd.append('action_type', form.action_type);
       if (form.action_url) fd.append('action_url', form.action_url.trim());
@@ -134,7 +144,7 @@ export default function AdManager() {
       if (form.start_date) fd.append('start_date', form.start_date);
       if (form.end_date) fd.append('end_date', form.end_date);
       fd.append('priority', form.priority || '0');
-      fd.append('banner_image', bannerFile);
+      if (bannerFile) fd.append('banner_image', bannerFile);
 
       const res = await api.post('/ads', fd);
       toast.success(res.data?.message || 'Advertisement posted live!');
@@ -154,6 +164,11 @@ export default function AdManager() {
       title: '',
       tagline: '',
       description: '',
+      media_type: 'image',
+      video_url: '',
+      distance: '',
+      location_name: '',
+      store_url: '',
       target_panel: 'both',
       action_type: 'link',
       action_url: '',
@@ -550,6 +565,40 @@ export default function AdManager() {
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs sm:text-sm">
+          {/* Media Format Selector: Picture Ad vs Video Ad */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              Advertisement Format *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, media_type: 'image' })}
+                className={`py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 border transition cursor-pointer ${
+                  form.media_type === 'image'
+                    ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200'
+                }`}
+              >
+                <span>🖼️ Picture Ad</span>
+                <span className="text-[10px] font-semibold opacity-75">(Creative Image)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, media_type: 'video' })}
+                className={`py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 border transition cursor-pointer ${
+                  form.media_type === 'video'
+                    ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200'
+                }`}
+              >
+                <span>🎥 Video Ad</span>
+                <span className="text-[10px] font-semibold opacity-75">(Video Player)</span>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               Campaign Title *
@@ -559,9 +608,37 @@ export default function AdManager() {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Special Weekend Discount on Groceries & Dairy"
+              placeholder={form.media_type === 'video' ? 'e.g. Organic Home Garden Plants & Exotic Flora' : 'e.g. Express 30-Min Two Wheeler & Car Service'}
               className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Store Location / Area
+              </label>
+              <input
+                type="text"
+                value={form.location_name}
+                onChange={(e) => setForm({ ...form, location_name: e.target.value })}
+                placeholder="e.g. Perandapalli, Hosur"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Distance Badge (Optional)
+              </label>
+              <input
+                type="text"
+                value={form.distance}
+                onChange={(e) => setForm({ ...form, distance: e.target.value })}
+                placeholder="e.g. 3.4 km"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -572,15 +649,42 @@ export default function AdManager() {
               type="text"
               value={form.tagline}
               onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-              placeholder="e.g. Flat 20% OFF on all fresh fruits with free doorstep delivery!"
+              placeholder="e.g. Authorized multi-brand service, computerized diagnostics & free delivery!"
               className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
             />
           </div>
 
-          {/* Banner Creative Uploader */}
+          {/* Video URL (if Video Ad) */}
+          {form.media_type === 'video' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                  Video URL / Stream Path (MP4, WebM) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, video_url: '/ads/sample-ad-video.mp4' })}
+                  className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                >
+                  Use Sample Nature Video
+                </button>
+              </div>
+              <input
+                type="text"
+                value={form.video_url}
+                onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                placeholder="e.g. /ads/sample-ad-video.mp4 or https://domain.com/video.mp4"
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-amber-500 font-mono text-xs"
+              />
+            </div>
+          )}
+
+          {/* Banner Creative / Video Poster Uploader */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              Creative Banner Image * (1200x500 recommended, max 15MB)
+              {form.media_type === 'video'
+                ? 'Video Poster / Thumbnail Image (Optional)'
+                : 'Creative Banner Image * (1200x500 recommended, max 15MB)'}
             </label>
             <div className="mt-1 flex items-center gap-4">
               <input
@@ -596,7 +700,7 @@ export default function AdManager() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 font-bold text-xs cursor-pointer hover:bg-amber-100/50 transition"
               >
                 <HiPhoto className="w-5 h-5" />
-                <span>{bannerFile ? 'Change Banner' : 'Upload Banner Creative'}</span>
+                <span>{bannerFile ? 'Change Banner' : form.media_type === 'video' ? 'Upload Poster Image' : 'Upload Banner Creative'}</span>
               </label>
 
               {bannerFile && (
@@ -765,12 +869,22 @@ export default function AdManager() {
       >
         <div className="space-y-4">
           <div className="relative rounded-2xl overflow-hidden bg-slate-950 max-h-[420px] flex items-center justify-center">
-            {previewAd?.banner_image && (
+            {previewAd?.media_type === 'video' || previewAd?.video_url ? (
+              <video
+                controls
+                playsInline
+                className="w-full max-h-[420px] object-contain bg-black"
+                src={previewAd.video_url?.startsWith('http') || previewAd.video_url?.startsWith('/ads/') ? previewAd.video_url : getFileUrl(previewAd.video_url)}
+                poster={previewAd.banner_image ? getFileUrl(previewAd.banner_image) : undefined}
+              />
+            ) : previewAd?.banner_image ? (
               <img
                 src={getFileUrl(previewAd.banner_image)}
                 alt={previewAd.title}
                 className="w-full h-auto object-contain max-h-[420px]"
               />
+            ) : (
+              <div className="p-8 text-gray-500 font-bold">No creative media uploaded</div>
             )}
           </div>
 

@@ -174,6 +174,12 @@ async function initPostgresSchemaAndSeed() {
       CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
       CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
 
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT 'image';
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS video_url VARCHAR(500);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS distance VARCHAR(50);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS location_name VARCHAR(255);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS store_url VARCHAR(500);
+
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM advertisements LIMIT 1) THEN

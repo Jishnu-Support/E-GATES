@@ -249,6 +249,11 @@ exports.create = async (req, res, next) => {
       start_date,
       end_date,
       priority = 0,
+      media_type = 'image',
+      video_url,
+      distance,
+      location_name,
+      store_url,
     } = req.body;
 
     if (!title || !title.trim()) {
@@ -258,17 +263,36 @@ exports.create = async (req, res, next) => {
       });
     }
 
-    if (!req.file) {
+    // Determine banner image and video file from req.files or req.file
+    const bannerFile = req.files?.banner_image?.[0] || req.file;
+    const videoFile = req.files?.video_file?.[0];
+
+    let bannerPath = bannerFile
+      ? (bannerFile.path ? bannerFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `uploads/ads/${bannerFile.filename}`)
+      : (req.body.banner_image || null);
+
+    let finalVideoUrl = videoFile
+      ? (videoFile.path ? videoFile.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/') : `uploads/ads/${videoFile.filename}`)
+      : (video_url ? video_url.trim() : null);
+
+    const isVideo = media_type === 'video' || Boolean(finalVideoUrl);
+    const finalMediaType = isVideo ? 'video' : 'image';
+
+    if (!bannerPath && !isVideo) {
       return res.status(400).json({
         success: false,
-        message: 'Ad banner creative image is required',
+        message: 'Ad banner creative image is required for picture ads',
       });
     }
 
-    // Determine banner image relative path
-    const bannerPath = req.file.path
-      ? req.file.path.replace(/\\/g, '/').replace(/^.*\/uploads\//, 'uploads/')
-      : `uploads/ads/${req.file.filename}`;
+    // Default fallback banner if video ad has no separate poster
+    if (!bannerPath && isVideo) {
+      bannerPath = 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    if (isVideo && !finalVideoUrl) {
+      finalVideoUrl = '/ads/sample-ad-video.mp4';
+    }
 
     const isSuperAdmin = req.user.role === 'super_admin';
     const initialStatus = isSuperAdmin ? 'active' : 'pending';
@@ -298,13 +322,19 @@ exports.create = async (req, res, next) => {
         start_date,
         end_date,
         priority,
+        media_type,
+        video_url,
+        distance,
+        location_name,
+        store_url,
         click_count,
         impression_count,
         created_at,
         updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       RETURNING *
     `;
@@ -325,6 +355,11 @@ exports.create = async (req, res, next) => {
       start_date || null,
       end_date || null,
       parseInt(priority, 10) || 0,
+      finalMediaType,
+      finalVideoUrl,
+      distance ? distance.trim() : null,
+      location_name ? location_name.trim() : null,
+      store_url ? store_url.trim() : null,
     ];
 
     const result = await pool.query(insertQuery, values);

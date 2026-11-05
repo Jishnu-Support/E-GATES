@@ -327,6 +327,12 @@ function ensureSchemaMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
       `);
 
+      try { db.run("ALTER TABLE advertisements ADD COLUMN media_type TEXT DEFAULT 'image';"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN video_url TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN distance TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN location_name TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN store_url TEXT;"); } catch (_) {}
+
       // Auto-seed initial showcase ads if table is empty
       const adCountRes = db.exec("SELECT COUNT(*) FROM advertisements;");
       const adCount = adCountRes[0]?.values?.[0]?.[0] || 0;

@@ -5,23 +5,21 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 const { authorize } = require('../middleware/roles');
 const upload = require('../config/multer');
 
-// Multer upload wrapper for ad banner image
-const adBannerUpload = (req, res, next) => {
-  const handler =
-    typeof upload?.adUpload === 'function'
-      ? upload.adUpload
-      : upload?.adUpload?.single
-      ? upload.adUpload.single('banner_image')
-      : upload?.uploadGeneric
-      ? upload.uploadGeneric('ads', 15 * 1024 * 1024).single('banner_image')
-      : null;
+// Multer upload wrapper for ad media (banner image and/or video file)
+const adMediaUpload = (req, res, next) => {
+  const handler = upload?.uploadGeneric
+    ? upload.uploadGeneric('ads', 100 * 1024 * 1024).fields([
+        { name: 'banner_image', maxCount: 1 },
+        { name: 'video_file', maxCount: 1 },
+      ])
+    : null;
 
   if (handler) {
     handler(req, res, (err) => {
       if (err) {
         return res.status(400).json({
           success: false,
-          message: err.message || 'Ad banner image upload failed',
+          message: err.message || 'Ad media upload failed',
         });
       }
       next();
@@ -75,7 +73,7 @@ router.post(
   '/',
   authenticate,
   authorize('super_admin', 'vendor'),
-  adBannerUpload,
+  adMediaUpload,
   adController.create
 );
 
