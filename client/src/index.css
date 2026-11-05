@@ -64,10 +64,45 @@
   }
 
   .dark button.bg-white,
-  .dark a.bg-white {
-    background-color: #1e293b !important;
+  .dark a.bg-white,
+  .dark button.bg-white\/95,
+  .dark button.bg-white\/90,
+  .dark button.bg-white\/80,
+  .dark a.bg-white\/95,
+  .dark a.bg-white\/90,
+  .dark a.bg-white\/80 {
+    background-color: #0f172a !important;
     border-color: #334155 !important;
-    color: #f1f5f9 !important;
+    color: #f8fafc !important;
+  }
+
+  .dark button.bg-white\/95 span,
+  .dark button.bg-white\/95 svg,
+  .dark button.bg-white span,
+  .dark button.bg-white svg {
+    color: #f8fafc !important;
+  }
+
+  /* Prevent text washout on bright amber/orange/yellow buttons in dark mode */
+  .dark button[class*="from-amber"],
+  .dark a[class*="from-amber"],
+  .dark button[class*="bg-amber-400"],
+  .dark button[class*="bg-amber-500"],
+  .dark button[class*="bg-amber-300"],
+  .dark button[class*="bg-yellow-400"],
+  .dark button[class*="bg-yellow-500"] {
+    color: #09090b !important;
+  }
+
+  .dark button[class*="from-amber"] span,
+  .dark button[class*="from-amber"] svg,
+  .dark button[class*="bg-amber-400"] span,
+  .dark button[class*="bg-amber-400"] svg,
+  .dark button[class*="bg-amber-500"] span,
+  .dark button[class*="bg-amber-500"] svg,
+  .dark button[class*="bg-amber-300"] span,
+  .dark button[class*="bg-amber-300"] svg {
+    color: #09090b !important;
   }
 
   .dark .bg-gray-50,

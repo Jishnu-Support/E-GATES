@@ -424,6 +424,25 @@ CREATE INDEX IF NOT EXISTS idx_ads_assoc ON advertisements(association_id);
 CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
 CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
 
+-- 22. Platform Subscription & Ad Pricing Plans (Managed by Super Admin)
+CREATE TABLE IF NOT EXISTS pricing_plans (
+  id SERIAL PRIMARY KEY,
+  plan_type VARCHAR(50) NOT NULL, -- 'vendor_subscription', 'association_subscription', 'ad_image', 'ad_video'
+  billing_cycle VARCHAR(50) NOT NULL, -- 'day', 'month', '3_months', '6_months', 'year'
+  duration_days INTEGER NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  original_price DECIMAL(10, 2),
+  features TEXT,
+  is_active BOOLEAN DEFAULT true,
+  is_popular BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pricing_plan_type ON pricing_plans(plan_type);
+CREATE INDEX IF NOT EXISTS idx_pricing_billing_cycle ON pricing_plans(billing_cycle);
+
 
 
 

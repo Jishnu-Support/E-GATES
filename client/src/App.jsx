@@ -24,6 +24,7 @@ const PollResults = lazy(() => import('./pages/super-admin/PollResults'));
 const SOSReports = lazy(() => import('./pages/super-admin/SOSReports'));
 const AuditLog = lazy(() => import('./pages/super-admin/AuditLog'));
 const AdManager = lazy(() => import('./pages/super-admin/AdManager'));
+const ManagePricing = lazy(() => import('./pages/super-admin/ManagePricing'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -155,6 +156,7 @@ export default function App() {
           <Route path="shops" element={<Marketplace />} />
           <Route path="properties" element={<Properties />} />
           <Route path="ads" element={<AdManager />} />
+          <Route path="pricing" element={<ManagePricing />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />

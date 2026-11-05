@@ -47,6 +47,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Local Market & Shops', path: '/super-admin/market', icon: HiBuildingStorefront },
     { name: 'Properties (Sale / Rent)', path: '/super-admin/properties', icon: HiHome },
     { name: 'Advertisements & Banners', path: '/super-admin/ads', icon: HiSparkles },
+    { name: 'Payment & Pricing Plans', path: '/super-admin/pricing', icon: HiCreditCard },
     { name: t('nav_audit_log'), path: '/super-admin/audit-log', icon: HiClipboardDocumentList },
     { name: t('nav_profile') || 'My Profile', path: '/super-admin/profile', icon: HiUserCircle },
   ];

@@ -95,4 +95,8 @@ router.use('/ads', adRoutes);
 const agentRoutes = safeLoadRoute(['agent.routes.js', 'agent.js'], 'Agent Operations');
 router.use('/agent', agentRoutes);
 
+// 18. Pricing & Subscription Plans (Super Admin manageable)
+const pricingRoutes = safeLoadRoute(['pricing.routes.js', 'pricing.js'], 'Pricing Plans');
+router.use('/pricing', pricingRoutes);
+
 module.exports = router;

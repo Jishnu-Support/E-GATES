@@ -192,7 +192,58 @@ async function initPostgresSchemaAndSeed() {
       CREATE INDEX IF NOT EXISTS idx_ads_created_by ON advertisements(created_by);
       CREATE INDEX IF NOT EXISTS idx_ads_assoc ON advertisements(association_id);
       CREATE INDEX IF NOT EXISTS idx_ads_status ON advertisements(status);
-      CREATE INDEX IF NOT EXISTS idx_ads_target_panel ON advertisements(target_panel);
+      CREATE TABLE IF NOT EXISTS pricing_plans (
+        id SERIAL PRIMARY KEY,
+        plan_type VARCHAR(50) NOT NULL,
+        billing_cycle VARCHAR(50) NOT NULL,
+        duration_days INTEGER NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        original_price DECIMAL(10, 2),
+        features TEXT,
+        is_active BOOLEAN DEFAULT true,
+        is_popular BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_pricing_plan_type ON pricing_plans(plan_type);
+      CREATE INDEX IF NOT EXISTS idx_pricing_billing_cycle ON pricing_plans(billing_cycle);
+
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pricing_plans LIMIT 1) THEN
+          INSERT INTO pricing_plans (plan_type, billing_cycle, duration_days, name, price, original_price, features, is_popular) VALUES
+          -- Vendor Shop Subscription Plans
+          ('vendor_subscription', 'month', 30, '1 Month Plan', 199.00, 299.00, '["Full Catalog Access", "Direct WhatsApp Orders", "Community Visibility"]', false),
+          ('vendor_subscription', '3_months', 90, '3 Months Plan', 499.00, 899.00, '["Full Catalog Access", "Direct WhatsApp Orders", "Priority Search Ranking", "Save 45%"]', true),
+          ('vendor_subscription', '6_months', 180, '6 Months Plan', 899.00, 1799.00, '["Full Catalog Access", "Direct WhatsApp Orders", "Priority Listing", "Save 50%"]', false),
+          ('vendor_subscription', 'year', 365, '1 Year Plan', 1499.00, 3588.00, '["Full Catalog Access", "Featured Merchant Badge", "Max Savings (60%)", "24/7 Support"]', false),
+
+          -- Association Subscription Plans
+          ('association_subscription', 'month', 30, '1 Month License', 499.00, 699.00, '["Resident Directory", "Emergency SOS", "Polls & Complaints"]', false),
+          ('association_subscription', '3_months', 90, '3 Months License', 1299.00, 1999.00, '["Resident Directory", "Emergency SOS", "Financials & Accounting", "Save 35%"]', true),
+          ('association_subscription', '6_months', 180, '6 Months License', 2499.00, 3999.00, '["All Platform Features", "Dedicated Manager", "Save 40%"]', false),
+          ('association_subscription', 'year', 365, '1 Year License', 4499.00, 7999.00, '["All Features", "Annual AGM Tools", "Free Domain Mapping", "Max Value"]', false),
+
+          -- Ad Banner Image Plans (Day basis & Monthly basis)
+          ('ad_image', 'day', 1, '1 Day Display', 49.00, 99.00, '["Single Day Blast", "Target City Residents"]', false),
+          ('ad_image', 'day', 7, '7 Days (1 Week)', 299.00, 499.00, '["7 Days Continuous", "City & District Targeting", "Click Tracking"]', true),
+          ('ad_image', 'day', 15, '15 Days (Half Month)', 549.00, 899.00, '["15 Days Banner", "All Layout Dashboards", "Performance Analytics"]', false),
+          ('ad_image', 'month', 30, '1 Month Banner', 899.00, 1499.00, '["30 Days High Visibility", "Multi-Layout Rotation", "Max Exposure"]', false),
+          ('ad_image', '3_months', 90, '3 Months Banner', 2399.00, 4499.00, '["Quarterly Promotion", "Seasonal Festival Priority", "Save 45%"]', false),
+          ('ad_image', '6_months', 180, '6 Months Banner', 4499.00, 8999.00, '["Half Year Branding", "Top Carousel Slot", "Save 50%"]', false),
+          ('ad_image', 'year', 365, '1 Year Banner', 7999.00, 17999.00, '["Annual Fixed Presence", "Exclusive Banner Slot", "Massive Savings"]', false),
+
+          -- Ad Video Plans (Day basis & Monthly basis)
+          ('ad_video', 'day', 1, '1 Day Video Blast', 99.00, 199.00, '["Video Autoplay Display", "Target District Reach"]', false),
+          ('ad_video', 'day', 7, '7 Days Video', 499.00, 899.00, '["7 Days Video Stream", "Direct CTA Button", "High Engagement"]', true),
+          ('ad_video', 'day', 15, '15 Days Video', 899.00, 1599.00, '["15 Days Video Feed", "Featured Placement", "Audience Insights"]', false),
+          ('ad_video', 'month', 30, '1 Month Video', 1499.00, 2499.00, '["30 Days Full Video Ad", "Dedicated Watch Count", "Save 40%"]', false),
+          ('ad_video', '3_months', 90, '3 Months Video', 3999.00, 7499.00, '["Quarterly Video Campaign", "Lead Generation Focus", "Save 45%"]', false),
+          ('ad_video', '6_months', 180, '6 Months Video', 7499.00, 14999.00, '["Half Year Video Sponsorship", "Prime Spot", "Save 50%"]', false),
+          ('ad_video', 'year', 365, '1 Year Video', 12999.00, 29999.00, '["Annual Video Partnership", "Complete Layout Monopoly", "Best ROI"]', false);
+        END IF;
+      END $$;
 
       ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS media_type VARCHAR(20) DEFAULT 'image';
       ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS video_url VARCHAR(500);

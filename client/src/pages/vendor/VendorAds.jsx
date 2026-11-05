@@ -12,6 +12,10 @@ import {
   HiPhoto,
   HiPause,
   HiPlay,
+  HiCreditCard,
+  HiBolt,
+  HiFilm,
+  HiCalendarDays,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,6 +26,7 @@ import toast from 'react-hot-toast';
 export default function VendorAds() {
   const { user } = useAuth();
   const [ads, setAds] = useState([]);
+  const [pricingPlans, setPricingPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Request Ad Modal
@@ -30,6 +35,11 @@ export default function VendorAds() {
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Pay Modal
+  const [payModalAd, setPayModalAd] = useState(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentRef, setPaymentRef] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -44,17 +54,24 @@ export default function VendorAds() {
     action_type: 'whatsapp',
     action_url: user?.shop_phone || user?.phone || '',
     action_text: 'Order on WhatsApp',
+    duration_type: 'day', // 'day' | 'month'
+    duration_days: 7,
+    payment_amount: 299,
   });
 
   const [previewAd, setPreviewAd] = useState(null);
   const [deleteAd, setDeleteAd] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchMyAds = async () => {
+  const fetchAdsAndPricing = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/ads/my-ads');
-      setAds(res.data?.data || []);
+      const [adsRes, pricingRes] = await Promise.all([
+        api.get('/ads/my-ads'),
+        api.get('/pricing').catch(() => ({ data: { data: [] } })),
+      ]);
+      setAds(adsRes.data?.data || []);
+      setPricingPlans(pricingRes.data?.data || []);
     } catch (err) {
       console.warn('Failed to load my ads:', err);
       toast.error('Failed to load your ad campaigns');
@@ -64,7 +81,7 @@ export default function VendorAds() {
   };
 
   useEffect(() => {
-    fetchMyAds();
+    fetchAdsAndPricing();
   }, []);
 
   const handleBannerChange = (e) => {
@@ -116,18 +133,53 @@ export default function VendorAds() {
       fd.append('action_type', form.action_type);
       if (form.action_url) fd.append('action_url', form.action_url.trim());
       if (form.action_text) fd.append('action_text', form.action_text.trim());
+      fd.append('duration_days', String(form.duration_days));
+      fd.append('payment_amount', String(form.payment_amount));
       if (bannerFile) fd.append('banner_image', bannerFile);
 
       const res = await api.post('/ads', fd);
-      toast.success(res.data?.message || 'Ad request submitted for Super Admin review!');
+      const createdAd = res.data?.data;
+      toast.success(res.data?.message || 'Ad request submitted successfully!');
       setIsModalOpen(false);
       resetForm();
-      fetchMyAds();
+      fetchAdsAndPricing();
+
+      if (createdAd) {
+        setPayModalAd(createdAd);
+      }
     } catch (err) {
       console.error('Submit ad error:', err);
       toast.error(err.response?.data?.message || 'Failed to submit ad campaign request');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePaySubmit = async (isDemo = true) => {
+    if (!payModalAd) return;
+    try {
+      setSubmittingPayment(true);
+      const formData = new FormData();
+      const ref = isDemo || !paymentRef.trim()
+        ? `DEMO-VENDOR-${Date.now().toString().slice(-6)}`
+        : paymentRef.trim();
+
+      formData.append('payment_reference', ref);
+      formData.append('payment_amount', String(payModalAd.payment_amount || form.payment_amount || 299));
+      formData.append('auto_activate', 'true'); // Immediate dummy payment activation
+
+      await api.post(`/ads/${payModalAd.id}/pay`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      toast.success('🎉 Dummy payment processed successfully! Your advertisement is now active and live.');
+      setPayModalAd(null);
+      setPaymentRef('');
+      fetchAdsAndPricing();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to process ad payment');
+    } finally {
+      setSubmittingPayment(false);
     }
   };
 
@@ -145,6 +197,9 @@ export default function VendorAds() {
       action_type: 'whatsapp',
       action_url: user?.shop_phone || user?.phone || '',
       action_text: 'Order on WhatsApp',
+      duration_type: 'day',
+      duration_days: 7,
+      payment_amount: 299,
     });
     setBannerFile(null);
     setBannerPreview(null);
@@ -266,7 +321,7 @@ export default function VendorAds() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                     {/* Status Badge */}
-                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                           ad.status === 'active'
@@ -281,8 +336,18 @@ export default function VendorAds() {
                         {ad.status === 'pending' ? '⏳ Under Review' : `● ${ad.status}`}
                       </span>
 
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          ad.payment_status === 'paid'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-rose-600 text-white animate-pulse'
+                        }`}
+                      >
+                        {ad.payment_status === 'paid' ? '✓ Paid' : 'Payment Required'}
+                      </span>
+
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-black/60 text-white backdrop-blur-md">
-                        {ad.target_panel === 'both' ? 'Admin & Member' : `${ad.target_panel.toUpperCase()}`}
+                        {ad.target_panel === 'both' ? 'Admin & Member' : `${ad.target_panel?.toUpperCase()}`}
                       </span>
                     </div>
                   </div>
@@ -332,32 +397,45 @@ export default function VendorAds() {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-3 bg-gray-50 dark:bg-slate-850 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                  {ad.status === 'active' || ad.status === 'paused' ? (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(ad.id)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                        ad.status === 'active'
-                          ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                          : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      }`}
-                    >
-                      {ad.status === 'active' ? (
-                        <>
-                          <HiPause className="w-3.5 h-3.5" />
-                          <span>Pause Campaign</span>
-                        </>
-                      ) : (
-                        <>
-                          <HiPlay className="w-3.5 h-3.5" />
-                          <span>Resume Campaign</span>
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <span className="text-[11px] text-gray-400 italic">Awaiting Action</span>
-                  )}
+                <div className="p-3 bg-gray-50 dark:bg-slate-850 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {ad.status === 'active' || ad.status === 'paused' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(ad.id)}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          ad.status === 'active'
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        }`}
+                      >
+                        {ad.status === 'active' ? (
+                          <>
+                            <HiPause className="w-3.5 h-3.5" />
+                            <span>Pause</span>
+                          </>
+                        ) : (
+                          <>
+                            <HiPlay className="w-3.5 h-3.5" />
+                            <span>Resume</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 italic">Under Review</span>
+                    )}
+
+                    {ad.payment_status !== 'paid' && (
+                      <button
+                        type="button"
+                        onClick={() => setPayModalAd(ad)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 shadow-sm transition cursor-pointer"
+                      >
+                        <HiBolt className="w-3.5 h-3.5" />
+                        <span>Pay (Demo)</span>
+                      </button>
+                    )}
+                  </div>
 
                   <button
                     type="button"
@@ -390,7 +468,12 @@ export default function VendorAds() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setForm({ ...form, media_type: 'image' })}
+                onClick={() => {
+                  const newType = 'image';
+                  const relevantPlans = pricingPlans.filter((p) => p.plan_type === 'ad_image' && (form.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day'));
+                  const defaultP = relevantPlans[0] || (form.duration_type === 'day' ? { price: 299, duration_days: 7 } : { price: 899, duration_days: 30 });
+                  setForm({ ...form, media_type: newType, payment_amount: defaultP.price, duration_days: defaultP.duration_days });
+                }}
                 className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                   form.media_type === 'image'
                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
@@ -403,7 +486,12 @@ export default function VendorAds() {
 
               <button
                 type="button"
-                onClick={() => setForm({ ...form, media_type: 'video' })}
+                onClick={() => {
+                  const newType = 'video';
+                  const relevantPlans = pricingPlans.filter((p) => p.plan_type === 'ad_video' && (form.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day'));
+                  const defaultP = relevantPlans[0] || (form.duration_type === 'day' ? { price: 499, duration_days: 7 } : { price: 1499, duration_days: 30 });
+                  setForm({ ...form, media_type: newType, payment_amount: defaultP.price, duration_days: defaultP.duration_days });
+                }}
                 className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                   form.media_type === 'video'
                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
@@ -413,6 +501,116 @@ export default function VendorAds() {
                 <span>🎥 Video Ad</span>
                 <span className="text-[10px] opacity-80">(Video Player)</span>
               </button>
+            </div>
+          </div>
+
+          {/* Duration Basis: Day Basis vs Monthly Basis */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                Duration Basis & Pricing Plans *
+              </label>
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-0.5 rounded-xl border border-gray-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newBasis = 'day';
+                    const relevantPlans = pricingPlans.filter((p) => p.plan_type === `ad_${form.media_type}` && p.billing_cycle === 'day');
+                    const defaultP = relevantPlans[0] || (form.media_type === 'video' ? { price: 499, duration_days: 7 } : { price: 299, duration_days: 7 });
+                    setForm({ ...form, duration_type: newBasis, payment_amount: defaultP.price, duration_days: defaultP.duration_days });
+                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                    form.duration_type === 'day'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  }`}
+                >
+                  📅 Day Basis
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newBasis = 'month';
+                    const relevantPlans = pricingPlans.filter((p) => p.plan_type === `ad_${form.media_type}` && p.billing_cycle !== 'day');
+                    const defaultP = relevantPlans[0] || (form.media_type === 'video' ? { price: 1499, duration_days: 30 } : { price: 899, duration_days: 30 });
+                    setForm({ ...form, duration_type: newBasis, payment_amount: defaultP.price, duration_days: defaultP.duration_days });
+                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                    form.duration_type === 'month'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  }`}
+                >
+                  🗓️ Monthly Basis
+                </button>
+              </div>
+            </div>
+
+            {/* Plan selection buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(
+                pricingPlans.filter((p) => {
+                  const matchType = p.plan_type === `ad_${form.media_type}`;
+                  const matchCycle = form.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day';
+                  return matchType && matchCycle;
+                }).length > 0
+                  ? pricingPlans.filter((p) => {
+                      const matchType = p.plan_type === `ad_${form.media_type}`;
+                      const matchCycle = form.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day';
+                      return matchType && matchCycle;
+                    })
+                  : form.duration_type === 'day'
+                  ? form.media_type === 'video'
+                    ? [
+                        { id: 16, name: '1 Day', price: 99, duration_days: 1 },
+                        { id: 17, name: '7 Days', price: 499, duration_days: 7, is_popular: true },
+                        { id: 18, name: '15 Days', price: 899, duration_days: 15 },
+                      ]
+                    : [
+                        { id: 9, name: '1 Day', price: 49, duration_days: 1 },
+                        { id: 10, name: '7 Days', price: 299, duration_days: 7, is_popular: true },
+                        { id: 11, name: '15 Days', price: 549, duration_days: 15 },
+                      ]
+                  : form.media_type === 'video'
+                  ? [
+                      { id: 19, name: '1 Month', price: 1499, duration_days: 30 },
+                      { id: 20, name: '3 Months', price: 3999, duration_days: 90, is_popular: true },
+                      { id: 21, name: '6 Months', price: 7499, duration_days: 180 },
+                      { id: 22, name: '1 Year', price: 12999, duration_days: 365 },
+                    ]
+                  : [
+                      { id: 12, name: '1 Month', price: 899, duration_days: 30 },
+                      { id: 13, name: '3 Months', price: 2399, duration_days: 90, is_popular: true },
+                      { id: 14, name: '6 Months', price: 4499, duration_days: 180 },
+                      { id: 15, name: '1 Year', price: 7999, duration_days: 365 },
+                    ]
+              ).map((p) => {
+                const isSelected = form.duration_days === p.duration_days;
+                return (
+                  <button
+                    key={p.id || p.name}
+                    type="button"
+                    onClick={() => {
+                      setForm({ ...form, duration_days: p.duration_days, payment_amount: p.price });
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer relative ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/30'
+                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                    }`}
+                  >
+                    {p.is_popular && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase bg-emerald-600 text-white tracking-wider">
+                        POPULAR
+                      </span>
+                    )}
+                    <span className="block text-xs font-bold">{p.name}</span>
+                    <span className="block text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      ₹{p.price}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -675,6 +873,68 @@ export default function VendorAds() {
         confirmText={isDeleting ? 'Deleting...' : 'Delete'}
         isDestructive
       />
+
+      {/* DUMMY PAYMENT MODAL */}
+      <Modal
+        isOpen={Boolean(payModalAd)}
+        onClose={() => setPayModalAd(null)}
+        title="Complete Ad Campaign Payment"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-900 border border-emerald-500/30 text-white space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-emerald-400 font-bold">Campaign Fee</span>
+              <span className="text-2xl font-black text-amber-300">
+                ₹{payModalAd?.payment_amount || form.payment_amount || 299}
+              </span>
+            </div>
+            <p className="text-xs text-emerald-200/90 font-medium line-clamp-1">
+              Campaign: <strong>{payModalAd?.title}</strong>
+            </p>
+            <p className="text-[11px] text-gray-300">
+              Format: {payModalAd?.media_type === 'video' ? '🎬 Video Ad' : '🖼️ Picture Ad'} • Duration: {payModalAd?.duration_days || form.duration_days} Days
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-200">
+            ⚡ <strong>Instant Demo Payment Available:</strong> Click the button below to simulate an immediate successful payment and activate your ad banner across layout dashboards!
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Payment UTR / Transaction Ref (Optional for Demo)
+            </label>
+            <input
+              type="text"
+              value={paymentRef}
+              onChange={(e) => setPaymentRef(e.target.value)}
+              placeholder="e.g. UPI-DEMO-982312 or leave blank for auto-generate"
+              className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
+            />
+          </div>
+
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              disabled={submittingPayment}
+              onClick={() => handlePaySubmit(true)}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <HiBolt className="w-5 h-5 text-amber-300" />
+              <span>{submittingPayment ? 'Processing...' : '⚡ Instant Dummy Payment (Activate Now)'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPayModalAd(null)}
+              className="w-full py-2 text-xs font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer text-center"
+            >
+              Close / Pay Later
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

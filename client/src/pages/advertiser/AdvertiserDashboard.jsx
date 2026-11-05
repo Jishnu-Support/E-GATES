@@ -27,6 +27,7 @@ export default function AdvertiserDashboard() {
   const { user } = useAuth();
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pricingPlans, setPricingPlans] = useState([]);
 
   // Post Ad Modal
   const [showPostModal, setShowPostModal] = useState(false);
@@ -34,6 +35,10 @@ export default function AdvertiserDashboard() {
   const [adForm, setAdForm] = useState({
     title: '',
     placement: 'both',
+    ad_type: 'image', // 'image' | 'video'
+    duration_type: 'day', // 'day' | 'month'
+    duration_days: 7,
+    payment_amount: 299,
     target_city: user?.taluk || 'Hosur',
     target_district: user?.district || 'Krishnagiri',
     target_state: 'Tamil Nadu',
@@ -41,7 +46,7 @@ export default function AdvertiserDashboard() {
     cta_phone: user?.phone || '',
     cta_link: user?.company_website || '',
     start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   });
 
   const [bannerFile, setBannerFile] = useState(null);
@@ -55,21 +60,25 @@ export default function AdvertiserDashboard() {
   const [paymentProof, setPaymentProof] = useState(null);
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
-  const fetchAds = async () => {
+  const fetchAdsAndPricing = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/ads/my-ads');
-      setAds(res.data?.data || []);
+      const [adsRes, pricingRes] = await Promise.all([
+        api.get('/ads/my-ads'),
+        api.get('/pricing'),
+      ]);
+      setAds(adsRes.data?.data || []);
+      setPricingPlans(pricingRes.data?.data || []);
     } catch (err) {
-      console.warn('Error fetching advertiser ads:', err);
-      toast.error('Failed to load ad campaigns');
+      console.warn('Error fetching advertiser data:', err);
+      toast.error('Failed to load ad campaigns and pricing');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAds();
+    fetchAdsAndPricing();
   }, []);
 
   const handleBannerChange = (e) => {
@@ -128,6 +137,10 @@ export default function AdvertiserDashboard() {
     setAdForm({
       title: '',
       placement: 'both',
+      ad_type: 'image',
+      duration_type: 'day',
+      duration_days: 7,
+      payment_amount: 299,
       target_city: user?.taluk || 'Hosur',
       target_district: user?.district || 'Krishnagiri',
       target_state: 'Tamil Nadu',
@@ -135,7 +148,7 @@ export default function AdvertiserDashboard() {
       cta_phone: user?.phone || '',
       cta_link: user?.company_website || '',
       start_date: new Date().toISOString().split('T')[0],
-      end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     });
     setBannerFile(null);
     setBannerPreview(null);
@@ -143,27 +156,32 @@ export default function AdvertiserDashboard() {
     setVideoPreview(null);
   };
 
-  // Pay Submit
-  const handlePaySubmit = async (isDemo = false) => {
+  // Pay Submit (Dummy Payment Mode supported)
+  const handlePaySubmit = async (isDemo = true) => {
     if (!payModalAd) return;
     try {
       setSubmittingPayment(true);
       const formData = new FormData();
-      formData.append('payment_reference', isDemo ? `DEMO-PAY-${Date.now()}` : paymentRef);
-      formData.append('payment_amount', '999');
+      const ref = isDemo || !paymentRef.trim()
+        ? `DEMO-AD-${Date.now().toString().slice(-6)}`
+        : paymentRef.trim();
+
+      formData.append('payment_reference', ref);
+      formData.append('payment_amount', String(payModalAd.payment_amount || 299));
+      formData.append('auto_activate', 'true'); // Immediate dummy activation
       if (paymentProof && !isDemo) {
         formData.append('payment_proof', paymentProof);
       }
 
-      const res = await api.post(`/ads/${payModalAd.id}/pay`, formData, {
+      await api.post(`/ads/${payModalAd.id}/pay`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      toast.success(res.data?.message || 'Payment submitted successfully!');
+      toast.success('🎉 Dummy payment processed successfully! Your advertisement is now active and live.');
       setPayModalAd(null);
       setPaymentRef('');
       setPaymentProof(null);
-      fetchAds();
+      fetchAdsAndPricing();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to process ad payment');
     } finally {
@@ -412,6 +430,162 @@ export default function AdvertiserDashboard() {
                 />
               </div>
 
+              {/* 1. AD FORMAT: Picture Ad vs Video Ad */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Ad Format Type *
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newType = 'image';
+                      const relevantPlans = pricingPlans.filter((p) => p.plan_type === 'ad_image' && p.billing_cycle === adForm.duration_type);
+                      const defaultP = relevantPlans[0] || (adForm.duration_type === 'day' ? { price: 299, duration_days: 7 } : { price: 899, duration_days: 30 });
+                      const endD = new Date(Date.now() + defaultP.duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                      setAdForm({ ...adForm, ad_type: newType, payment_amount: defaultP.price, duration_days: defaultP.duration_days, end_date: endD });
+                    }}
+                    className={`py-2.5 px-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 border transition cursor-pointer ${
+                      adForm.ad_type === 'image'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-md'
+                        : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <HiPhoto className="w-4 h-4" />
+                    <span>🖼️ Picture / Banner Ad</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newType = 'video';
+                      const relevantPlans = pricingPlans.filter((p) => p.plan_type === 'ad_video' && p.billing_cycle === adForm.duration_type);
+                      const defaultP = relevantPlans[0] || (adForm.duration_type === 'day' ? { price: 499, duration_days: 7 } : { price: 1499, duration_days: 30 });
+                      const endD = new Date(Date.now() + defaultP.duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                      setAdForm({ ...adForm, ad_type: newType, payment_amount: defaultP.price, duration_days: defaultP.duration_days, end_date: endD });
+                    }}
+                    className={`py-2.5 px-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 border transition cursor-pointer ${
+                      adForm.ad_type === 'video'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-md'
+                        : 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <HiFilm className="w-4 h-4" />
+                    <span>🎬 Video Ad</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. DURATION BASIS: Day Basis vs Monthly Basis */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                    Duration Basis & Campaign Plans *
+                  </label>
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-0.5 rounded-xl border border-gray-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBasis = 'day';
+                        const relevantPlans = pricingPlans.filter((p) => p.plan_type === `ad_${adForm.ad_type}` && p.billing_cycle === 'day');
+                        const defaultP = relevantPlans[0] || (adForm.ad_type === 'video' ? { price: 499, duration_days: 7 } : { price: 299, duration_days: 7 });
+                        const endD = new Date(Date.now() + defaultP.duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                        setAdForm({ ...adForm, duration_type: newBasis, payment_amount: defaultP.price, duration_days: defaultP.duration_days, end_date: endD });
+                      }}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                        adForm.duration_type === 'day'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                      }`}
+                    >
+                      📅 Day Basis
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBasis = 'month';
+                        const relevantPlans = pricingPlans.filter((p) => p.plan_type === `ad_${adForm.ad_type}` && p.billing_cycle !== 'day');
+                        const defaultP = relevantPlans[0] || (adForm.ad_type === 'video' ? { price: 1499, duration_days: 30 } : { price: 899, duration_days: 30 });
+                        const endD = new Date(Date.now() + defaultP.duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                        setAdForm({ ...adForm, duration_type: newBasis, payment_amount: defaultP.price, duration_days: defaultP.duration_days, end_date: endD });
+                      }}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                        adForm.duration_type === 'month'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                      }`}
+                    >
+                      🗓️ Monthly Basis
+                    </button>
+                  </div>
+                </div>
+
+                {/* Duration options list */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(
+                    pricingPlans.filter((p) => {
+                      const matchType = p.plan_type === `ad_${adForm.ad_type}`;
+                      const matchCycle = adForm.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day';
+                      return matchType && matchCycle;
+                    }).length > 0
+                      ? pricingPlans.filter((p) => {
+                          const matchType = p.plan_type === `ad_${adForm.ad_type}`;
+                          const matchCycle = adForm.duration_type === 'day' ? p.billing_cycle === 'day' : p.billing_cycle !== 'day';
+                          return matchType && matchCycle;
+                        })
+                      : adForm.duration_type === 'day'
+                      ? adForm.ad_type === 'video'
+                        ? [
+                            { id: 16, name: '1 Day', price: 99, duration_days: 1 },
+                            { id: 17, name: '7 Days', price: 499, duration_days: 7, is_popular: true },
+                            { id: 18, name: '15 Days', price: 899, duration_days: 15 },
+                          ]
+                        : [
+                            { id: 9, name: '1 Day', price: 49, duration_days: 1 },
+                            { id: 10, name: '7 Days', price: 299, duration_days: 7, is_popular: true },
+                            { id: 11, name: '15 Days', price: 549, duration_days: 15 },
+                          ]
+                      : adForm.ad_type === 'video'
+                      ? [
+                          { id: 19, name: '1 Month', price: 1499, duration_days: 30 },
+                          { id: 20, name: '3 Months', price: 3999, duration_days: 90, is_popular: true },
+                          { id: 21, name: '6 Months', price: 7499, duration_days: 180 },
+                          { id: 22, name: '1 Year', price: 12999, duration_days: 365 },
+                        ]
+                      : [
+                          { id: 12, name: '1 Month', price: 899, duration_days: 30 },
+                          { id: 13, name: '3 Months', price: 2399, duration_days: 90, is_popular: true },
+                          { id: 14, name: '6 Months', price: 4499, duration_days: 180 },
+                          { id: 15, name: '1 Year', price: 7999, duration_days: 365 },
+                        ]
+                  ).map((plan) => {
+                    const isSelected = adForm.duration_days === plan.duration_days && adForm.payment_amount === plan.price;
+                    return (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => {
+                          const endD = new Date(Date.now() + plan.duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                          setAdForm({ ...adForm, duration_days: plan.duration_days, payment_amount: plan.price, end_date: endD });
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                          isSelected
+                            ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 ring-2 ring-rose-400'
+                            : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/60'
+                        }`}
+                      >
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 truncate">
+                          {plan.name}
+                        </span>
+                        <span className="text-sm font-black text-gray-900 dark:text-white mt-0.5">
+                          ₹{plan.price}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* City & District Targeting (Crucial requirement) */}
               <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-900/40">
                 <div>
@@ -452,10 +626,10 @@ export default function AdvertiserDashboard() {
               </div>
 
               {/* Media Uploads */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {adForm.ad_type === 'image' ? (
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Banner Image (JPG / PNG)
+                    Banner Creative Image * (JPG / PNG, max 15MB)
                   </label>
                   <input
                     type="file"
@@ -464,13 +638,13 @@ export default function AdvertiserDashboard() {
                     className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 dark:file:bg-slate-800 file:text-rose-700 dark:file:text-rose-300 cursor-pointer"
                   />
                   {bannerPreview && (
-                    <img src={bannerPreview} alt="Preview" className="w-full h-20 object-cover rounded-xl mt-2 border" />
+                    <img src={bannerPreview} alt="Preview" className="w-full h-24 object-cover rounded-xl mt-2 border" />
                   )}
                 </div>
-
+              ) : (
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Video Ad (MP4 / WebM)
+                    Video File * (MP4 / WebM, max 100MB)
                   </label>
                   <input
                     type="file"
@@ -479,10 +653,10 @@ export default function AdvertiserDashboard() {
                     className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 dark:file:bg-slate-800 file:text-rose-700 dark:file:text-rose-300 cursor-pointer"
                   />
                   {videoPreview && (
-                    <video src={videoPreview} className="w-full h-20 object-cover rounded-xl mt-2 border" controls />
+                    <video src={videoPreview} className="w-full h-24 object-cover rounded-xl mt-2 border" controls />
                   )}
                 </div>
-              </div>
+              )}
 
               {/* Call-to-action */}
               <div className="grid grid-cols-2 gap-3">
@@ -545,9 +719,14 @@ export default function AdvertiserDashboard() {
               </div>
 
               {/* Fee notice */}
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-800/80 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-                <span>Single Ad Slot Fee:</span>
-                <span className="text-base font-black text-rose-600">₹999</span>
+              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                <div>
+                  <span className="font-bold">Total Ad Slot Campaign Fee:</span>
+                  <p className="text-[10px] text-gray-400 capitalize">
+                    {adForm.duration_days} Days ({adForm.duration_type} basis) • {adForm.ad_type} ad
+                  </p>
+                </div>
+                <span className="text-xl font-black text-rose-600">₹{adForm.payment_amount || 299}</span>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
@@ -597,26 +776,43 @@ export default function AdvertiserDashboard() {
                 Targeting: {payModalAd.target_city || 'All Cities'}, {payModalAd.target_district || 'All Districts'}
               </p>
               <div className="mt-2 flex items-center justify-between pt-2 border-t border-rose-200/60 dark:border-rose-900/40">
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Single Ad Slot Fee:</span>
-                <span className="text-xl font-black text-rose-600">₹999</span>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Total Campaign Fee:</span>
+                <span className="text-xl font-black text-rose-600">₹{payModalAd.payment_amount || 299}</span>
               </div>
             </div>
 
+            {/* INSTANT DUMMY PAYMENT CALLOUT */}
+            <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-center mb-4">
+              <p className="text-xs font-black text-emerald-800 dark:text-emerald-300">
+                ⚡ Process Dummy Payment (Immediate Activation)
+              </p>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                Click below to process a dummy test payment successfully and immediately activate this advertisement!
+              </p>
+              <button
+                type="button"
+                disabled={submittingPayment}
+                onClick={() => handlePaySubmit(true)}
+                className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition cursor-pointer"
+              >
+                {submittingPayment ? 'Processing...' : 'Process Dummy Payment Successfully'}
+              </button>
+            </div>
+
             {/* UPI QR & ID */}
-            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-slate-700 text-center mb-4">
-              <div className="w-32 h-32 bg-white rounded-xl mx-auto flex items-center justify-center p-2 shadow-inner border">
+            <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded-2xl border border-gray-200 dark:border-slate-700 text-center mb-4">
+              <div className="w-28 h-28 bg-white rounded-xl mx-auto flex items-center justify-center p-2 shadow-inner border">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                    `upi://pay?pa=egates.ads@upi&pn=EGATES%20Platform&am=999&cu=INR`
+                    `upi://pay?pa=egates.ads@upi&pn=EGATES%20Platform&am=${payModalAd.payment_amount || 299}&cu=INR`
                   )}`}
                   alt="UPI QR Code"
                   className="w-full h-full object-contain"
                 />
               </div>
-              <p className="font-mono font-bold text-xs text-gray-800 dark:text-gray-200 mt-2">
+              <p className="font-mono font-bold text-[11px] text-gray-800 dark:text-gray-200 mt-1">
                 UPI ID: egates.ads@upi
               </p>
-              <p className="text-[10px] text-gray-500">Scan & pay ₹999 with GPay, PhonePe, Paytm</p>
             </div>
 
             {/* UTR Reference Input */}
@@ -633,38 +829,16 @@ export default function AdvertiserDashboard() {
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Payment Screenshot (Optional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setPaymentProof(e.target.files[0])}
-                  className="text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-gray-200 dark:file:bg-slate-700 cursor-pointer"
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
               <button
                 type="button"
-                disabled={submittingPayment || !paymentRef.trim()}
+                disabled={submittingPayment}
                 onClick={() => handlePaySubmit(false)}
                 className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
               >
-                {submittingPayment ? 'Submitting...' : 'Submit UTR for Verification'}
-              </button>
-
-              {/* Instant Demo Pay for testing */}
-              <button
-                type="button"
-                disabled={submittingPayment}
-                onClick={() => handlePaySubmit(true)}
-                className="w-full py-2 px-4 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold text-xs transition cursor-pointer"
-              >
-                ⚡ Instant Demo Pay (Activate Ad Immediately)
+                {submittingPayment ? 'Submitting...' : 'Submit & Activate Ad (Dummy Payment)'}
               </button>
             </div>
           </div>

@@ -42,6 +42,8 @@ export default function VendorDashboard() {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [paymentTab, setPaymentTab] = useState('upi'); // 'upi' | 'bank'
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [paymentForm, setPaymentForm] = useState({
     payment_reference: user?.payment_reference || '',
     payment_method: 'Google Pay / PhonePe UPI',
@@ -121,8 +123,24 @@ export default function VendorDashboard() {
     }
   };
 
+  const fetchSubscriptionPlans = async () => {
+    try {
+      const res = await api.get('/pricing?type=vendor_subscription');
+      const fetched = res.data?.data || [];
+      setSubscriptionPlans(fetched);
+      if (fetched.length > 0) {
+        const defaultPlan = fetched.find((p) => p.is_popular) || fetched[0];
+        setSelectedPlanId(defaultPlan.id);
+        setPaymentForm((prev) => ({ ...prev, payment_amount: defaultPlan.price }));
+      }
+    } catch (err) {
+      console.warn('Error fetching subscription plans:', err);
+    }
+  };
+
   useEffect(() => {
     fetchMyProducts();
+    fetchSubscriptionPlans();
   }, []);
 
   const handleCopyUpi = () => {
@@ -148,25 +166,19 @@ export default function VendorDashboard() {
 
   const handlePaymentSubmit = async (e, instantActivate = false) => {
     if (e) e.preventDefault();
-    if (!instantActivate && (!paymentForm.payment_reference || !paymentForm.payment_reference.trim())) {
-      toast.error('Please enter your 12-digit UPI / Bank Transaction ID (UTR)');
-      return;
-    }
 
     try {
       setSubmittingPayment(true);
       const formData = new FormData();
-      formData.append(
-        'payment_reference',
-        instantActivate
-          ? `DEMO-PAY-${Date.now().toString().slice(-6)}`
-          : paymentForm.payment_reference.trim()
-      );
-      formData.append('payment_amount', String(paymentForm.payment_amount));
-      formData.append('payment_method', paymentForm.payment_method);
-      if (instantActivate) {
-        formData.append('auto_activate', 'true');
-      }
+      const ref = instantActivate || !paymentForm.payment_reference?.trim()
+        ? `DEMO-PAY-${Date.now().toString().slice(-6)}`
+        : paymentForm.payment_reference.trim();
+
+      formData.append('payment_reference', ref);
+      formData.append('payment_amount', String(paymentForm.payment_amount || 499));
+      formData.append('payment_method', paymentForm.payment_method || 'Instant Dummy Pay');
+      formData.append('auto_activate', 'true'); // Instant dummy payment activation
+
       if (paymentProofFile) {
         formData.append('eb_bill_proof', paymentProofFile);
       }
@@ -175,7 +187,7 @@ export default function VendorDashboard() {
       const updatedUser = res.data?.data;
       if (updatedUser) {
         updateUser({
-          payment_status: updatedUser.payment_status,
+          payment_status: 'paid',
           payment_reference: updatedUser.payment_reference,
           payment_amount: updatedUser.payment_amount,
           payment_date: updatedUser.payment_date,
@@ -183,13 +195,9 @@ export default function VendorDashboard() {
         });
       }
 
-      if (instantActivate || updatedUser?.payment_status === 'paid') {
-        toast.success('🎉 Store onboarding payment completed! Product adding is now unlocked.');
-        setPaymentModalOpen(false);
-      } else {
-        toast.success('Payment submitted for Admin verification! Product creation will unlock upon approval.');
-        setPaymentModalOpen(false);
-      }
+      toast.success('🎉 Dummy payment processed successfully! Store product catalog is now unlocked.');
+      setPaymentModalOpen(false);
+      fetchMyProducts();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Payment submission failed');
     } finally {
@@ -407,21 +415,21 @@ export default function VendorDashboard() {
             <button
               type="button"
               onClick={openAddModal}
-              className={`px-5 py-3 rounded-2xl font-black text-sm shadow-lg hover:shadow-xl transition flex items-center gap-2 cursor-pointer ${
+              className={`px-5 py-3 rounded-2xl font-black text-sm shadow-xl transition flex items-center gap-2 cursor-pointer ${
                 isPaid
-                  ? 'bg-white text-amber-700 hover:bg-amber-50'
-                  : 'bg-white/95 text-slate-900 hover:bg-white ring-2 ring-amber-300'
+                  ? 'bg-slate-950 text-white hover:bg-slate-900 border border-amber-400/30'
+                  : 'bg-slate-950 text-amber-300 hover:bg-slate-900 border-2 border-amber-400 shadow-amber-500/20'
               }`}
             >
               {isPaid ? (
                 <>
-                  <HiPlus className="w-5 h-5 text-amber-600" />
-                  <span>Add New Product</span>
+                  <HiPlus className="w-5 h-5 text-amber-400" />
+                  <span className="text-white">Add New Product</span>
                 </>
               ) : (
                 <>
-                  <HiLockClosed className="w-5 h-5 text-amber-600" />
-                  <span>Add Product (Payment Required)</span>
+                  <HiLockClosed className="w-5 h-5 text-amber-400" />
+                  <span className="text-amber-300 font-black">Add Product (Payment Required)</span>
                 </>
               )}
             </button>
@@ -510,10 +518,13 @@ export default function VendorDashboard() {
               <button
                 type="button"
                 onClick={() => setPaymentModalOpen(true)}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs sm:text-sm shadow-xl transition flex items-center gap-2 cursor-pointer"
+                className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl transition flex items-center gap-2 cursor-pointer border border-amber-300"
+                style={{ color: '#09090b' }}
               >
-                <HiCreditCard className="w-5 h-5" />
-                <span>{isPendingVerification ? 'Update Payment Info' : 'Proceed with Your Payment'}</span>
+                <HiCreditCard className="w-5 h-5 text-slate-950" style={{ color: '#09090b' }} />
+                <span className="font-black text-slate-950" style={{ color: '#09090b' }}>
+                  {isPendingVerification ? 'Update Payment Info' : 'Proceed with Your Payment'}
+                </span>
               </button>
 
               <button
@@ -985,22 +996,91 @@ export default function VendorDashboard() {
         maxWidth="max-w-xl"
       >
         <div className="space-y-5">
+          {/* Plan Selector (Monthly, 3 Months, 6 Months, 1 Year) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">
+              Select Your Subscription Plan (Managed by Super Admin):
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {(subscriptionPlans.length > 0
+                ? subscriptionPlans
+                : [
+                    { id: 1, name: '1 Month', price: 199, duration_days: 30, billing_cycle: 'month' },
+                    { id: 2, name: '3 Months', price: 499, duration_days: 90, billing_cycle: '3_months', is_popular: true },
+                    { id: 3, name: '6 Months', price: 899, duration_days: 180, billing_cycle: '6_months' },
+                    { id: 4, name: '1 Year', price: 1499, duration_days: 365, billing_cycle: 'year' },
+                  ]
+              ).map((p) => {
+                const isSelected = selectedPlanId === p.id || paymentForm.payment_amount === p.price;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlanId(p.id);
+                      setPaymentForm({ ...paymentForm, payment_amount: p.price });
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between relative cursor-pointer ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 ring-2 ring-amber-400'
+                        : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-amber-300'
+                    }`}
+                  >
+                    {p.is_popular && (
+                      <span className="absolute -top-2 right-2 text-[9px] font-black uppercase tracking-wider bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded shadow-xs">
+                        Popular
+                      </span>
+                    )}
+                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                      {p.name}
+                    </span>
+                    <span className="text-base font-black text-gray-900 dark:text-white mt-1">
+                      ₹{p.price}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Fee Header Card */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-500/30 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                Vendor Onboarding Fee
+                Vendor Activation & Subscription Fee
               </p>
               <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-0.5">
-                ₹499 <span className="text-xs font-semibold text-gray-500">/ one-time activation</span>
+                ₹{paymentForm.payment_amount || 499}{' '}
+                <span className="text-xs font-semibold text-gray-500">/ subscription activation</span>
               </h3>
               <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                Unlocks product listings, store catalog & customer orders on the portal.
+                Unlocks product listings, store catalog & customer WhatsApp orders on the portal.
               </p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-2xl shadow-md">
               ₹
             </div>
+          </div>
+
+          {/* INSTANT DUMMY PAYMENT CALLOUT */}
+          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>Instant Demo / Dummy Payment Mode</span>
+              </p>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                Click below to process a dummy test payment successfully and immediately unlock product adding!
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={submittingPayment}
+              onClick={() => handlePaymentSubmit(null, true)}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            >
+              <span>Process Dummy Payment</span>
+            </button>
           </div>
 
           {/* Payment Method Tabs */}
@@ -1222,10 +1302,13 @@ export default function VendorDashboard() {
                 <button
                   type="submit"
                   disabled={submittingPayment}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer border border-amber-300"
+                  style={{ color: '#09090b' }}
                 >
-                  <HiShieldCheck className="w-4 h-4" />
-                  <span>{submittingPayment ? 'Submitting...' : 'Submit Payment for Verification'}</span>
+                  <HiShieldCheck className="w-4 h-4 text-slate-950" style={{ color: '#09090b' }} />
+                  <span className="font-black text-slate-950" style={{ color: '#09090b' }}>
+                    {submittingPayment ? 'Processing...' : 'Pay & Activate Store (Dummy Payment)'}
+                  </span>
                 </button>
               </div>
             </div>
