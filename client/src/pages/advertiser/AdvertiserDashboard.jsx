@@ -60,7 +60,7 @@ export default function AdvertiserDashboard() {
   const [paymentProof, setPaymentProof] = useState(null);
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
-  const fetchAdsAndPricing = async () => {
+  const fetchAds = async () => {
     try {
       setLoading(true);
       const [adsRes, pricingRes] = await Promise.all([
@@ -78,7 +78,7 @@ export default function AdvertiserDashboard() {
   };
 
   useEffect(() => {
-    fetchAdsAndPricing();
+    fetchAds();
   }, []);
 
   const handleBannerChange = (e) => {
@@ -181,7 +181,7 @@ export default function AdvertiserDashboard() {
       setPayModalAd(null);
       setPaymentRef('');
       setPaymentProof(null);
-      fetchAdsAndPricing();
+      fetchAds();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to process ad payment');
     } finally {
