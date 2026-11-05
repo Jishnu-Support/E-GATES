@@ -107,7 +107,10 @@ export default function FloatingSOS() {
     if (list.length === 0) {
       return [{ id: 'def-med-1', name: '108 Ambulance Service', phone: '108', designation: 'Emergency Medical Responder' }];
     }
-    return list;
+    return list.map(c => ({
+      ...c,
+      name: (!c.name || c.name.trim().length <= 2) ? '108 Ambulance Service' : c.name
+    }));
   }, [emergencyContacts]);
 
   const policeList = useMemo(() => {
@@ -188,6 +191,12 @@ export default function FloatingSOS() {
   };
 
   const residentAddress = compileAddress();
+
+  const isWaAvailable = (rawPhone) => {
+    if (!rawPhone) return false;
+    const digits = String(rawPhone).replace(/\D/g, '');
+    return digits.length >= 10;
+  };
 
   const formatWaPhone = (rawPhone) => {
     if (!rawPhone) return '';
@@ -387,14 +396,14 @@ export default function FloatingSOS() {
           )}
 
           {/* 1. FAMILY EMERGENCY CONTACT */}
-          <div className="flex items-center justify-between p-2.5 rounded-2xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center justify-between p-2.5 rounded-2xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30 gap-2">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
                 👨‍👩‍👧
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                  <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">
                     {activeFamily ? activeFamily.name : 'Family Emergency'}
                   </span>
                   {activeFamily?.designation && (
@@ -450,31 +459,33 @@ export default function FloatingSOS() {
                 <HiPhone className="w-3.5 h-3.5" />
                 <span>Call</span>
               </button>
-              <button
-                type="button"
-                onClick={() => handleAction('whatsapp', activeFamily || { name: 'Family Contact', phone: '112' }, 'Family Emergency')}
-                className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                title="Send WhatsApp SOS Alert with GPS Location"
-              >
-                <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                <span>WhatsApp</span>
-              </button>
+              {isWaAvailable(activeFamily?.phone) && (
+                <button
+                  type="button"
+                  onClick={() => handleAction('whatsapp', activeFamily || { name: 'Family Contact', phone: '112' }, 'Family Emergency')}
+                  className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  title="Send WhatsApp SOS Alert with GPS Location"
+                >
+                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* 2. MEDICAL / AMBULANCE CONTACT */}
           {activeMedical && (
-            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/30">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/30 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
                   🏥
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                    <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">
                       {activeMedical.name}
                     </span>
-                    <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.2 rounded truncate max-w-[140px]">
+                    <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.2 rounded">
                       {activeMedical.designation || 'Medical'}
                     </span>
                   </div>
@@ -492,35 +503,37 @@ export default function FloatingSOS() {
                 <button
                   type="button"
                   onClick={() => handleAction('call', activeMedical, 'Medical Emergency')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
                   title="Direct Call Ambulance / Doctor"
                 >
                   <HiPhone className="w-3.5 h-3.5" />
                   <span>Call</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleAction('whatsapp', activeMedical, 'Medical Emergency')}
-                  className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="Send WhatsApp Alert"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+                {isWaAvailable(activeMedical.phone) && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('whatsapp', activeMedical, 'Medical Emergency')}
+                    className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                    title="Send WhatsApp Alert"
+                  >
+                    <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {/* 3. POLICE EMERGENCY CONTACT */}
           {activePolice && (
-            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
                   🚓
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                    <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">
                       {activePolice.name}
                     </span>
                     <span className="text-[10px] font-bold text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.2 rounded">
@@ -541,35 +554,37 @@ export default function FloatingSOS() {
                 <button
                   type="button"
                   onClick={() => handleAction('call', activePolice, 'Police Distress')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
                   title="Direct Call Police"
                 >
                   <HiPhone className="w-3.5 h-3.5" />
                   <span>Call</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleAction('whatsapp', activePolice, 'Police Distress')}
-                  className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="Send WhatsApp Alert"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+                {isWaAvailable(activePolice.phone) && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('whatsapp', activePolice, 'Police Distress')}
+                    className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                    title="Send WhatsApp Alert"
+                  >
+                    <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {/* 4. SECURITY GATE / RESPONDER */}
           {activeResident && (
-            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
                   🏡
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                    <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">
                       {activeResident.name}
                     </span>
                     <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.2 rounded">
@@ -590,35 +605,37 @@ export default function FloatingSOS() {
                 <button
                   type="button"
                   onClick={() => handleAction('call', activeResident, 'Security Alert')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
                   title="Direct Call Security Gate"
                 >
                   <HiPhone className="w-3.5 h-3.5" />
                   <span>Call</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleAction('whatsapp', activeResident, 'Security Alert')}
-                  className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="Send WhatsApp Alert"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+                {isWaAvailable(activeResident.phone) && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('whatsapp', activeResident, 'Security Alert')}
+                    className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                    title="Send WhatsApp Alert"
+                  >
+                    <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {/* 5. FIRE & RESCUE */}
           {activeFire && (
-            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/30">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl border border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/30 gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
                   🔥
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-gray-900 dark:text-white truncate">
+                    <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">
                       {activeFire.name}
                     </span>
                     <span className="text-[10px] font-bold text-orange-800 dark:text-orange-200 bg-orange-100 dark:bg-orange-900/60 px-1.5 py-0.2 rounded">
@@ -639,21 +656,23 @@ export default function FloatingSOS() {
                 <button
                   type="button"
                   onClick={() => handleAction('call', activeFire, 'Fire Emergency')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
                   title="Direct Call Fire Station"
                 >
                   <HiPhone className="w-3.5 h-3.5" />
                   <span>Call</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleAction('whatsapp', activeFire, 'Fire Emergency')}
-                  className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="Send WhatsApp Alert"
-                >
-                  <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+                {isWaAvailable(activeFire.phone) && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('whatsapp', activeFire, 'Fire Emergency')}
+                    className="px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                    title="Send WhatsApp Alert"
+                  >
+                    <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -674,20 +693,21 @@ export default function FloatingSOS() {
           size="sm"
         >
           <div className="text-center py-4 px-2 space-y-4">
-            {/* Animated Checkmark Circle */}
-            <div className="relative w-16 h-16 mx-auto">
-              <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
-              <div className="relative w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-3xl font-black shadow-lg">
-                ✓
+            {/* Clean Static Badge */}
+            <div className="relative w-14 h-14 mx-auto">
+              <div className={`w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl font-black shadow-md ${dispatchedContact?.actionType === 'whatsapp' ? 'bg-green-600' : 'bg-emerald-600'}`}>
+                {dispatchedContact?.actionType === 'whatsapp' ? '💬' : '📞'}
               </div>
             </div>
 
             <div>
-              <h4 className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
-                Emergency Alert Sent Successfully!
+              <h4 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                {dispatchedContact?.actionType === 'whatsapp' ? 'WhatsApp SOS Dispatched!' : 'Direct Call Dialed!'}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                Your emergency notification and live GPS location have been dispatched.
+                {dispatchedContact?.actionType === 'whatsapp'
+                  ? 'Emergency notification & live GPS link shared via WhatsApp.'
+                  : 'Dialing emergency telephone line now.'}
               </p>
             </div>
 
