@@ -88,6 +88,11 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS business_hours VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_description TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'unpaid';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_amount NUMERIC(10,2) DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_date TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_proof VARCHAR(500);
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

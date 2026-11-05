@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const { body } = require('express-validator');
 const authController = require('../controllers/auth.controller');
 const { validate } = require('../middleware/validate');
+const { authenticate } = require('../middleware/auth');
 const upload = require('../config/multer');
 
 // Rate limiter for authentication attempts (unlimited attempts accepted)
@@ -147,6 +148,13 @@ router.post(
   ],
   authController.login
 );
+
+/**
+ * @route   GET /api/v1/auth/me
+ * @desc    Get current user profile
+ * @access  Private
+ */
+router.get('/me', authenticate, authController.getMe);
 
 /**
  * @route   POST /api/v1/auth/refresh-token

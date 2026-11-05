@@ -222,25 +222,25 @@ export default function VendorRegister() {
               </div>
               <div>
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  Pending Super Admin Approval
+                  Pending Administrator Approval
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-white mt-3">
                   Vendor Registration Submitted!
                 </h2>
                 <p className="text-slate-400 text-sm mt-2 leading-relaxed">
                   Your shop <strong className="text-white">"{successData.shop_name || form.shop_name}"</strong> has been registered.
-                  The Master Super Administrator will review and approve your merchant account.
+                  The Administrator will review and approve your merchant registration.
                 </p>
               </div>
 
               <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 text-left text-xs space-y-2 text-slate-300">
-                <p>✅ <strong>What happens next:</strong></p>
-                <ul className="list-disc list-inside space-y-1 text-slate-400">
-                  <li>Super Admin approves your shop profile.</li>
-                  <li>You can log in to the <strong>Vendor Portal</strong> with your email/phone and password.</li>
-                  <li>Add and manage your product listings, set prices, and update stock.</li>
-                  <li>Layout residents will be able to see your products and contact you directly to place orders!</li>
-                </ul>
+                <p className="font-bold text-amber-400">✅ What happens next:</p>
+                <ol className="list-decimal list-inside space-y-1.5 text-slate-300 font-medium">
+                  <li><strong>Admin Approval:</strong> Administrator reviews and approves your shop account in the Admin Panel.</li>
+                  <li><strong>Vendor Sign In:</strong> Log in to the <strong>Vendor Portal</strong> using your registered email/phone and password.</li>
+                  <li><strong>Proceed with Payment:</strong> Complete your one-time onboarding payment to activate store catalog features.</li>
+                  <li><strong>Add Items & Start Selling:</strong> Add your products, set pricing, and start receiving direct orders from layout residents!</li>
+                </ol>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">

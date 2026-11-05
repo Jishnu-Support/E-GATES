@@ -17,6 +17,11 @@ import {
   HiEye,
   HiExclamationCircle,
   HiSparkles,
+  HiLockClosed,
+  HiCreditCard,
+  HiQrCode,
+  HiClipboardDocumentCheck,
+  HiShieldCheck,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,8 +30,27 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 export default function VendorDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  // Payment status check
+  const isPaid = user?.payment_status === 'paid';
+  const isPendingVerification = user?.payment_status === 'pending_verification';
+
+  // Payment Modal State
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [paymentTab, setPaymentTab] = useState('upi'); // 'upi' | 'bank'
+  const [paymentForm, setPaymentForm] = useState({
+    payment_reference: user?.payment_reference || '',
+    payment_method: 'Google Pay / PhonePe UPI',
+    payment_amount: 499,
+  });
+  const [paymentProofFile, setPaymentProofFile] = useState(null);
+  const [proofPreview, setProofPreview] = useState(user?.payment_proof ? getFileUrl(user.payment_proof) : null);
+  const proofInputRef = useRef(null);
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -101,7 +125,84 @@ export default function VendorDashboard() {
     fetchMyProducts();
   }, []);
 
+  const handleCopyUpi = () => {
+    navigator.clipboard.writeText('association.kcc@okhdfcbank');
+    setCopiedUpi(true);
+    toast.success('UPI ID copied to clipboard!');
+    setTimeout(() => setCopiedUpi(false), 2500);
+  };
+
+  const handleProofChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Payment receipt size must be under 5MB');
+        return;
+      }
+      setPaymentProofFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setProofPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePaymentSubmit = async (e, instantActivate = false) => {
+    if (e) e.preventDefault();
+    if (!instantActivate && (!paymentForm.payment_reference || !paymentForm.payment_reference.trim())) {
+      toast.error('Please enter your 12-digit UPI / Bank Transaction ID (UTR)');
+      return;
+    }
+
+    try {
+      setSubmittingPayment(true);
+      const formData = new FormData();
+      formData.append(
+        'payment_reference',
+        instantActivate
+          ? `DEMO-PAY-${Date.now().toString().slice(-6)}`
+          : paymentForm.payment_reference.trim()
+      );
+      formData.append('payment_amount', String(paymentForm.payment_amount));
+      formData.append('payment_method', paymentForm.payment_method);
+      if (instantActivate) {
+        formData.append('auto_activate', 'true');
+      }
+      if (paymentProofFile) {
+        formData.append('eb_bill_proof', paymentProofFile);
+      }
+
+      const res = await api.post('/users/vendor/submit-payment', formData);
+      const updatedUser = res.data?.data;
+      if (updatedUser) {
+        updateUser({
+          payment_status: updatedUser.payment_status,
+          payment_reference: updatedUser.payment_reference,
+          payment_amount: updatedUser.payment_amount,
+          payment_date: updatedUser.payment_date,
+          payment_proof: updatedUser.payment_proof,
+        });
+      }
+
+      if (instantActivate || updatedUser?.payment_status === 'paid') {
+        toast.success('🎉 Store onboarding payment completed! Product adding is now unlocked.');
+        setPaymentModalOpen(false);
+      } else {
+        toast.success('Payment submitted for Admin verification! Product creation will unlock upon approval.');
+        setPaymentModalOpen(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Payment submission failed');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
   const openAddModal = () => {
+    if (!isPaid) {
+      toast.error('Payment Required: Please proceed with your onboarding payment to unlock adding products.');
+      setPaymentModalOpen(true);
+      return;
+    }
     setEditingProduct(null);
     setForm({
       name: '',
@@ -259,10 +360,22 @@ export default function VendorDashboard() {
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30">
                   {user?.shop_category || 'Merchant Shop'}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-400 text-slate-900 flex items-center gap-1 shadow-sm">
-                  <HiCheckCircle className="w-3.5 h-3.5" />
-                  <span>Approved & Live</span>
-                </span>
+                {isPaid ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-400 text-slate-900 flex items-center gap-1 shadow-sm">
+                    <HiCheckCircle className="w-3.5 h-3.5" />
+                    <span>Approved & Live</span>
+                  </span>
+                ) : isPendingVerification ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-300 text-slate-900 flex items-center gap-1 shadow-sm animate-pulse">
+                    <HiArrowPath className="w-3.5 h-3.5" />
+                    <span>Payment Under Verification</span>
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-300 text-slate-900 flex items-center gap-1 shadow-sm">
+                    <HiLockClosed className="w-3.5 h-3.5" />
+                    <span>Payment Required</span>
+                  </span>
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-black mt-1">
                 {user?.shop_name || user?.name || 'My Shop'}
@@ -294,14 +407,127 @@ export default function VendorDashboard() {
             <button
               type="button"
               onClick={openAddModal}
-              className="px-5 py-3 rounded-2xl bg-white text-amber-700 hover:bg-amber-50 font-black text-sm shadow-lg hover:shadow-xl transition flex items-center gap-2 cursor-pointer"
+              className={`px-5 py-3 rounded-2xl font-black text-sm shadow-lg hover:shadow-xl transition flex items-center gap-2 cursor-pointer ${
+                isPaid
+                  ? 'bg-white text-amber-700 hover:bg-amber-50'
+                  : 'bg-white/95 text-slate-900 hover:bg-white ring-2 ring-amber-300'
+              }`}
             >
-              <HiPlus className="w-5 h-5 text-amber-600" />
-              <span>Add New Product</span>
+              {isPaid ? (
+                <>
+                  <HiPlus className="w-5 h-5 text-amber-600" />
+                  <span>Add New Product</span>
+                </>
+              ) : (
+                <>
+                  <HiLockClosed className="w-5 h-5 text-amber-600" />
+                  <span>Add Product (Payment Required)</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* PROCEED WITH YOUR PAYMENT NOTICE (IF UNPAID / PENDING) */}
+      {!isPaid && (
+        <div
+          className={`p-6 sm:p-7 rounded-3xl border shadow-lg transition relative overflow-hidden ${
+            isPendingVerification
+              ? 'bg-gradient-to-r from-sky-950/70 via-blue-950/50 to-slate-900 border-sky-500/50 text-slate-100'
+              : 'bg-gradient-to-r from-amber-950/70 via-orange-950/50 to-slate-900 border-amber-500/50 text-slate-100'
+          }`}
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                    isPendingVerification
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-400/30'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                  }`}
+                >
+                  {isPendingVerification ? (
+                    <>
+                      <span>⏳</span>
+                      <span>Payment Under Admin Verification</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🎉</span>
+                      <span>Registration Approved • Payment Required</span>
+                    </>
+                  )}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-300">
+                  Onboarding Fee: ₹499
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                {isPendingVerification
+                  ? 'Payment Submitted — Verification in Progress'
+                  : 'Proceed with Your Payment to Start Adding Products'}
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {isPendingVerification ? (
+                  <>
+                    Your onboarding payment (UTR:{' '}
+                    <strong className="text-sky-300 font-mono">
+                      {user?.payment_reference || 'Submitted'}
+                    </strong>
+                    ) has been received and is being verified by the administrator. Adding items will unlock immediately once verified.
+                  </>
+                ) : (
+                  <>
+                    Congratulations! Your vendor shop has been approved by the Administrator. To activate your store catalog and start adding items and products for community residents, please proceed with your one-time onboarding payment.
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {isPendingVerification && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const fresh = await refreshUser();
+                    if (fresh?.payment_status === 'paid') {
+                      toast.success('🎉 Your payment has been approved! Product adding is now unlocked.');
+                    } else {
+                      toast('Payment is still awaiting admin approval.', { icon: '⏳' });
+                    }
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <HiArrowPath className="w-4 h-4" />
+                  <span>Check Status</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPaymentModalOpen(true)}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs sm:text-sm shadow-xl transition flex items-center gap-2 cursor-pointer"
+              >
+                <HiCreditCard className="w-5 h-5" />
+                <span>{isPendingVerification ? 'Update Payment Info' : 'Proceed with Your Payment'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePaymentSubmit(null, true)}
+                className="px-4 py-3 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs border border-emerald-500/40 transition flex items-center gap-1.5 cursor-pointer"
+                title="Instant unlock for demo/testing"
+              >
+                <span>⚡ Instant Activate (Demo)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -418,10 +644,23 @@ export default function VendorDashboard() {
             <button
               type="button"
               onClick={openAddModal}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition"
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition ${
+                isPaid
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black hover:brightness-110 ring-2 ring-amber-300'
+              }`}
             >
-              <HiPlus className="w-4 h-4" />
-              <span>Add Your First Product</span>
+              {isPaid ? (
+                <>
+                  <HiPlus className="w-4 h-4" />
+                  <span>Add Your First Product</span>
+                </>
+              ) : (
+                <>
+                  <HiLockClosed className="w-4 h-4" />
+                  <span>Proceed with Payment to Add Items</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -737,6 +976,262 @@ export default function VendorDashboard() {
         confirmText={deleting ? 'Deleting...' : 'Delete Product'}
         danger
       />
+
+      {/* PROCEED WITH YOUR PAYMENT MODAL */}
+      <Modal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        title="Proceed with Your Vendor Store Payment"
+        maxWidth="max-w-xl"
+      >
+        <div className="space-y-5">
+          {/* Fee Header Card */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-500/30 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                Vendor Onboarding Fee
+              </p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-0.5">
+                ₹499 <span className="text-xs font-semibold text-gray-500">/ one-time activation</span>
+              </h3>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                Unlocks product listings, store catalog & customer orders on the portal.
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-2xl shadow-md">
+              ₹
+            </div>
+          </div>
+
+          {/* Payment Method Tabs */}
+          <div className="flex border-b border-gray-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setPaymentTab('upi')}
+              className={`pb-2 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+                paymentTab === 'upi'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <HiQrCode className="w-4 h-4" />
+              <span>UPI & QR Code</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentTab('bank')}
+              className={`pb-2 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+                paymentTab === 'bank'
+                  ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <HiBuildingStorefront className="w-4 h-4" />
+              <span>Bank Transfer (NEFT/IMPS)</span>
+            </button>
+          </div>
+
+          {paymentTab === 'upi' ? (
+            /* UPI & QR CODE SECTION */
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 text-center space-y-4">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                Scan with any UPI App (Google Pay, PhonePe, Paytm, BHIM)
+              </p>
+
+              {/* Dynamic Mock UPI QR Canvas/SVG */}
+              <div className="w-44 h-44 mx-auto p-3 bg-white rounded-2xl shadow-inner border border-gray-200 flex flex-col items-center justify-center relative">
+                <svg className="w-36 h-36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Outer corner markers */}
+                  <rect x="5" y="5" width="28" height="28" rx="4" stroke="#0f172a" strokeWidth="5" fill="none" />
+                  <rect x="11" y="11" width="16" height="16" rx="2" fill="#0f172a" />
+                  <rect x="67" y="5" width="28" height="28" rx="4" stroke="#0f172a" strokeWidth="5" fill="none" />
+                  <rect x="73" y="11" width="16" height="16" rx="2" fill="#0f172a" />
+                  <rect x="5" y="67" width="28" height="28" rx="4" stroke="#0f172a" strokeWidth="5" fill="none" />
+                  <rect x="11" y="73" width="16" height="16" rx="2" fill="#0f172a" />
+
+                  {/* QR Matrix Grid Pattern */}
+                  <rect x="42" y="10" width="8" height="8" fill="#d97706" />
+                  <rect x="52" y="10" width="8" height="8" fill="#0f172a" />
+                  <rect x="42" y="24" width="8" height="8" fill="#0f172a" />
+                  <rect x="10" y="42" width="8" height="8" fill="#d97706" />
+                  <rect x="24" y="42" width="8" height="8" fill="#0f172a" />
+                  <rect x="40" y="40" width="20" height="20" rx="3" fill="#d97706" />
+                  <circle cx="50" cy="50" r="5" fill="#ffffff" />
+                  <rect x="68" y="42" width="8" height="8" fill="#0f172a" />
+                  <rect x="82" y="42" width="8" height="8" fill="#d97706" />
+                  <rect x="42" y="68" width="8" height="8" fill="#0f172a" />
+                  <rect x="54" y="68" width="8" height="8" fill="#d97706" />
+                  <rect x="42" y="82" width="8" height="8" fill="#d97706" />
+                  <rect x="54" y="82" width="8" height="8" fill="#0f172a" />
+                  <rect x="70" y="70" width="8" height="8" fill="#0f172a" />
+                  <rect x="82" y="70" width="8" height="8" fill="#0f172a" />
+                  <rect x="70" y="82" width="8" height="8" fill="#d97706" />
+                  <rect x="82" y="82" width="8" height="8" fill="#0f172a" />
+                </svg>
+                <span className="text-[10px] font-black tracking-widest text-slate-800 mt-1 uppercase">
+                  UPI • SCAN TO PAY
+                </span>
+              </div>
+
+              {/* UPI ID copy */}
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 max-w-sm mx-auto">
+                <div className="text-left">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Association UPI ID</p>
+                  <p className="text-xs font-mono font-bold text-gray-800 dark:text-gray-200">
+                    association.kcc@okhdfcbank
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyUpi}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedUpi ? (
+                    <>
+                      <HiCheckCircle className="w-3.5 h-3.5" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <HiClipboardDocumentCheck className="w-3.5 h-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* BANK TRANSFER SECTION */
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 space-y-2.5 text-xs text-gray-700 dark:text-gray-300">
+              <div className="flex justify-between py-1 border-b border-gray-200 dark:border-slate-700">
+                <span className="font-semibold text-gray-500">Account Name:</span>
+                <span className="font-bold text-gray-900 dark:text-white">Hosur KCC Nagar Welfare Association</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200 dark:border-slate-700">
+                <span className="font-semibold text-gray-500">Account Number:</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-white">50200084729184</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200 dark:border-slate-700">
+                <span className="font-semibold text-gray-500">IFSC Code:</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-white">HDFC0001824</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="font-semibold text-gray-500">Bank & Branch:</span>
+                <span className="font-bold text-gray-900 dark:text-white">HDFC Bank, Hosur Branch</span>
+              </div>
+            </div>
+          )}
+
+          {/* Submission Form */}
+          <form onSubmit={(e) => handlePaymentSubmit(e, false)} className="space-y-4 pt-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Transaction / UTR Reference Number <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={paymentForm.payment_reference}
+                onChange={(e) => setPaymentForm({ ...paymentForm, payment_reference: e.target.value })}
+                placeholder="e.g. 412984928172 or UPI Ref / IMPS Ref"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Enter the 12-digit UTR from your GPay / PhonePe / Paytm payment receipt.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Payment Method
+                </label>
+                <select
+                  value={paymentForm.payment_method}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="Google Pay">Google Pay (UPI)</option>
+                  <option value="PhonePe">PhonePe (UPI)</option>
+                  <option value="Paytm">Paytm (UPI)</option>
+                  <option value="BHIM UPI">BHIM / Other UPI</option>
+                  <option value="Bank NEFT / IMPS">Bank NEFT / IMPS Transfer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Amount Paid
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value="₹499.00 (Standard Fee)"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800/40 text-xs font-bold text-gray-500"
+                />
+              </div>
+            </div>
+
+            {/* Optional Screenshot */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                Upload Payment Screenshot (Optional)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  ref={proofInputRef}
+                  accept="image/*,.pdf"
+                  onChange={handleProofChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => proofInputRef.current?.click()}
+                  className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+                >
+                  {paymentProofFile ? 'Change Receipt' : 'Attach Screenshot'}
+                </button>
+                {paymentProofFile && (
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold truncate max-w-xs">
+                    ✓ {paymentProofFile.name}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Submit & Demo Buttons */}
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => handlePaymentSubmit(null, true)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-300 dark:border-emerald-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Instant unlock for demo testing"
+              >
+                <span>⚡ Instant Activate (Demo Mode)</span>
+              </button>
+
+              <div className="w-full sm:w-auto flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingPayment}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <HiShieldCheck className="w-4 h-4" />
+                  <span>{submittingPayment ? 'Submitting...' : 'Submit Payment for Verification'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 }

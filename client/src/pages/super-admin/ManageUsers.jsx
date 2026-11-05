@@ -100,6 +100,16 @@ export default function ManageUsers() {
   });
 
   // Handle Create Super Admin
+  const handleVerifyVendorPayment = async (userId, userName, status = 'paid') => {
+    try {
+      await api.put(`/users/${userId}/verify-payment`, { payment_status: status });
+      toast.success(`Payment status for "${userName}" updated to "${status}"!`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update vendor payment');
+    }
+  };
+
   const handleCreateSuperAdmin = async (e) => {
     e.preventDefault();
     if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {
@@ -281,6 +291,7 @@ export default function ManageUsers() {
             <option value="super_admin">Super Admins</option>
             <option value="admin">Main Association Admins</option>
             <option value="member">Residents (Members)</option>
+            <option value="vendor">🏪 Shop Vendors</option>
           </select>
         </div>
 
@@ -356,10 +367,15 @@ export default function ManageUsers() {
                           )}
                         </div>
                         <div>
-                          <p className="group-hover:text-purple-600 dark:group-hover:text-purple-400 transition flex items-center gap-1">
+                          <p className="group-hover:text-purple-600 dark:group-hover:text-purple-400 transition flex items-center gap-1 font-bold">
                             <span>{user.name}</span>
                             <span className="text-[10px] text-teal-600 opacity-0 group-hover:opacity-100 transition">🪪</span>
                           </p>
+                          {user.role === 'vendor' && user.shop_name && (
+                            <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                              🏪 {user.shop_name} ({user.shop_category || 'Shop'})
+                            </p>
+                          )}
                           <p className="text-[10px] text-gray-400 font-normal">{user.email}</p>
                         </div>
                       </div>
@@ -386,6 +402,8 @@ export default function ManageUsers() {
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           user.role === 'super_admin'
                             ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                            : user.role === 'vendor'
+                            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                             : user.is_main_admin || user.display_role === 'Main Association Admin'
                             ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800'
                             : user.role === 'admin'
@@ -395,6 +413,8 @@ export default function ManageUsers() {
                       >
                         {user.role === 'super_admin'
                           ? '👑 Super Admin'
+                          : user.role === 'vendor'
+                          ? '🏪 Shop Vendor'
                           : user.is_main_admin || user.display_role === 'Main Association Admin'
                           ? '🛡️ Main Association Admin'
                           : user.role === 'admin'
@@ -403,17 +423,57 @@ export default function ManageUsers() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                          user.status === 'approved'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400'
-                            : user.status === 'pending'
-                            ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400'
-                            : 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400'
-                        }`}
-                      >
-                        {user.status}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                            user.status === 'approved'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400'
+                              : user.status === 'pending'
+                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400'
+                              : 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400'
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+
+                        {user.role === 'vendor' && (
+                          <div className="mt-0.5">
+                            {user.payment_status === 'paid' ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                ✓ Paid ₹{user.payment_amount || 499}
+                              </span>
+                            ) : user.payment_status === 'pending_verification' ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300">
+                                  ⏳ UTR: {user.payment_reference || 'Review'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyVendorPayment(user.id, user.name, 'paid')}
+                                  className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold shadow-xs transition cursor-pointer"
+                                  title="Approve onboarding payment"
+                                >
+                                  Approve Payment
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-gray-100 dark:bg-slate-800 text-gray-500 border border-gray-200">
+                                  Unpaid
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyVendorPayment(user.id, user.name, 'paid')}
+                                  className="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold shadow-xs transition cursor-pointer"
+                                  title="Mark as paid"
+                                >
+                                  Mark Paid
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">

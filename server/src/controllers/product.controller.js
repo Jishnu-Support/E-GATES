@@ -158,6 +158,24 @@ const productController = {
   async create(req, res, next) {
     try {
       const vendorId = req.user.id;
+
+      // Verify vendor onboarding payment is completed
+      const vendorCheck = await pool.query(
+        'SELECT id, role, status, payment_status, shop_name FROM users WHERE id = $1',
+        [vendorId]
+      );
+      if (vendorCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Vendor account not found' });
+      }
+      const vendorUser = vendorCheck.rows[0];
+      if (vendorUser.payment_status !== 'paid') {
+        return res.status(403).json({
+          success: false,
+          code: 'PAYMENT_REQUIRED',
+          message: 'Payment Required: Please complete your vendor onboarding fee payment before adding products to your shop catalog.'
+        });
+      }
+
       const {
         name,
         description,

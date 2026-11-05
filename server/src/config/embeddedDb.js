@@ -264,6 +264,21 @@ function ensureSchemaMigrations(db) {
     if (!userCols.includes('shop_description')) {
       db.run("ALTER TABLE users ADD COLUMN shop_description TEXT;");
     }
+    if (!userCols.includes('payment_status')) {
+      db.run("ALTER TABLE users ADD COLUMN payment_status TEXT DEFAULT 'unpaid';");
+    }
+    if (!userCols.includes('payment_reference')) {
+      db.run("ALTER TABLE users ADD COLUMN payment_reference TEXT;");
+    }
+    if (!userCols.includes('payment_amount')) {
+      db.run("ALTER TABLE users ADD COLUMN payment_amount REAL DEFAULT 0;");
+    }
+    if (!userCols.includes('payment_date')) {
+      db.run("ALTER TABLE users ADD COLUMN payment_date TEXT;");
+    }
+    if (!userCols.includes('payment_proof')) {
+      db.run("ALTER TABLE users ADD COLUMN payment_proof TEXT;");
+    }
 
     // 3. Ensure missing columns on associations
     const assocRes = db.exec("PRAGMA table_info(associations);");
@@ -422,6 +437,11 @@ function initSchemaAndSeed(db) {
       business_hours TEXT,
       upi_id TEXT,
       shop_description TEXT,
+      payment_status TEXT DEFAULT 'unpaid',
+      payment_reference TEXT,
+      payment_amount REAL DEFAULT 0,
+      payment_date TEXT,
+      payment_proof TEXT,
       status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       rejection_reason TEXT,
       language TEXT DEFAULT 'en',

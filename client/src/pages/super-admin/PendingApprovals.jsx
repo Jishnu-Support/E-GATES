@@ -171,10 +171,20 @@ export default function PendingApprovals() {
         ? 'Layout Admin'
         : 'Resident Member';
       const displayName = userObj?.shop_name || name;
-      toast.success(`${roleLabel} "${displayName}" approved successfully! They can now log in.`);
+      toast.success(`${roleLabel} "${displayName}" approved successfully! They can now log in and proceed with payment.`);
       fetchPending();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to approve user');
+    }
+  };
+
+  const handleVerifyPayment = async (id, name) => {
+    try {
+      await api.put(`/users/${id}/verify-payment`, { payment_status: 'paid' });
+      toast.success(`Payment verified and approved for "${name}"! Store product creation is now unlocked.`);
+      fetchPending();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify vendor payment');
     }
   };
 
@@ -440,10 +450,25 @@ export default function PendingApprovals() {
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       {user.role === 'vendor' ? (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center justify-center gap-1 shadow-xs">
-                          <span>🏪</span>
-                          <span>Shop Vendor</span>
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center justify-center gap-1 shadow-xs">
+                            <span>🏪</span>
+                            <span>Shop Vendor</span>
+                          </span>
+                          {user.payment_status === 'paid' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ✓ Paid (₹{user.payment_amount || 499})
+                            </span>
+                          ) : user.payment_status === 'pending_verification' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300">
+                              ⏳ UTR: {user.payment_reference || 'Submitted'}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 dark:bg-slate-800 text-gray-500 border border-gray-200 dark:border-slate-700">
+                              Payment: Unpaid
+                            </span>
+                          )}
+                        </div>
                       ) : user.is_main_admin || user.display_role === 'Main Association Admin' ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 flex items-center justify-center gap-1 shadow-xs">
                           <span>🛡️</span>

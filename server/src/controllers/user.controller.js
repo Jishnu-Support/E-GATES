@@ -88,6 +88,7 @@ const userController = {
                u.eb_bill_proof, u.property_tax_receipt, u.status, u.created_at,
                u.shop_name, u.shop_category, u.shop_address, u.shop_phone, u.shop_logo,
                u.business_hours, u.upi_id, u.shop_description,
+               u.payment_status, u.payment_reference, u.payment_amount, u.payment_date, u.payment_proof,
                a.name as association_name
         FROM users u
         LEFT JOIN associations a ON u.association_id = a.id
@@ -103,7 +104,7 @@ const userController = {
           queryText += ` AND u.association_id = $${queryParams.length}`;
         }
       } else {
-        // Main Association Admin approves resident members and layout admins
+        // Main Association Admin approves resident members, layout admins, and community vendor shops
         if (!is_main_admin) {
           return res.status(403).json({
             success: false,
@@ -111,7 +112,7 @@ const userController = {
           });
         }
         queryParams.push(userAssocId);
-        queryText += ` AND u.association_id = $${queryParams.length} AND (u.is_main_admin IS NOT TRUE OR u.is_main_admin = false)`;
+        queryText += ` AND (u.association_id = $${queryParams.length} OR (u.role = 'vendor' AND (u.association_id = $${queryParams.length} OR u.association_id IS NULL))) AND (u.is_main_admin IS NOT TRUE OR u.is_main_admin = false)`;
       }
 
       queryText += ' ORDER BY u.created_at ASC';
@@ -168,7 +169,7 @@ const userController = {
           });
         }
 
-        if (targetUser.association_id !== adminAssocId) {
+        if (targetUser.association_id && targetUser.association_id !== adminAssocId && targetUser.role !== 'vendor') {
           return res.status(403).json({
             success: false,
             message: 'You can only approve users within your own layout association.'
@@ -190,19 +191,21 @@ const userController = {
         });
       }
 
-      // Generate unique member code (e.g. RES-001)
-      const memberCode = await getUniqueMemberCode(targetUser.association_id);
+      // Generate unique member code (e.g. RES-001 or VEN-001)
+      const assignedAssocId = targetUser.association_id || (role === 'admin' ? adminAssocId : null);
+      const memberCode = await getUniqueMemberCode(assignedAssocId);
 
       // Update user status and member code
       const updateResult = await pool.query(
         `UPDATE users
          SET status = 'approved',
              member_code = $1,
+             association_id = COALESCE(association_id, $2),
              rejection_reason = NULL,
              updated_at = NOW()
-         WHERE id = $2
-         RETURNING id, name, email, phone, role, association_id, member_code, status, updated_at`,
-        [memberCode, userId]
+         WHERE id = $3
+         RETURNING id, name, email, phone, role, association_id, member_code, status, payment_status, updated_at`,
+        [memberCode, assignedAssocId, userId]
       );
 
       const approvedUser = updateResult.rows[0];
@@ -227,9 +230,9 @@ const userController = {
 
       // Notification in DB
       const isVendor = approvedUser.role === 'vendor';
-      const notifTitle = isVendor ? 'Vendor Shop Approved' : 'Account Approved';
+      const notifTitle = isVendor ? 'Vendor Shop Approved!' : 'Account Approved!';
       const notifMsg = isVendor
-        ? `Congratulations! Your vendor shop has been approved by the Super Administrator. You can now log in and add your shop products to the resident portal.`
+        ? 'Congratulations! Your vendor shop account has been approved by the Administrator. Please log in to your Vendor Portal and proceed with your onboarding payment to activate your store and start adding products.'
         : `Congratulations! Your membership account has been approved. Your Member Code is ${memberCode}.`;
       const notifLink = isVendor ? '/vendor/dashboard' : '/member/dashboard';
 
@@ -332,7 +335,7 @@ const userController = {
           });
         }
 
-        if (targetUser.association_id !== adminAssocId) {
+        if (targetUser.association_id && targetUser.association_id !== adminAssocId && targetUser.role !== 'vendor') {
           return res.status(403).json({
             success: false,
             message: 'You can only reject users within your own layout association.'
@@ -2149,6 +2152,175 @@ const userController = {
         success: true,
         message: 'Tenant restored successfully',
         data: restoreResult.rows[0]
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Submit vendor onboarding payment (UTR reference & proof)
+   * Accessible by logged-in Vendor
+   */
+  async submitVendorPayment(req, res, next) {
+    try {
+      const vendorId = req.user.id;
+      const { payment_reference, payment_amount = 499, auto_activate = false } = req.body;
+
+      if (!payment_reference || !payment_reference.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment Transaction / UTR reference number is required'
+        });
+      }
+
+      // Check user exists and is vendor
+      const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [vendorId]);
+      if (userRes.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Vendor account not found' });
+      }
+      const vendor = userRes.rows[0];
+
+      // Handle uploaded proof screenshot
+      const paymentProof = req.file ? normalizeFilePath(req.file, 'proofs') : (vendor.payment_proof || null);
+
+      // Determine new payment status: if auto_activate is requested, mark as paid immediately
+      const newPaymentStatus = auto_activate === true || auto_activate === 'true' ? 'paid' : 'pending_verification';
+      const numAmount = parseFloat(payment_amount) || 499;
+
+      const updateRes = await pool.query(
+        `UPDATE users
+         SET payment_status = $1,
+             payment_reference = $2,
+             payment_amount = $3,
+             payment_date = NOW(),
+             payment_proof = $4,
+             updated_at = NOW()
+         WHERE id = $5
+         RETURNING id, name, email, phone, role, status, payment_status, payment_reference, payment_amount, payment_date, payment_proof, shop_name`,
+        [newPaymentStatus, payment_reference.trim(), numAmount, paymentProof, vendorId]
+      );
+
+      const updatedUser = updateRes.rows[0];
+
+      // Notify Super Admin and Association Admins
+      try {
+        const notifMsg = newPaymentStatus === 'paid'
+          ? `Shop "${vendor.shop_name || vendor.name}" completed onboarding payment (UTR: ${payment_reference.trim()}, ₹${numAmount}). Store is now active!`
+          : `Shop "${vendor.shop_name || vendor.name}" submitted onboarding payment (UTR: ${payment_reference.trim()}, ₹${numAmount}) awaiting Admin verification.`;
+
+        const superAdmins = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+        for (const sa of superAdmins.rows) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [sa.id, 'Vendor Payment Update', notifMsg, 'info', '/super-admin/approvals']
+          );
+        }
+
+        if (vendor.association_id) {
+          const assocAdmins = await pool.query(
+            "SELECT id FROM users WHERE association_id = $1 AND role = 'admin'",
+            [vendor.association_id]
+          );
+          for (const adm of assocAdmins.rows) {
+            await pool.query(
+              `INSERT INTO notifications (user_id, title, message, type, link)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [adm.id, 'Vendor Payment Update', notifMsg, 'info', '/admin/approvals']
+            );
+          }
+        }
+      } catch (notifErr) {
+        console.warn('Notification error on vendor payment:', notifErr.message);
+      }
+
+      await logAudit(
+        vendorId,
+        'VENDOR_PAYMENT_SUBMIT',
+        'users',
+        vendorId,
+        { payment_reference: payment_reference.trim(), amount: numAmount, status: newPaymentStatus },
+        req.ip
+      );
+
+      res.json({
+        success: true,
+        message: newPaymentStatus === 'paid'
+          ? 'Payment successful! Your store is now active and you can start adding products immediately.'
+          : 'Payment details submitted successfully! Your payment is under verification. Once approved by the administrator, product listing will be activated.',
+        data: updatedUser
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Verify and update vendor payment status
+   * Accessible by Super Admin and Main Association Admin
+   */
+  async verifyVendorPayment(req, res, next) {
+    try {
+      const targetUserId = parseInt(req.params.id, 10);
+      const { payment_status = 'paid' } = req.body;
+      const { role, is_main_admin, association_id: adminAssocId } = req.user;
+
+      const userCheck = await pool.query('SELECT * FROM users WHERE id = $1', [targetUserId]);
+      if (userCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Vendor not found' });
+      }
+
+      const targetUser = userCheck.rows[0];
+
+      if (role !== 'super_admin') {
+        if (!is_main_admin) {
+          return res.status(403).json({ success: false, message: 'Only administrators can verify vendor payments' });
+        }
+        if (targetUser.association_id && targetUser.association_id !== adminAssocId) {
+          return res.status(403).json({ success: false, message: 'You can only verify payments for vendors in your association' });
+        }
+      }
+
+      const updateRes = await pool.query(
+        `UPDATE users
+         SET payment_status = $1,
+             updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, name, email, phone, role, status, payment_status, payment_reference, payment_amount, payment_date, shop_name`,
+        [payment_status, targetUserId]
+      );
+
+      const updatedUser = updateRes.rows[0];
+
+      // Notify vendor
+      if (payment_status === 'paid') {
+        await pool.query(
+          `INSERT INTO notifications (user_id, title, message, type, link)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            targetUserId,
+            'Vendor Onboarding Payment Verified! 🎉',
+            'Your store onboarding fee payment has been verified. You can now add and manage products in your shop catalog!',
+            'success',
+            '/vendor/dashboard'
+          ]
+        );
+      }
+
+      await logAudit(
+        req.user.id,
+        'VENDOR_PAYMENT_VERIFY',
+        'users',
+        targetUserId,
+        { payment_status, verifiedBy: req.user.id },
+        req.ip
+      );
+
+      res.json({
+        success: true,
+        message: `Vendor payment marked as "${payment_status}" successfully`,
+        data: updatedUser
       });
     } catch (error) {
       next(error);

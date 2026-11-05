@@ -577,7 +577,8 @@ const authController = {
         member_code: user.member_code,
         shop_name: user.shop_name,
         shop_category: user.shop_category,
-        shop_logo: user.shop_logo
+        shop_logo: user.shop_logo,
+        payment_status: user.payment_status || 'unpaid'
       };
 
       const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
@@ -628,6 +629,11 @@ const authController = {
             business_hours: user.business_hours,
             upi_id: user.upi_id,
             shop_description: user.shop_description,
+            payment_status: user.payment_status || 'unpaid',
+            payment_reference: user.payment_reference || null,
+            payment_amount: user.payment_amount ? parseFloat(user.payment_amount) : 0,
+            payment_date: user.payment_date || null,
+            payment_proof: user.payment_proof || null,
             door_no: user.door_no,
             street: user.street,
             layout_name: user.layout_name,
@@ -697,19 +703,33 @@ const authController = {
         ? 'Super Admin'
         : 'Resident Member';
 
+      // Fetch latest user details including payment info
+      const fullUserRes = await pool.query(
+        `SELECT u.*, a.name as association_name, a.code as association_code
+         FROM users u
+         LEFT JOIN associations a ON u.association_id = a.id
+         WHERE u.id = $1`,
+        [user.user_id]
+      );
+      const fullUser = fullUserRes.rows[0] || user;
+
       // Generate new access token
       const newAccessToken = jwt.sign(
         {
-          id: user.user_id,
-          role: user.role,
-          is_main_admin: Boolean(user.is_main_admin),
+          id: fullUser.id || user.user_id,
+          role: fullUser.role,
+          is_main_admin: Boolean(fullUser.is_main_admin),
           designation: userDesignation,
-          association_id: user.association_id,
-          association_name: user.association_name,
-          association_code: user.association_code,
-          name: user.name,
-          email: user.email,
-          member_code: user.member_code
+          association_id: fullUser.association_id,
+          association_name: fullUser.association_name,
+          association_code: fullUser.association_code,
+          name: fullUser.name,
+          email: fullUser.email,
+          member_code: fullUser.member_code,
+          shop_name: fullUser.shop_name,
+          shop_category: fullUser.shop_category,
+          shop_logo: fullUser.shop_logo,
+          payment_status: fullUser.payment_status || 'unpaid'
         },
         JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRY }
@@ -718,7 +738,45 @@ const authController = {
       res.json({
         success: true,
         data: {
-          token: newAccessToken
+          token: newAccessToken,
+          user: {
+            id: fullUser.id,
+            name: fullUser.name,
+            email: fullUser.email,
+            phone: fullUser.phone,
+            role: fullUser.role,
+            is_main_admin: Boolean(fullUser.is_main_admin),
+            designation: userDesignation,
+            association_id: fullUser.association_id,
+            association_name: fullUser.association_name,
+            association_code: fullUser.association_code,
+            member_code: fullUser.member_code,
+            shop_name: fullUser.shop_name,
+            shop_category: fullUser.shop_category,
+            shop_address: fullUser.shop_address,
+            shop_phone: fullUser.shop_phone,
+            shop_logo: fullUser.shop_logo,
+            business_hours: fullUser.business_hours,
+            upi_id: fullUser.upi_id,
+            shop_description: fullUser.shop_description,
+            payment_status: fullUser.payment_status || 'unpaid',
+            payment_reference: fullUser.payment_reference || null,
+            payment_amount: fullUser.payment_amount ? parseFloat(fullUser.payment_amount) : 0,
+            payment_date: fullUser.payment_date || null,
+            payment_proof: fullUser.payment_proof || null,
+            door_no: fullUser.door_no,
+            street: fullUser.street,
+            layout_name: fullUser.layout_name,
+            taluk: fullUser.taluk,
+            district: fullUser.district,
+            state: fullUser.state,
+            eb_bill_proof: fullUser.eb_bill_proof,
+            property_tax_receipt: fullUser.property_tax_receipt,
+            profile_photo: fullUser.profile_photo,
+            status: fullUser.status,
+            language: fullUser.language,
+            created_at: fullUser.created_at
+          }
         }
       });
     } catch (error) {
@@ -1006,6 +1064,81 @@ const authController = {
   },
 
   /**
+   * Get current authenticated user's profile
+   */
+  async getMe(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const result = await pool.query(
+        `SELECT u.*, a.name as association_name, a.code as association_code
+         FROM users u
+         LEFT JOIN associations a ON u.association_id = a.id
+         WHERE u.id = $1`,
+        [userId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      const user = result.rows[0];
+      const userDesignation = user.role === 'vendor'
+        ? 'Shop Vendor'
+        : (user.is_main_admin
+          ? 'Main Association Admin'
+          : user.role === 'admin'
+          ? 'Layout Admin'
+          : user.role === 'super_admin'
+          ? 'Super Admin'
+          : 'Resident Member');
+
+      res.json({
+        success: true,
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          is_main_admin: Boolean(user.is_main_admin),
+          designation: userDesignation,
+          association_id: user.association_id,
+          association_name: user.association_name,
+          association_code: user.association_code,
+          member_code: user.member_code,
+          shop_name: user.shop_name,
+          shop_category: user.shop_category,
+          shop_address: user.shop_address,
+          shop_phone: user.shop_phone,
+          shop_logo: user.shop_logo,
+          business_hours: user.business_hours,
+          upi_id: user.upi_id,
+          shop_description: user.shop_description,
+          payment_status: user.payment_status || 'unpaid',
+          payment_reference: user.payment_reference || null,
+          payment_amount: user.payment_amount ? parseFloat(user.payment_amount) : 0,
+          payment_date: user.payment_date || null,
+          payment_proof: user.payment_proof || null,
+          door_no: user.door_no,
+          street: user.street,
+          layout_name: user.layout_name,
+          taluk: user.taluk,
+          district: user.district,
+          state: user.state,
+          eb_bill_proof: user.eb_bill_proof,
+          property_tax_receipt: user.property_tax_receipt,
+          profile_photo: user.profile_photo,
+          status: user.status,
+          language: user.language,
+          created_at: user.created_at
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * Register a new Vendor / Shop Merchant
    * Status defaults to 'pending' (requires Super Admin approval)
    */
@@ -1075,17 +1208,17 @@ const authController = {
 
       const insertQuery = `
         INSERT INTO users (
-          name, email, phone, password_hash, role, status,
+          name, email, phone, password_hash, role, status, payment_status, payment_amount,
           association_id, shop_name, shop_category, shop_address, shop_phone,
           shop_logo, business_hours, upi_id, shop_description,
           door_no, street, taluk, district, state
         ) VALUES (
-          $1, $2, $3, $4, 'vendor', 'pending',
+          $1, $2, $3, $4, 'vendor', 'pending', 'unpaid', 0,
           $5, $6, $7, $8, $9,
           $10, $11, $12, $13,
           $14, $15, $16, $17, $18
         )
-        RETURNING id, name, email, phone, role, status, shop_name, shop_category, shop_logo, created_at
+        RETURNING id, name, email, phone, role, status, payment_status, shop_name, shop_category, shop_logo, created_at
       `;
 
       const result = await pool.query(insertQuery, [
@@ -1121,14 +1254,36 @@ const authController = {
             [
               sa.id,
               'New Vendor Pending Approval',
-              `Shop "${newVendor.shop_name}" (${newVendor.shop_category}) registered by "${newVendor.name}" requires Super Admin review.`,
+              `Shop "${newVendor.shop_name}" (${newVendor.shop_category}) registered by "${newVendor.name}" requires Admin review.`,
               'info',
               '/super-admin/approvals'
             ]
           );
         }
+
+        // Notify Layout Admins if association is specified or notify main admins
+        let adminQuery = "SELECT id FROM users WHERE role = 'admin'";
+        const adminParams = [];
+        if (resolvedAssocId) {
+          adminQuery += " AND association_id = $1";
+          adminParams.push(resolvedAssocId);
+        }
+        const layoutAdmins = await pool.query(adminQuery, adminParams);
+        for (const adm of layoutAdmins.rows) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              adm.id,
+              'New Vendor Registration Pending Approval',
+              `Shop "${newVendor.shop_name}" (${newVendor.shop_category}) by "${newVendor.name}" is pending approval.`,
+              'info',
+              '/admin/approvals'
+            ]
+          );
+        }
       } catch (notifErr) {
-        console.warn('Super admin notification error for vendor:', notifErr.message);
+        console.warn('Admin notification error for vendor:', notifErr.message);
       }
 
       await logAudit(
@@ -1142,7 +1297,7 @@ const authController = {
 
       res.status(201).json({
         success: true,
-        message: 'Vendor shop registration submitted successfully! Your account is pending Super Administrator approval. You will be able to log in and list your products once approved.',
+        message: 'Vendor shop registration submitted successfully! Your account is pending Administrator approval. Once approved, you can log in, proceed with your onboarding payment, and start adding products to your shop.',
         data: newVendor
       });
     } catch (error) {

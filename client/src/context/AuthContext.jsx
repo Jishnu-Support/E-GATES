@@ -204,6 +204,20 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data?.data) {
+        setUser(res.data.data);
+        localStorage.setItem('association_user', JSON.stringify(res.data.data));
+        return res.data.data;
+      }
+    } catch (err) {
+      console.warn('refreshUser failed:', err.message);
+    }
+    return null;
+  };
+
   const value = {
     user,
     token,
@@ -215,6 +229,7 @@ export const AuthProvider = ({ children }) => {
     registerVendor,
     logout,
     updateUser,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

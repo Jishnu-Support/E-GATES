@@ -185,6 +185,39 @@ router.put(
 );
 
 /**
+ * @route   POST /api/v1/users/vendor/submit-payment
+ * @desc    Submit vendor onboarding payment reference and receipt
+ * @access  Private (Vendor)
+ */
+router.post(
+  '/vendor/submit-payment',
+  authenticate,
+  authorize('vendor'),
+  proofUploadMiddleware,
+  [
+    body('payment_reference').trim().notEmpty().withMessage('Payment reference / UTR is required'),
+    validate
+  ],
+  userController.submitVendorPayment
+);
+
+/**
+ * @route   PUT /api/v1/users/:id/verify-payment
+ * @desc    Verify vendor payment status (Super Admin / Admin)
+ * @access  Private (Super Admin, Admin)
+ */
+router.put(
+  '/:id/verify-payment',
+  authenticate,
+  authorize('super_admin', 'admin'),
+  [
+    param('id').isInt().withMessage('User ID must be an integer'),
+    validate
+  ],
+  userController.verifyVendorPayment
+);
+
+/**
  * @route   GET /api/v1/users
  * @desc    List all users (SA: all, Admin: own association)
  * @access  Private (Super Admin, Admin)
