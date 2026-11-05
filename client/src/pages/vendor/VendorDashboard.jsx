@@ -420,16 +420,21 @@ export default function VendorDashboard() {
                   ? 'bg-slate-950 text-white hover:bg-slate-900 border border-amber-400/30'
                   : 'bg-slate-950 text-amber-300 hover:bg-slate-900 border-2 border-amber-400 shadow-amber-500/20'
               }`}
+              style={{
+                backgroundColor: '#090d16',
+                color: isPaid ? '#ffffff' : '#fcd34d',
+                borderColor: '#fbbf24',
+              }}
             >
               {isPaid ? (
                 <>
-                  <HiPlus className="w-5 h-5 text-amber-400" />
-                  <span className="text-white">Add New Product</span>
+                  <HiPlus className="w-5 h-5 text-amber-400" style={{ color: '#fbbf24' }} />
+                  <span style={{ color: '#ffffff' }}>Add New Product</span>
                 </>
               ) : (
                 <>
-                  <HiLockClosed className="w-5 h-5 text-amber-400" />
-                  <span className="text-amber-300 font-black">Add Product (Payment Required)</span>
+                  <HiLockClosed className="w-5 h-5 text-amber-400" style={{ color: '#fbbf24' }} />
+                  <span style={{ color: '#fcd34d' }} className="font-black">Add Product (Payment Required)</span>
                 </>
               )}
             </button>
