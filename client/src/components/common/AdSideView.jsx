@@ -1,38 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  HiSparkles,
-  HiArrowTopRightOnSquare,
-  HiPhone,
   HiBuildingStorefront,
-  HiCheckBadge,
-  HiTag,
-  HiMegaphone,
-  HiMapPin,
+  HiPhone,
+  HiArrowTopRightOnSquare,
   HiEye,
-  HiChatBubbleOvalLeftEllipsis,
-  HiPlay,
-  HiPause,
-  HiSpeakerWave,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
-// Fallback showcase ads featuring both Picture and Video formats
+// Fallback showcase ads without clutter
 export const DEFAULT_PICTURE_ADS = [
   {
     id: 'showcase-pic-1',
     media_type: 'image',
     shop_name: 'AMMAN MOTORS MARUTI',
-    distance: '3.4 km',
-    location_name: 'Perandapalli',
     title: 'Express 30-Min Two Wheeler & Car Service',
-    tagline: 'Authorized multi-brand automobile care: express engine oil service, computerized diagnostics, battery boost & 24/7 doorstep breakdown support.',
-    banner_image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1200&q=80',
-    badge: 'EXPRESS SERVICE',
-    action_type: 'whatsapp',
-    action_url: '9566823219',
-    action_text: 'WhatsApp',
+    banner_image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
+    badge: '15% OFF',
     call_phone: '9566823219',
     store_url: '/member/marketplace',
     impression_count: 1851,
@@ -41,15 +26,9 @@ export const DEFAULT_PICTURE_ADS = [
     id: 'showcase-pic-2',
     media_type: 'image',
     shop_name: 'D-MART Supermarket',
-    distance: '1.2 km',
-    location_name: 'Hosur Town',
-    title: 'Monthly Groceries, Farm Dairy & Fresh Produce',
-    tagline: 'Flat 15% OFF on monthly grocery bundles & farm fresh dairy with free 30-min doorstep delivery to all community residents!',
-    banner_image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80',
-    badge: '15% OFF • 30-MIN DELIVERY',
-    action_type: 'whatsapp',
-    action_url: '9876543210',
-    action_text: 'Order on WhatsApp',
+    title: 'Daily Essentials & Fresh Groceries Delivery',
+    banner_image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
+    badge: 'SUPER SAVER',
     call_phone: '9876543210',
     store_url: '/member/marketplace',
     impression_count: 2430,
@@ -60,16 +39,10 @@ export const DEFAULT_VIDEO_ADS = [
   {
     id: 'showcase-vid-1',
     media_type: 'video',
-    shop_name: 'Green Bloom Agro & Landscaping',
-    distance: '2.1 km',
-    location_name: 'Perandapalli',
-    title: 'Organic Home Garden Plants & Exotic Flora',
-    tagline: 'Fresh flowering plants, organic vermicompost, bonsai trees and automated drip irrigation systems delivered directly to your doorstep.',
+    shop_name: 'Green Bloom Agro Nursery',
+    title: 'Organic Home Garden Plants & Flora',
     video_url: '/ads/sample-ad-video.mp4',
-    banner_image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1200&q=80',
-    badge: 'ORGANIC NURSERY',
-    action_type: 'link',
-    action_url: '/member/marketplace',
+    banner_image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80',
     action_text: 'Visit Sponsor',
     call_phone: '9566823219',
     store_url: '/member/marketplace',
@@ -77,28 +50,25 @@ export const DEFAULT_VIDEO_ADS = [
   },
 ];
 
-// Helper to format view impressions
 const formatViews = (count) => {
   const num = parseInt(count, 10);
-  if (isNaN(num) || num <= 0) return '1,851';
-  return num.toLocaleString('en-IN');
+  if (isNaN(num) || num <= 0) return '1.8k';
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return String(num);
 };
 
-// Helper for image URLs
 const resolveImageUrl = (img) => {
   if (!img) return '';
   if (img.startsWith('http://') || img.startsWith('https://')) return img;
   return getFileUrl(img);
 };
 
-// Helper for video URLs
 const resolveVideoUrl = (video) => {
   if (!video) return '/ads/sample-ad-video.mp4';
   if (video.startsWith('http://') || video.startsWith('https://') || video.startsWith('/ads/')) return video;
   return getFileUrl(video);
 };
 
-// Hook to load active ads
 export function useActiveAds(panel = 'member', associationId = null) {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +98,6 @@ export function useActiveAds(panel = 'member', associationId = null) {
     return () => { isMounted = false; };
   }, [panel, associationId]);
 
-  // Separate picture ads and video ads
   const pictureAds = ads.filter(
     (a) => a.media_type !== 'video' && !a.video_url
   );
@@ -144,14 +113,13 @@ export function useActiveAds(panel = 'member', associationId = null) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. PICTURE ADVERTISEMENT COMPONENT (Matches Screenshots 1 & 2)
+// 1. COMPACT PICTURE ADVERTISEMENT (Reduced size, no unwanted clutter)
 // ─────────────────────────────────────────────────────────────────────────────
 export function AdPictureCard({ ads, isMobile = false }) {
   const navigate = useNavigate();
   const list = Array.isArray(ads) && ads.length > 0 ? ads : DEFAULT_PICTURE_ADS;
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Auto-cycle picture ads if more than one
   useEffect(() => {
     if (list.length <= 1) return;
     const interval = setInterval(() => {
@@ -169,7 +137,7 @@ export function AdPictureCard({ ads, isMobile = false }) {
   };
 
   const handleViewStore = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     handleAdClick();
     if (ad.store_url) {
       if (ad.store_url.startsWith('http://') || ad.store_url.startsWith('https://')) {
@@ -182,20 +150,8 @@ export function AdPictureCard({ ads, isMobile = false }) {
     }
   };
 
-  const handleWhatsApp = (e) => {
-    e.stopPropagation();
-    handleAdClick();
-    const phone = ad.action_url || ad.shop_phone || '9566823219';
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const waNumber = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-    const msg = encodeURIComponent(
-      `Hello ${ad.shop_name || 'Store'}, I saw your advertisement "${ad.title}" on EGATES Community Portal! I would like to inquire about your services/products.`
-    );
-    window.open(`https://wa.me/${waNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
-  };
-
   const handleCall = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     handleAdClick();
     const phone = ad.call_phone || ad.action_url || ad.shop_phone || '9566823219';
     const cleanPhone = phone.replace(/[^0-9+]/g, '');
@@ -206,90 +162,65 @@ export function AdPictureCard({ ads, isMobile = false }) {
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-gray-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden select-none group ${
-        isMobile ? 'w-full mb-4' : 'w-full'
+      className={`bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs hover:shadow-sm transition-all overflow-hidden select-none ${
+        isMobile ? 'w-full max-w-lg mx-auto mb-2.5' : 'w-full'
       }`}
     >
-      {/* Top Header Bar: ADVERTISEMENT badge + View Count */}
-      <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/80 dark:to-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs">
-        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md bg-gray-200/70 dark:bg-slate-800">
-          ADVERTISEMENT
+      {/* Sleek Header Bar */}
+      <div className="px-2.5 py-1 bg-gray-50/90 dark:bg-slate-800/80 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
+        <span className="font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Ad
         </span>
-        <span className="flex items-center gap-1 text-[11px] font-extrabold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-slate-800/90 px-2 py-0.5 rounded-full border border-gray-200 dark:border-slate-700">
-          <HiEye className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+        <span className="flex items-center gap-1 font-bold text-gray-500 dark:text-gray-400">
+          <HiEye className="w-3 h-3 opacity-70" />
           <span>{formatViews(ad.impression_count)} views</span>
         </span>
       </div>
 
-      {/* Picture Creative Image */}
+      {/* Compact Image Banner */}
       <div
-        className="relative w-full h-40 sm:h-48 overflow-hidden bg-slate-950 cursor-pointer"
+        className="relative w-full h-24 sm:h-28 overflow-hidden bg-slate-950 cursor-pointer"
         onClick={handleViewStore}
       >
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={ad.title}
-            className="w-full h-full object-cover transform scale-100 group-hover:scale-105 transition-transform duration-700 ease-out"
+            className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-slate-900 text-amber-400 text-3xl font-black">
+          <div className="w-full h-full flex items-center justify-center bg-slate-900 text-amber-400 text-xl font-bold">
             🛍️
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
-
         {ad.badge && (
-          <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md">
+          <span className="absolute top-1.5 left-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-600 text-white shadow-xs">
             {ad.badge}
           </span>
         )}
       </div>
 
-      {/* Content Section */}
-      <div className="p-3 sm:p-4 space-y-2.5">
-        {/* Store Name & Distance Row */}
+      {/* Concise Content Bar */}
+      <div className="p-2 sm:p-2.5 space-y-1.5">
         <div className="flex items-center justify-between gap-1">
-          <h4 className="font-black text-xs sm:text-sm text-gray-900 dark:text-white uppercase tracking-wide truncate flex items-center gap-1.5">
-            <HiBuildingStorefront className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-            <span className="truncate">{ad.shop_name || 'Verified Merchant'}</span>
-            <HiCheckBadge className="w-4 h-4 text-cyan-500 flex-shrink-0" title="Verified Community Partner" />
-          </h4>
-          {ad.distance && (
-            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md flex-shrink-0">
-              {ad.distance}
-            </span>
-          )}
+          <span className="font-extrabold text-[11px] text-gray-900 dark:text-white truncate">
+            {ad.shop_name || 'Community Store'}
+          </span>
         </div>
 
-        {/* Location Row */}
-        <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-          <HiMapPin className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
-          <span>{ad.location_name || 'Perandapalli'}</span>
-        </div>
-
-        {/* Ad Title */}
         <h3
-          className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white leading-snug line-clamp-2 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+          className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition"
           onClick={handleViewStore}
         >
           {ad.title}
         </h3>
 
-        {/* Tagline / Description */}
-        {ad.tagline && (
-          <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
-            {ad.tagline}
-          </p>
-        )}
-
-        {/* Action Buttons Row: View Store | WhatsApp | Call */}
-        <div className="grid grid-cols-3 gap-1.5 pt-1">
+        {/* Compact Action Buttons (Only View Store & Call - WhatsApp removed) */}
+        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
           <button
             type="button"
             onClick={handleViewStore}
-            className="py-2 px-1.5 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1 shadow-xs transition cursor-pointer touch-manipulation whitespace-nowrap"
-            title="View Store / Order Catalog"
+            className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg font-bold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer"
           >
             <HiBuildingStorefront className="w-3.5 h-3.5" />
             <span>View Store</span>
@@ -297,28 +228,17 @@ export function AdPictureCard({ ads, isMobile = false }) {
 
           <button
             type="button"
-            onClick={handleWhatsApp}
-            className="py-2 px-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1 shadow-xs transition cursor-pointer touch-manipulation whitespace-nowrap"
-            title="Chat or Order on WhatsApp"
-          >
-            <HiChatBubbleOvalLeftEllipsis className="w-3.5 h-3.5" />
-            <span>WhatsApp</span>
-          </button>
-
-          <button
-            type="button"
             onClick={handleCall}
-            className="py-2 px-1.5 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 active:scale-95 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1 shadow-xs transition cursor-pointer touch-manipulation whitespace-nowrap"
-            title="Call Store Directly"
+            className="py-1.5 px-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-95 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer"
           >
             <HiPhone className="w-3.5 h-3.5 text-rose-500" />
             <span>Call</span>
           </button>
         </div>
 
-        {/* Carousel Dots (when multiple picture ads are present) */}
+        {/* Dots */}
         {list.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 pt-1.5">
+          <div className="flex items-center justify-center gap-1 pt-0.5">
             {list.map((_, idx) => (
               <button
                 key={idx}
@@ -326,10 +246,10 @@ export function AdPictureCard({ ads, isMobile = false }) {
                 onClick={() => setCurrentIndex(idx)}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   currentIndex === idx
-                    ? 'w-4 h-1.5 bg-emerald-600 dark:bg-emerald-400'
-                    : 'w-1.5 h-1.5 bg-gray-300 dark:bg-slate-700 hover:bg-gray-400'
+                    ? 'w-3 h-1 bg-emerald-600 dark:bg-emerald-400'
+                    : 'w-1 h-1 bg-gray-300 dark:bg-slate-700 hover:bg-gray-400'
                 }`}
-                aria-label={`Go to picture ad ${idx + 1}`}
+                aria-label={`Slide ${idx + 1}`}
               />
             ))}
           </div>
@@ -340,7 +260,7 @@ export function AdPictureCard({ ads, isMobile = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. VIDEO ADVERTISEMENT COMPONENT (Matches Screenshots 1 & 2)
+// 2. COMPACT VIDEO ADVERTISEMENT (Reduced size, no unwanted clutter)
 // ─────────────────────────────────────────────────────────────────────────────
 export function AdVideoCard({ ads, isMobile = false }) {
   const navigate = useNavigate();
@@ -359,15 +279,7 @@ export function AdVideoCard({ ads, isMobile = false }) {
   const handleVisitSponsor = (e) => {
     e?.stopPropagation();
     handleAdClick();
-    if (ad.action_type === 'whatsapp' || ad.shop_phone) {
-      const phone = ad.action_url || ad.shop_phone || '9566823219';
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
-      const waNumber = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-      const msg = encodeURIComponent(
-        `Hello ${ad.shop_name || 'Sponsor'}, I watched your Video Advertisement "${ad.title}" on EGATES Community Portal! Please share more details.`
-      );
-      window.open(`https://wa.me/${waNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
-    } else if (ad.store_url || ad.action_url) {
+    if (ad.store_url || ad.action_url) {
       const target = ad.store_url || ad.action_url;
       if (target.startsWith('http://') || target.startsWith('https://')) {
         window.open(target, '_blank', 'noopener,noreferrer');
@@ -384,29 +296,23 @@ export function AdVideoCard({ ads, isMobile = false }) {
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-gray-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden select-none ${
-        isMobile ? 'w-full mt-6 mb-8' : 'w-full'
+      className={`bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs hover:shadow-sm transition-all overflow-hidden select-none ${
+        isMobile ? 'w-full max-w-lg mx-auto mt-4 mb-4' : 'w-full'
       }`}
     >
-      {/* Top Header Bar: VIDEO ADVERTISEMENT + Location + View Count */}
-      <div className="px-3 py-2 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/80 dark:to-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs gap-1.5 flex-wrap">
-        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md bg-gray-200/70 dark:bg-slate-800">
-          VIDEO ADVERTISEMENT
+      {/* Sleek Header Bar (location tag removed) */}
+      <div className="px-2.5 py-1 bg-gray-50/90 dark:bg-slate-800/80 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
+        <span className="font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Video Ad
         </span>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-white bg-emerald-700 dark:bg-emerald-800 px-2 py-0.5 rounded-md shadow-xs">
-            <HiMapPin className="w-3 h-3 text-rose-300" />
-            <span>{ad.location_name || 'Perandapalli'}</span>
-          </span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-slate-800/90 px-2 py-0.5 rounded-full border border-gray-200 dark:border-slate-700">
-            <HiEye className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-            <span>{formatViews(ad.impression_count)} views</span>
-          </span>
-        </div>
+        <span className="flex items-center gap-1 font-bold text-gray-500 dark:text-gray-400">
+          <HiEye className="w-3 h-3 opacity-70" />
+          <span>{formatViews(ad.impression_count)} views</span>
+        </span>
       </div>
 
-      {/* Video Player Box (Android / Desktop friendly) */}
-      <div className="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
+      {/* Reduced-Height Video Player */}
+      <div className="relative w-full h-32 sm:h-36 bg-black overflow-hidden flex items-center justify-center">
         <video
           ref={videoRef}
           src={videoUrl}
@@ -414,42 +320,38 @@ export function AdVideoCard({ ads, isMobile = false }) {
           controls
           playsInline
           preload="metadata"
-          className="w-full h-full object-contain bg-black"
+          className="w-full h-full object-cover bg-black"
           onPlay={handleAdClick}
         >
-          Your browser does not support HTML5 video streaming.
+          Your browser does not support HTML5 video.
         </video>
       </div>
 
-      {/* Content Section */}
-      <div className="p-3 sm:p-4 space-y-2.5">
-        <div>
-          <h4 className="font-black text-xs sm:text-sm text-gray-900 dark:text-white uppercase tracking-wide truncate">
-            {ad.shop_name || 'Featured Community Sponsor'}
-          </h4>
-          <h3 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 leading-snug line-clamp-2 mt-0.5">
-            {ad.title}
-          </h3>
-          {ad.tagline && (
-            <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed mt-1">
-              {ad.tagline}
-            </p>
-          )}
+      {/* Concise Content Bar */}
+      <div className="p-2 sm:p-2.5 space-y-1.5">
+        <div className="flex items-center justify-between gap-1">
+          <span className="font-extrabold text-[11px] text-gray-900 dark:text-white truncate">
+            {ad.shop_name || 'Featured Sponsor'}
+          </span>
         </div>
 
-        {/* Visit Sponsor Button */}
+        <h3 className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1">
+          {ad.title}
+        </h3>
+
+        {/* Compact CTA */}
         <button
           type="button"
           onClick={handleVisitSponsor}
-          className="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer touch-manipulation"
+          className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg font-bold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer"
         >
-          <HiArrowTopRightOnSquare className="w-4 h-4 text-emerald-200" />
+          <HiArrowTopRightOnSquare className="w-3.5 h-3.5" />
           <span>{ad.action_text || 'Visit Sponsor'}</span>
         </button>
 
-        {/* Carousel Dots (when multiple video ads are present) */}
+        {/* Dots */}
         {list.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 pt-1">
+          <div className="flex items-center justify-center gap-1 pt-0.5">
             {list.map((_, idx) => (
               <button
                 key={idx}
@@ -457,10 +359,10 @@ export function AdVideoCard({ ads, isMobile = false }) {
                 onClick={() => setCurrentIndex(idx)}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   currentIndex === idx
-                    ? 'w-4 h-1.5 bg-emerald-600 dark:bg-emerald-400'
-                    : 'w-1.5 h-1.5 bg-gray-300 dark:bg-slate-700 hover:bg-gray-400'
+                    ? 'w-3 h-1 bg-emerald-600 dark:bg-emerald-400'
+                    : 'w-1 h-1 bg-gray-300 dark:bg-slate-700 hover:bg-gray-400'
                 }`}
-                aria-label={`Go to video ad ${idx + 1}`}
+                aria-label={`Slide ${idx + 1}`}
               />
             ))}
           </div>
@@ -471,61 +373,34 @@ export function AdVideoCard({ ads, isMobile = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. DESKTOP RIGHT-SIDE STICKY AD RAIL (Default Export)
-// Shows Picture Ad at TOP, and Video Ad BELOW it!
+// 3. COMPACT DESKTOP RIGHT-SIDE AD RAIL (Default Export)
+// Reduced width and concise spacing
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdSideView({ panel = 'member', associationId = null, className = '' }) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { pictureAds, videoAds } = useActiveAds(panel, associationId);
 
   return (
     <aside
-      className={`hidden xl:flex xl:flex-col xl:w-80 2xl:w-84 xl:flex-shrink-0 sticky top-20 self-start gap-4 select-none ${className}`}
-      aria-label="Community Sponsored Advertisements"
+      className={`hidden xl:flex xl:flex-col xl:w-72 xl:flex-shrink-0 sticky top-20 self-start gap-3 select-none ${className}`}
+      aria-label="Advertisements"
     >
-      {/* 1. TOP ITEM: PICTURE ADVERTISEMENT (Matches Screenshot 1) */}
+      {/* 1. TOP ITEM: COMPACT PICTURE AD */}
       <AdPictureCard ads={pictureAds} />
 
-      {/* 2. BOTTOM ITEM: VIDEO ADVERTISEMENT (Matches Screenshot 1) */}
+      {/* 2. BOTTOM ITEM: COMPACT VIDEO AD */}
       <AdVideoCard ads={videoAds} />
-
-      {/* Promote Your Shop footer */}
-      <div className="p-3 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-slate-800/60 dark:to-slate-900 rounded-2xl border border-dashed border-amber-300 dark:border-amber-800 text-center space-y-1.5">
-        <p className="text-xs font-black text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1">
-          <HiMegaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <span>Promote Your Shop Here</span>
-        </p>
-        <p className="text-[10px] text-gray-600 dark:text-gray-400">
-          Reach 500+ verified layout resident households daily.
-        </p>
-        {user?.role === 'vendor' ? (
-          <button
-            type="button"
-            onClick={() => navigate('/vendor/ads')}
-            className="mt-1 w-full py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 text-xs font-bold rounded-lg transition shadow-sm cursor-pointer"
-          >
-            + Post Your Ad Now
-          </button>
-        ) : (
-          <span className="inline-block text-[10px] font-bold text-amber-700 dark:text-amber-300">
-            Contact Super Admin for Ad Space
-          </span>
-        )}
-      </div>
     </aside>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. MOBILE BANNER EXPORTS (Matches Screenshot 2)
-// Rendered in phone: First Picture Ad at top, Last Video Ad at bottom!
+// 4. COMPACT MOBILE BANNER EXPORTS
 // ─────────────────────────────────────────────────────────────────────────────
 export function MobileTopPictureAd({ panel = 'member', associationId = null }) {
   const { pictureAds } = useActiveAds(panel, associationId);
 
   return (
-    <div className="block xl:hidden w-full mb-4">
+    <div className="block xl:hidden w-full">
       <AdPictureCard ads={pictureAds} isMobile={true} />
     </div>
   );
@@ -535,7 +410,7 @@ export function MobileBottomVideoAd({ panel = 'member', associationId = null }) 
   const { videoAds } = useActiveAds(panel, associationId);
 
   return (
-    <div className="block xl:hidden w-full mt-6 mb-8">
+    <div className="block xl:hidden w-full">
       <AdVideoCard ads={videoAds} isMobile={true} />
     </div>
   );
