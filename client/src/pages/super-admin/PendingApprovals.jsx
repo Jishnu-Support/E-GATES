@@ -165,13 +165,17 @@ export default function PendingApprovals() {
       const isMain = userObj?.is_main_admin || userObj?.display_role === 'Main Association Admin';
       const roleLabel = userObj?.role === 'vendor'
         ? 'Shop Vendor'
+        : userObj?.role === 'agent'
+        ? 'Growth Agent'
+        : userObj?.role === 'advertiser'
+        ? 'Ad Company'
         : isMain
         ? 'Main Association Admin'
         : userObj?.role === 'admin'
         ? 'Layout Admin'
         : 'Resident Member';
-      const displayName = userObj?.shop_name || name;
-      toast.success(`${roleLabel} "${displayName}" approved successfully! They can now log in and proceed with payment.`);
+      const displayName = userObj?.company_name || userObj?.shop_name || name;
+      toast.success(`${roleLabel} "${displayName}" approved successfully! They can now log in.`);
       fetchPending();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to approve user');
@@ -368,6 +372,35 @@ export default function PendingApprovals() {
                             </span>
                           )}
                         </div>
+                      ) : user.role === 'agent' ? (
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">🚀</span>
+                            <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
+                              {user.name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 font-mono mt-0.5">
+                            Agent Code: <strong className="text-indigo-600 dark:text-indigo-400">{user.agent_code || 'Pending'}</strong>
+                          </p>
+                        </div>
+                      ) : user.role === 'advertiser' ? (
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">📢</span>
+                            <span className="text-sm font-black text-rose-600 dark:text-rose-400">
+                              {user.company_name || user.name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold mt-0.5">
+                            Contact: {user.name}
+                          </p>
+                          {user.gst_number && (
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                              GST: {user.gst_number}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <p>{user.name}</p>
                       )}
@@ -469,6 +502,16 @@ export default function PendingApprovals() {
                             </span>
                           )}
                         </div>
+                      ) : user.role === 'agent' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 flex items-center justify-center gap-1 shadow-xs">
+                          <span>🚀</span>
+                          <span>Growth Agent</span>
+                        </span>
+                      ) : user.role === 'advertiser' ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 flex items-center justify-center gap-1 shadow-xs">
+                          <span>📢</span>
+                          <span>Ad Company</span>
+                        </span>
                       ) : user.is_main_admin || user.display_role === 'Main Association Admin' ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 flex items-center justify-center gap-1 shadow-xs">
                           <span>🛡️</span>

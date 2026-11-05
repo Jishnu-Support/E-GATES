@@ -79,7 +79,7 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE event_captures ALTER COLUMN file_size TYPE BIGINT;
       ALTER TABLE documents ALTER COLUMN file_type TYPE VARCHAR(255);
       ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor'));
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'advertiser'));
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_category VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_address TEXT;
@@ -93,6 +93,21 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_amount NUMERIC(10,2) DEFAULT 0;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_date TIMESTAMPTZ;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_proof VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_code VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS gst_number VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_id INTEGER;
+      ALTER TABLE associations ADD COLUMN IF NOT EXISTS agent_id INTEGER;
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_city VARCHAR(100);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_district VARCHAR(100);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_state VARCHAR(100);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'unpaid';
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_amount NUMERIC(10,2) DEFAULT 0;
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_date TIMESTAMPTZ;
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS payment_proof VARCHAR(500);
+      ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS agent_id INTEGER;
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         vendor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

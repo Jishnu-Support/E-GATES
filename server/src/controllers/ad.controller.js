@@ -20,9 +20,9 @@ const logAudit = async (userId, action, entityType, entityId, details, ipAddress
  */
 exports.getActive = async (req, res, next) => {
   try {
-    const { panel = 'both', association_id } = req.query;
+    const { panel = 'both', association_id, city, district } = req.query;
 
-    const conditions = ["ad.status = 'active'"];
+    const conditions = ["ad.status = 'active' AND (ad.payment_status = 'paid' OR ad.payment_status IS NULL OR ad.creator_role = 'super_admin')"];
     const params = [];
     let pIdx = 1;
 
@@ -36,6 +36,20 @@ exports.getActive = async (req, res, next) => {
     if (association_id && !isNaN(association_id)) {
       conditions.push(`(ad.association_id IS NULL OR ad.association_id = $${pIdx++})`);
       params.push(parseInt(association_id, 10));
+    }
+
+    // Filter by District basis (platform-wide / all districts OR matching district)
+    const targetDistrict = district || req.user?.district;
+    if (targetDistrict && targetDistrict.trim() && targetDistrict.toLowerCase() !== 'all') {
+      conditions.push(`(ad.target_district IS NULL OR LOWER(ad.target_district) = 'all' OR LOWER(ad.target_district) = LOWER($${pIdx++}))`);
+      params.push(targetDistrict.trim());
+    }
+
+    // Filter by City / Taluk basis (platform-wide / all cities OR matching city)
+    const targetCity = city || req.user?.taluk || req.user?.layout_name;
+    if (targetCity && targetCity.trim() && targetCity.toLowerCase() !== 'all') {
+      conditions.push(`(ad.target_city IS NULL OR LOWER(ad.target_city) = 'all' OR LOWER(ad.target_city) = LOWER($${pIdx++}))`);
+      params.push(targetCity.trim());
     }
 
     const query = `
@@ -254,6 +268,13 @@ exports.create = async (req, res, next) => {
       distance,
       location_name,
       store_url,
+      target_city,
+      target_district,
+      target_state = 'Tamil Nadu',
+      payment_reference,
+      payment_amount = 999,
+      auto_activate = false,
+      agent_id,
     } = req.body;
 
     if (!title || !title.trim()) {
@@ -295,7 +316,18 @@ exports.create = async (req, res, next) => {
     }
 
     const isSuperAdmin = req.user.role === 'super_admin';
-    const initialStatus = isSuperAdmin ? 'active' : 'pending';
+    const isInstantPay = auto_activate === true || auto_activate === 'true';
+
+    // Payment status & ad initial status:
+    // If Super Admin: automatically paid & active
+    // If instant demo pay: automatically paid & active
+    // If UTR reference provided: pending_verification & pending
+    // Otherwise: unpaid & pending
+    const initialPaymentStatus = isSuperAdmin || isInstantPay
+      ? 'paid'
+      : (payment_reference && payment_reference.trim() ? 'pending_verification' : 'unpaid');
+
+    const initialStatus = (isSuperAdmin || isInstantPay) ? 'active' : 'pending';
 
     // Target association: Super Admin can choose any or NULL (all); Vendor defaults to their own or NULL if cross-layout
     let targetAssocId = null;
@@ -304,6 +336,8 @@ exports.create = async (req, res, next) => {
     } else if (!isSuperAdmin && req.user.association_id) {
       targetAssocId = req.user.association_id;
     }
+
+    const parsedAmount = parseFloat(payment_amount) || 999;
 
     const insertQuery = `
       INSERT INTO advertisements (
@@ -327,6 +361,14 @@ exports.create = async (req, res, next) => {
         distance,
         location_name,
         store_url,
+        target_city,
+        target_district,
+        target_state,
+        payment_status,
+        payment_reference,
+        payment_amount,
+        payment_date,
+        agent_id,
         click_count,
         impression_count,
         created_at,
@@ -334,6 +376,9 @@ exports.create = async (req, res, next) => {
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
         $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26,
+        CASE WHEN $24 = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END,
+        $27,
         0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       RETURNING *
@@ -360,25 +405,34 @@ exports.create = async (req, res, next) => {
       distance ? distance.trim() : null,
       location_name ? location_name.trim() : null,
       store_url ? store_url.trim() : null,
+      target_city ? target_city.trim() : null,
+      target_district ? target_district.trim() : null,
+      target_state ? target_state.trim() : 'Tamil Nadu',
+      initialPaymentStatus,
+      payment_reference ? payment_reference.trim() : null,
+      parsedAmount,
+      agent_id ? parseInt(agent_id, 10) : (req.user.agent_id || null),
     ];
 
     const result = await pool.query(insertQuery, values);
     const newAd = result.rows[0];
 
-    // If submitted by Vendor, notify Super Admin
+    // If submitted by Advertiser or Vendor, notify Super Admin
     if (!isSuperAdmin) {
       try {
         const saRes = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+        const roleLabel = req.user.role === 'advertiser' ? 'Ad Company' : 'Vendor';
+        const senderName = req.user.company_name || req.user.shop_name || req.user.name;
         for (const sa of saRes.rows) {
           await pool.query(
             `INSERT INTO notifications (user_id, title, message, type, link)
              VALUES ($1, $2, $3, $4, $5)`,
             [
               sa.id,
-              'New Vendor Ad Campaign Request',
-              `Vendor "${req.user.shop_name || req.user.name}" submitted campaign "${title.trim()}" for review.`,
+              `New ${roleLabel} Ad Posted`,
+              `${roleLabel} "${senderName}" submitted ad "${title.trim()}" (Target: ${targetDistrict || 'All'}/${targetCity || 'All'}).`,
               'info',
-              '/super-admin/ads'
+              '/super-admin/approvals'
             ]
           ).catch(() => {});
         }
@@ -392,15 +446,15 @@ exports.create = async (req, res, next) => {
       isSuperAdmin ? 'AD_CREATED' : 'AD_REQUEST_SUBMITTED',
       'advertisement',
       newAd.id,
-      { title: newAd.title, status: newAd.status },
+      { title: newAd.title, status: newAd.status, payment_status: newAd.payment_status },
       req.ip
     );
 
     return res.status(201).json({
       success: true,
-      message: isSuperAdmin
-        ? 'Advertisement posted and live across selected portals successfully.'
-        : 'Ad campaign request submitted successfully! It will be reviewed by the Super Admin.',
+      message: initialStatus === 'active'
+        ? 'Advertisement posted and live across targeted cities & districts successfully!'
+        : 'Ad created successfully! Please complete single ad slot payment to activate this campaign on the user portal.',
       data: newAd,
     });
   } catch (err) {
@@ -611,6 +665,78 @@ exports.delete = async (req, res, next) => {
     return res.json({
       success: true,
       message: 'Advertisement deleted successfully.',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @desc Pay for single ad slot (Advertiser / Vendor)
+ * @route POST /api/v1/ads/:id/pay
+ * @access Private (Advertiser / Vendor / Super Admin)
+ */
+exports.submitPayment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { payment_reference, payment_amount = 999, auto_activate = false } = req.body;
+
+    const findRes = await pool.query('SELECT * FROM advertisements WHERE id = $1', [id]);
+    if (findRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Advertisement not found' });
+    }
+
+    const ad = findRes.rows[0];
+    if (req.user.role !== 'super_admin' && ad.created_by !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to modify this ad' });
+    }
+
+    const isInstant = auto_activate === true || auto_activate === 'true' || req.user.role === 'super_admin';
+    const newPayStatus = isInstant ? 'paid' : 'pending_verification';
+    const newStatus = isInstant ? 'active' : 'pending';
+    const ref = isInstant
+      ? (payment_reference || `DEMO-AD-${Date.now().toString().slice(-6)}`)
+      : (payment_reference ? payment_reference.trim() : `PAY-${Date.now().toString().slice(-6)}`);
+
+    const updateRes = await pool.query(
+      `UPDATE advertisements
+       SET payment_status = $1,
+           status = $2,
+           payment_reference = $3,
+           payment_amount = $4,
+           payment_date = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`,
+      [newPayStatus, newStatus, ref, parseFloat(payment_amount) || 999, id]
+    );
+
+    const updatedAd = updateRes.rows[0];
+
+    // Notify Super Admin if pending review
+    if (!isInstant) {
+      const saRes = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+      for (const sa of saRes.rows) {
+        await pool.query(
+          `INSERT INTO notifications (user_id, title, message, type, link)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            sa.id,
+            'Ad Slot Payment Submitted',
+            `Ad "${ad.title}" has payment reference ${ref} awaiting verification.`,
+            'info',
+            '/super-admin/approvals'
+          ]
+        ).catch(() => {});
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: isInstant
+        ? 'Ad payment completed! Your advertisement is now active on the portal.'
+        : 'Ad payment submitted for verification! It will go live once verified.',
+      data: updatedAd,
     });
   } catch (err) {
     next(err);

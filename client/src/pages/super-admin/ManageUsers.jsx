@@ -292,6 +292,8 @@ export default function ManageUsers() {
             <option value="admin">Main Association Admins</option>
             <option value="member">Residents (Members)</option>
             <option value="vendor">🏪 Shop Vendors</option>
+            <option value="agent">🚀 Growth Agents</option>
+            <option value="advertiser">📢 Ad Companies</option>
           </select>
         </div>
 
@@ -376,6 +378,16 @@ export default function ManageUsers() {
                               🏪 {user.shop_name} ({user.shop_category || 'Shop'})
                             </p>
                           )}
+                          {user.role === 'agent' && (
+                            <p className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                              🚀 Agent Code: {user.agent_code || 'Assigned'}
+                            </p>
+                          )}
+                          {user.role === 'advertiser' && (
+                            <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                              📢 {user.company_name || 'Ad Company'} {user.gst_number ? `• GST: ${user.gst_number}` : ''}
+                            </p>
+                          )}
                           <p className="text-[10px] text-gray-400 font-normal">{user.email}</p>
                         </div>
                       </div>
@@ -404,6 +416,10 @@ export default function ManageUsers() {
                             ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
                             : user.role === 'vendor'
                             ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                            : user.role === 'agent'
+                            ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800'
+                            : user.role === 'advertiser'
+                            ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
                             : user.is_main_admin || user.display_role === 'Main Association Admin'
                             ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800'
                             : user.role === 'admin'
@@ -415,6 +431,10 @@ export default function ManageUsers() {
                           ? '👑 Super Admin'
                           : user.role === 'vendor'
                           ? '🏪 Shop Vendor'
+                          : user.role === 'agent'
+                          ? '🚀 Growth Agent'
+                          : user.role === 'advertiser'
+                          ? '📢 Ad Company'
                           : user.is_main_admin || user.display_role === 'Main Association Admin'
                           ? '🛡️ Main Association Admin'
                           : user.role === 'admin'

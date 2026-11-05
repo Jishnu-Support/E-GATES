@@ -53,6 +53,12 @@ const Properties = lazy(() => import('./pages/member/Properties'));
 const VendorDashboard = lazy(() => import('./pages/vendor/VendorDashboard'));
 const VendorAds = lazy(() => import('./pages/vendor/VendorAds'));
 
+// Agent & Advertiser Pages
+const AgentRegister = lazy(() => import('./pages/auth/AgentRegister'));
+const AdvertiserRegister = lazy(() => import('./pages/auth/AdvertiserRegister'));
+const AgentDashboard = lazy(() => import('./pages/agent/AgentDashboard'));
+const AdvertiserDashboard = lazy(() => import('./pages/advertiser/AdvertiserDashboard'));
+
 // Home Redirect Component
 function RootRedirect() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -71,6 +77,10 @@ function RootRedirect() {
     return <Navigate to="/admin/dashboard" replace />;
   } else if (user.role === 'vendor') {
     return <Navigate to="/vendor/dashboard" replace />;
+  } else if (user.role === 'agent') {
+    return <Navigate to="/agent/dashboard" replace />;
+  } else if (user.role === 'advertiser') {
+    return <Navigate to="/advertiser/dashboard" replace />;
   } else {
     return <Navigate to="/member/dashboard" replace />;
   }
@@ -109,6 +119,12 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/vendor/login" element={<Login />} />
         <Route path="/vendor/register" element={<VendorRegister />} />
+        <Route path="/agent/login" element={<Login />} />
+        <Route path="/agent/register" element={<AgentRegister />} />
+        <Route path="/advertiser/login" element={<Login />} />
+        <Route path="/advertiser/register" element={<AdvertiserRegister />} />
+        <Route path="/ad/login" element={<Login />} />
+        <Route path="/ad/register" element={<AdvertiserRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
@@ -218,6 +234,46 @@ export default function App() {
           <Route path="dashboard" element={<VendorDashboard />} />
           <Route path="products" element={<VendorDashboard />} />
           <Route path="ads" element={<VendorAds />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Route>
+
+        {/* Agent Protected Routes */}
+        <Route
+          path="/agent"
+          element={
+            <ProtectedRoute allowedRoles={['agent', 'super_admin']}>
+              <SocketProvider>
+                <DashboardLayout />
+              </SocketProvider>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AgentDashboard />} />
+          <Route path="businesses" element={<AgentDashboard />} />
+          <Route path="associations" element={<AgentDashboard />} />
+          <Route path="ads" element={<AgentDashboard />} />
+          <Route path="renewals" element={<AgentDashboard />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Route>
+
+        {/* Advertiser Protected Routes */}
+        <Route
+          path="/advertiser"
+          element={
+            <ProtectedRoute allowedRoles={['advertiser', 'super_admin']}>
+              <SocketProvider>
+                <DashboardLayout />
+              </SocketProvider>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdvertiserDashboard />} />
+          <Route path="my-ads" element={<AdvertiserDashboard />} />
+          <Route path="post-ad" element={<AdvertiserDashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>

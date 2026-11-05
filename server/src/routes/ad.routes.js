@@ -52,10 +52,10 @@ router.get('/pending', authenticate, authorize('super_admin'), adController.getP
 
 /**
  * @route   GET /api/v1/ads/my-ads
- * @desc    Get ads created by the logged-in vendor or super admin
- * @access  Private (Vendor / Super Admin)
+ * @desc    Get ads created by the logged-in vendor, advertiser, agent or super admin
+ * @access  Private (Vendor / Advertiser / Agent / Super Admin)
  */
-router.get('/my-ads', authenticate, authorize('vendor', 'super_admin'), adController.getMyAds);
+router.get('/my-ads', authenticate, authorize('vendor', 'advertiser', 'agent', 'super_admin'), adController.getMyAds);
 
 /**
  * @route   GET /api/v1/ads
@@ -66,15 +66,28 @@ router.get('/', authenticate, authorize('super_admin'), adController.getAll);
 
 /**
  * @route   POST /api/v1/ads
- * @desc    Create advertisement or submit vendor campaign request
- * @access  Private (Super Admin / Vendor)
+ * @desc    Create advertisement or submit vendor/advertiser campaign request
+ * @access  Private (Super Admin / Vendor / Advertiser / Agent)
  */
 router.post(
   '/',
   authenticate,
-  authorize('super_admin', 'vendor'),
+  authorize('super_admin', 'vendor', 'advertiser', 'agent'),
   adMediaUpload,
   adController.create
+);
+
+/**
+ * @route   POST /api/v1/ads/:id/pay
+ * @desc    Submit payment (UTR / demo pay) for single ad slot
+ * @access  Private (Advertiser / Vendor / Agent / Super Admin)
+ */
+router.post(
+  '/:id/pay',
+  authenticate,
+  authorize('advertiser', 'vendor', 'agent', 'super_admin'),
+  upload?.uploadGeneric ? upload.uploadGeneric('ad_payments', 10 * 1024 * 1024).single('payment_proof') : (req, res, next) => next(),
+  adController.submitPayment
 );
 
 /**
@@ -94,15 +107,15 @@ router.patch('/:id/reject', authenticate, authorize('super_admin'), adController
 /**
  * @route   PATCH /api/v1/ads/:id/toggle-status
  * @desc    Toggle active / paused
- * @access  Private (Super Admin / Vendor)
+ * @access  Private (Super Admin / Vendor / Advertiser / Agent)
  */
-router.patch('/:id/toggle-status', authenticate, authorize('super_admin', 'vendor'), adController.toggleStatus);
+router.patch('/:id/toggle-status', authenticate, authorize('super_admin', 'vendor', 'advertiser', 'agent'), adController.toggleStatus);
 
 /**
  * @route   DELETE /api/v1/ads/:id
  * @desc    Delete ad
- * @access  Private (Super Admin / Vendor)
+ * @access  Private (Super Admin / Vendor / Advertiser / Agent)
  */
-router.delete('/:id', authenticate, authorize('super_admin', 'vendor'), adController.delete);
+router.delete('/:id', authenticate, authorize('super_admin', 'vendor', 'advertiser', 'agent'), adController.delete);
 
 module.exports = router;

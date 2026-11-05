@@ -90,6 +90,22 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Shop Profile', path: '/vendor/profile', icon: HiUserCircle },
   ];
 
+  const agentLinks = [
+    { name: 'Agent Dashboard', path: '/agent/dashboard', icon: HiSquares2X2 },
+    { name: 'Link Businesses', path: '/agent/businesses', icon: HiBuildingStorefront },
+    { name: 'Register Associations', path: '/agent/associations', icon: HiBuildingOffice2 },
+    { name: 'Ads Sales', path: '/agent/ads', icon: HiSparkles },
+    { name: 'Subscription Renewals', path: '/agent/renewals', icon: HiCreditCard },
+    { name: 'My Profile', path: '/agent/profile', icon: HiUserCircle },
+  ];
+
+  const advertiserLinks = [
+    { name: 'Ad Dashboard', path: '/advertiser/dashboard', icon: HiSquares2X2 },
+    { name: 'Post Single Ad', path: '/advertiser/post-ad', icon: HiSparkles },
+    { name: 'My Ad Slots', path: '/advertiser/my-ads', icon: HiFilm },
+    { name: 'Company Profile', path: '/advertiser/profile', icon: HiUserCircle },
+  ];
+
   const links =
     user?.role === 'super_admin'
       ? superAdminLinks
@@ -97,6 +113,10 @@ export default function Sidebar({ isOpen, onClose }) {
       ? adminLinks
       : user?.role === 'vendor'
       ? vendorLinks
+      : user?.role === 'agent'
+      ? agentLinks
+      : user?.role === 'advertiser'
+      ? advertiserLinks
       : memberLinks;
 
   const resolveFileUrl = (filePath) => {

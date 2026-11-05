@@ -79,6 +79,8 @@ const userController = {
       let queryText = `
         SELECT u.id, u.name, u.email, u.phone, u.role, u.is_main_admin, u.association_id, u.profile_photo,
                CASE
+                 WHEN u.role = 'agent' THEN 'Growth Agent'
+                 WHEN u.role = 'advertiser' THEN 'Ad Company'
                  WHEN u.role = 'vendor' THEN 'Shop Vendor'
                  WHEN u.is_main_admin = true THEN 'Main Association Admin'
                  WHEN u.role = 'admin' THEN 'Layout Admin'
@@ -88,6 +90,7 @@ const userController = {
                u.eb_bill_proof, u.property_tax_receipt, u.status, u.created_at,
                u.shop_name, u.shop_category, u.shop_address, u.shop_phone, u.shop_logo,
                u.business_hours, u.upi_id, u.shop_description,
+               u.agent_code, u.company_name, u.gst_number, u.company_website,
                u.payment_status, u.payment_reference, u.payment_amount, u.payment_date, u.payment_proof,
                a.name as association_name
         FROM users u
@@ -97,8 +100,8 @@ const userController = {
       const queryParams = [];
 
       if (role === 'super_admin') {
-        // Super Admin approves new Association / Main Admin AND local Vendor registrations
-        queryText += " AND (u.is_main_admin = true OR u.role = 'vendor')";
+        // Super Admin approves new Association / Main Admin, local Vendors, Agents, and Ad Companies
+        queryText += " AND (u.is_main_admin = true OR u.role IN ('vendor', 'agent', 'advertiser'))";
         if (req.query.association_id) {
           queryParams.push(req.query.association_id);
           queryText += ` AND u.association_id = $${queryParams.length}`;
@@ -155,7 +158,7 @@ const userController = {
       // Super Admin: approves new Association / Main Admin registrations AND local Vendor registrations
       // Regular user & layout admin registration approvals are handled by Main Association Admin
       if (role === 'super_admin') {
-        if (!targetUser.is_main_admin && targetUser.role !== 'vendor') {
+        if (!targetUser.is_main_admin && !['vendor', 'agent', 'advertiser'].includes(targetUser.role)) {
           return res.status(403).json({
             success: false,
             message: 'Approval canceled for Super Admin. Resident member and layout administrator registrations must be approved by the Main Association Admin.'
@@ -230,11 +233,32 @@ const userController = {
 
       // Notification in DB
       const isVendor = approvedUser.role === 'vendor';
-      const notifTitle = isVendor ? 'Vendor Shop Approved!' : 'Account Approved!';
-      const notifMsg = isVendor
+      const isAgent = approvedUser.role === 'agent';
+      const isAdvertiser = approvedUser.role === 'advertiser';
+
+      const notifTitle = isAgent
+        ? 'Agent Account Approved!'
+        : isAdvertiser
+        ? 'Ad Company Approved!'
+        : isVendor
+        ? 'Vendor Shop Approved!'
+        : 'Account Approved!';
+
+      const notifMsg = isAgent
+        ? `Congratulations! Your Growth Agent account has been approved by the Super Administrator (Agent Code: ${approvedUser.agent_code || memberCode}). You can now log in to link businesses, register associations, and sell ads.`
+        : isAdvertiser
+        ? 'Congratulations! Your Ad Company account has been approved by the Super Administrator. You can now log in to post targeted advertisements.'
+        : isVendor
         ? 'Congratulations! Your vendor shop account has been approved by the Administrator. Please log in to your Vendor Portal and proceed with your onboarding payment to activate your store and start adding products.'
         : `Congratulations! Your membership account has been approved. Your Member Code is ${memberCode}.`;
-      const notifLink = isVendor ? '/vendor/dashboard' : '/member/dashboard';
+
+      const notifLink = isAgent
+        ? '/agent/dashboard'
+        : isAdvertiser
+        ? '/advertiser/dashboard'
+        : isVendor
+        ? '/vendor/dashboard'
+        : '/member/dashboard';
 
       await pool.query(
         `INSERT INTO notifications (user_id, title, message, type, link)
@@ -321,7 +345,7 @@ const userController = {
       // Super Admin: reviews new Association & Main Admin registrations AND local Vendor registrations
       // Regular user & layout admin registration rejections are reviewed by the Main Association Admin
       if (role === 'super_admin') {
-        if (!targetUser.is_main_admin && targetUser.role !== 'vendor') {
+        if (!targetUser.is_main_admin && !['vendor', 'agent', 'advertiser'].includes(targetUser.role)) {
           return res.status(403).json({
             success: false,
             message: 'Rejection canceled for Super Admin. Resident member and layout administrator registrations must be reviewed by the Main Association Admin.'

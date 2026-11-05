@@ -279,6 +279,21 @@ function ensureSchemaMigrations(db) {
     if (!userCols.includes('payment_proof')) {
       db.run("ALTER TABLE users ADD COLUMN payment_proof TEXT;");
     }
+    if (!userCols.includes('agent_code')) {
+      db.run("ALTER TABLE users ADD COLUMN agent_code TEXT;");
+    }
+    if (!userCols.includes('company_name')) {
+      db.run("ALTER TABLE users ADD COLUMN company_name TEXT;");
+    }
+    if (!userCols.includes('gst_number')) {
+      db.run("ALTER TABLE users ADD COLUMN gst_number TEXT;");
+    }
+    if (!userCols.includes('company_website')) {
+      db.run("ALTER TABLE users ADD COLUMN company_website TEXT;");
+    }
+    if (!userCols.includes('agent_id')) {
+      db.run("ALTER TABLE users ADD COLUMN agent_id INTEGER;");
+    }
 
     // 3. Ensure missing columns on associations
     const assocRes = db.exec("PRAGMA table_info(associations);");
@@ -294,6 +309,9 @@ function ensureSchemaMigrations(db) {
     }
     if (!assocCols.includes('code')) {
       db.run("ALTER TABLE associations ADD COLUMN code TEXT;");
+    }
+    if (!assocCols.includes('agent_id')) {
+      db.run("ALTER TABLE associations ADD COLUMN agent_id INTEGER;");
     }
     try {
       const missingAssocs = db.exec("SELECT id, name FROM associations WHERE code IS NULL OR code = '';");
@@ -347,6 +365,15 @@ function ensureSchemaMigrations(db) {
       try { db.run("ALTER TABLE advertisements ADD COLUMN distance TEXT;"); } catch (_) {}
       try { db.run("ALTER TABLE advertisements ADD COLUMN location_name TEXT;"); } catch (_) {}
       try { db.run("ALTER TABLE advertisements ADD COLUMN store_url TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN target_city TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN target_district TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN target_state TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN payment_status TEXT DEFAULT 'unpaid';"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN payment_reference TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN payment_amount REAL DEFAULT 0;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN payment_date TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN payment_proof TEXT;"); } catch (_) {}
+      try { db.run("ALTER TABLE advertisements ADD COLUMN agent_id INTEGER;"); } catch (_) {}
 
       // Auto-seed initial showcase ads if table is empty
       const adCountRes = db.exec("SELECT COUNT(*) FROM advertisements;");

@@ -91,4 +91,8 @@ router.use('/properties', propertyRoutes);
 const adRoutes = safeLoadRoute(['ad.routes.js', 'ads.routes.js', 'ad.js', 'ads.js'], 'Advertisements');
 router.use('/ads', adRoutes);
 
+// 17. Growth Agent routes
+const agentRoutes = safeLoadRoute(['agent.routes.js', 'agent.js'], 'Agent Operations');
+router.use('/agent', agentRoutes);
+
 module.exports = router;

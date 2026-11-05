@@ -494,8 +494,12 @@ const authController = {
 
       // Check account approval status
       if (user.status === 'pending') {
-        const pendingMsg = user.role === 'vendor'
-          ? 'Your vendor shop account registration is pending approval by the Super Administrator. You will be able to log in once approved.'
+        const pendingMsg = user.role === 'agent'
+          ? 'Your growth agent account registration is pending approval by the Super Administrator. You will be able to log in once approved.'
+          : user.role === 'advertiser'
+          ? 'Your ad company / advertiser registration is pending approval by the Super Administrator. You will be able to log in once approved.'
+          : user.role === 'vendor'
+          ? 'Your vendor shop account registration is pending approval by the Administrator. You will be able to log in once approved.'
           : (user.is_main_admin
             ? 'Your association and Main Association Admin registration is pending approval by the Super Administrator. You will be able to log in once approved.'
             : (user.role === 'admin'
@@ -553,7 +557,11 @@ const authController = {
       }
 
       // Determine designation
-      const userDesignation = user.role === 'vendor'
+      const userDesignation = user.role === 'agent'
+        ? 'Growth & Business Agent'
+        : user.role === 'advertiser'
+        ? 'Ad Company / Advertiser'
+        : user.role === 'vendor'
         ? 'Shop Vendor'
         : (user.is_main_admin
           ? 'Main Association Admin'
@@ -578,7 +586,11 @@ const authController = {
         shop_name: user.shop_name,
         shop_category: user.shop_category,
         shop_logo: user.shop_logo,
-        payment_status: user.payment_status || 'unpaid'
+        payment_status: user.payment_status || 'unpaid',
+        agent_code: user.agent_code,
+        company_name: user.company_name,
+        gst_number: user.gst_number,
+        company_website: user.company_website
       };
 
       const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
@@ -626,6 +638,10 @@ const authController = {
             shop_address: user.shop_address,
             shop_phone: user.shop_phone,
             shop_logo: user.shop_logo,
+            agent_code: user.agent_code,
+            company_name: user.company_name,
+            gst_number: user.gst_number,
+            company_website: user.company_website,
             business_hours: user.business_hours,
             upi_id: user.upi_id,
             shop_description: user.shop_description,
@@ -695,14 +711,6 @@ const authController = {
         });
       }
 
-      const userDesignation = user.is_main_admin
-        ? 'Main Association Admin'
-        : user.role === 'admin'
-        ? 'Layout Admin'
-        : user.role === 'super_admin'
-        ? 'Super Admin'
-        : 'Resident Member';
-
       // Fetch latest user details including payment info
       const fullUserRes = await pool.query(
         `SELECT u.*, a.name as association_name, a.code as association_code
@@ -712,6 +720,20 @@ const authController = {
         [user.user_id]
       );
       const fullUser = fullUserRes.rows[0] || user;
+
+      const userDesignation = fullUser.role === 'agent'
+        ? 'Growth & Business Agent'
+        : fullUser.role === 'advertiser'
+        ? 'Ad Company / Advertiser'
+        : fullUser.role === 'vendor'
+        ? 'Shop Vendor'
+        : (fullUser.is_main_admin
+          ? 'Main Association Admin'
+          : fullUser.role === 'admin'
+          ? 'Layout Admin'
+          : fullUser.role === 'super_admin'
+          ? 'Super Admin'
+          : 'Resident Member');
 
       // Generate new access token
       const newAccessToken = jwt.sign(
@@ -729,7 +751,11 @@ const authController = {
           shop_name: fullUser.shop_name,
           shop_category: fullUser.shop_category,
           shop_logo: fullUser.shop_logo,
-          payment_status: fullUser.payment_status || 'unpaid'
+          payment_status: fullUser.payment_status || 'unpaid',
+          agent_code: fullUser.agent_code,
+          company_name: fullUser.company_name,
+          gst_number: fullUser.gst_number,
+          company_website: fullUser.company_website
         },
         JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRY }
@@ -751,6 +777,10 @@ const authController = {
             association_name: fullUser.association_name,
             association_code: fullUser.association_code,
             member_code: fullUser.member_code,
+            agent_code: fullUser.agent_code,
+            company_name: fullUser.company_name,
+            gst_number: fullUser.gst_number,
+            company_website: fullUser.company_website,
             shop_name: fullUser.shop_name,
             shop_category: fullUser.shop_category,
             shop_address: fullUser.shop_address,
@@ -1082,7 +1112,11 @@ const authController = {
       }
 
       const user = result.rows[0];
-      const userDesignation = user.role === 'vendor'
+      const userDesignation = user.role === 'agent'
+        ? 'Growth & Business Agent'
+        : user.role === 'advertiser'
+        ? 'Ad Company / Advertiser'
+        : user.role === 'vendor'
         ? 'Shop Vendor'
         : (user.is_main_admin
           ? 'Main Association Admin'
@@ -1106,6 +1140,10 @@ const authController = {
           association_name: user.association_name,
           association_code: user.association_code,
           member_code: user.member_code,
+          agent_code: user.agent_code,
+          company_name: user.company_name,
+          gst_number: user.gst_number,
+          company_website: user.company_website,
           shop_name: user.shop_name,
           shop_category: user.shop_category,
           shop_address: user.shop_address,
@@ -1299,6 +1337,248 @@ const authController = {
         success: true,
         message: 'Vendor shop registration submitted successfully! Your account is pending Administrator approval. Once approved, you can log in, proceed with your onboarding payment, and start adding products to your shop.',
         data: newVendor
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Register a new Growth & Business Agent
+   * Responsible for: New business linking & introducing, association registration, ads sales, and subscription renewals.
+   * Status defaults to 'pending' (requires Super Admin approval)
+   */
+  async registerAgent(req, res, next) {
+    try {
+      const {
+        name,
+        email,
+        phone,
+        password,
+        door_no,
+        street,
+        taluk,
+        district,
+        state = 'Tamil Nadu',
+        aadhaar_number
+      } = req.body;
+
+      if (!name || !email || !phone || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Full name, email, phone number, and password are required'
+        });
+      }
+
+      // Check duplicate email or phone
+      const duplicateUser = await pool.query(
+        'SELECT id, email, phone FROM users WHERE email = $1 OR phone = $2',
+        [email.trim().toLowerCase(), phone.trim()]
+      );
+
+      if (duplicateUser.rows.length > 0) {
+        const existing = duplicateUser.rows[0];
+        const field = existing.email.toLowerCase() === email.trim().toLowerCase() ? 'Email' : 'Phone number';
+        return res.status(409).json({
+          success: false,
+          message: `${field} is already registered`
+        });
+      }
+
+      // Generate Agent Code (e.g. AGT-4912)
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const agentCode = `AGT-${randomSuffix}`;
+
+      // Handle profile photo if uploaded
+      const profilePhoto = req.files && req.files.profile_photo && req.files.profile_photo[0]
+        ? normalizeFilePath(req.files.profile_photo[0], 'profiles')
+        : (req.file ? normalizeFilePath(req.file, 'profiles') : null);
+
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const insertQuery = `
+        INSERT INTO users (
+          name, email, phone, password_hash, role, status, agent_code,
+          door_no, street, taluk, district, state, aadhaar_number, profile_photo
+        ) VALUES (
+          $1, $2, $3, $4, 'agent', 'pending', $5,
+          $6, $7, $8, $9, $10, $11, $12
+        )
+        RETURNING id, name, email, phone, role, status, agent_code, profile_photo, created_at
+      `;
+
+      const result = await pool.query(insertQuery, [
+        name.trim(),
+        email.trim().toLowerCase(),
+        phone.trim(),
+        passwordHash,
+        agentCode,
+        door_no ? door_no.trim() : null,
+        street ? street.trim() : null,
+        taluk ? taluk.trim() : null,
+        district ? district.trim() : null,
+        state ? state.trim() : 'Tamil Nadu',
+        aadhaar_number ? aadhaar_number.trim() : null,
+        profilePhoto
+      ]);
+
+      const newAgent = result.rows[0];
+
+      // Notify Super Admins
+      try {
+        const superAdmins = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+        for (const sa of superAdmins.rows) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              sa.id,
+              'New Agent Pending Approval',
+              `Growth Agent "${newAgent.name}" (Code: ${agentCode}) registered for new business onboarding & ads sales. Super Admin approval required.`,
+              'info',
+              '/super-admin/approvals'
+            ]
+          );
+        }
+      } catch (notifErr) {
+        console.warn('Super admin notification error for agent:', notifErr.message);
+      }
+
+      await logAudit(
+        newAgent.id,
+        'AGENT_REGISTER',
+        'users',
+        newAgent.id,
+        { agent_code: agentCode, name: newAgent.name },
+        req.ip
+      );
+
+      res.status(201).json({
+        success: true,
+        message: `Agent registration submitted successfully! Your Agent Code is ${agentCode}. Your account is pending Super Administrator approval. You will be able to log in to the Agent portal once approved.`,
+        data: newAgent
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Register a new Advertiser / Ad Company
+   * Status defaults to 'pending' (requires Super Admin approval)
+   */
+  async registerAdvertiser(req, res, next) {
+    try {
+      const {
+        name,
+        email,
+        phone,
+        password,
+        company_name,
+        gst_number,
+        company_website,
+        shop_category,
+        door_no,
+        street,
+        taluk,
+        district,
+        state = 'Tamil Nadu'
+      } = req.body;
+
+      if (!name || !email || !phone || !password || !company_name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Company name, contact person name, email, phone, and password are required'
+        });
+      }
+
+      // Check duplicate email or phone
+      const duplicateUser = await pool.query(
+        'SELECT id, email, phone FROM users WHERE email = $1 OR phone = $2',
+        [email.trim().toLowerCase(), phone.trim()]
+      );
+
+      if (duplicateUser.rows.length > 0) {
+        const existing = duplicateUser.rows[0];
+        const field = existing.email.toLowerCase() === email.trim().toLowerCase() ? 'Email' : 'Phone number';
+        return res.status(409).json({
+          success: false,
+          message: `${field} is already registered`
+        });
+      }
+
+      // Handle company logo if uploaded
+      const companyLogo = req.files && req.files.company_logo && req.files.company_logo[0]
+        ? normalizeFilePath(req.files.company_logo[0], 'logos')
+        : (req.file ? normalizeFilePath(req.file, 'logos') : null);
+
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const insertQuery = `
+        INSERT INTO users (
+          name, email, phone, password_hash, role, status,
+          company_name, gst_number, company_website, shop_category, shop_logo,
+          door_no, street, taluk, district, state
+        ) VALUES (
+          $1, $2, $3, $4, 'advertiser', 'pending',
+          $5, $6, $7, $8, $9,
+          $10, $11, $12, $13, $14
+        )
+        RETURNING id, name, email, phone, role, status, company_name, gst_number, company_website, shop_logo, created_at
+      `;
+
+      const result = await pool.query(insertQuery, [
+        name.trim(),
+        email.trim().toLowerCase(),
+        phone.trim(),
+        passwordHash,
+        company_name.trim(),
+        gst_number ? gst_number.trim() : null,
+        company_website ? company_website.trim() : null,
+        shop_category ? shop_category.trim() : 'Brand & Business Marketing',
+        companyLogo,
+        door_no ? door_no.trim() : null,
+        street ? street.trim() : null,
+        taluk ? taluk.trim() : null,
+        district ? district.trim() : null,
+        state ? state.trim() : 'Tamil Nadu'
+      ]);
+
+      const newAdvertiser = result.rows[0];
+
+      // Notify Super Admins
+      try {
+        const superAdmins = await pool.query("SELECT id FROM users WHERE role = 'super_admin'");
+        for (const sa of superAdmins.rows) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              sa.id,
+              'New Ad Company Pending Approval',
+              `Ad Company "${newAdvertiser.company_name}" registered by "${newAdvertiser.name}". Super Admin review and approval required.`,
+              'info',
+              '/super-admin/approvals'
+            ]
+          );
+        }
+      } catch (notifErr) {
+        console.warn('Super admin notification error for advertiser:', notifErr.message);
+      }
+
+      await logAudit(
+        newAdvertiser.id,
+        'ADVERTISER_REGISTER',
+        'users',
+        newAdvertiser.id,
+        { company_name: newAdvertiser.company_name, contact: newAdvertiser.name },
+        req.ip
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Ad Company registration submitted successfully! Your account is pending Super Administrator approval. Once approved, you can log in, choose your ad slots, and post targeted ads across cities and districts.',
+        data: newAdvertiser
       });
     } catch (error) {
       next(error);

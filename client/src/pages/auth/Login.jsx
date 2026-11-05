@@ -12,6 +12,8 @@ import {
   HiBuildingStorefront,
   HiArrowRight,
   HiCheckCircle,
+  HiSparkles,
+  HiMegaphone,
 } from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -31,7 +33,11 @@ export default function Login() {
   const initialTab =
     location.pathname.includes('/vendor') || queryRole === 'vendor' || location.state?.role === 'vendor'
       ? 'vendor'
-      : location.state?.role && ['super_admin', 'admin', 'member', 'vendor'].includes(location.state.role)
+      : location.pathname.includes('/agent') || queryRole === 'agent' || location.state?.role === 'agent'
+      ? 'agent'
+      : location.pathname.includes('/advertiser') || queryRole === 'advertiser' || location.state?.role === 'advertiser'
+      ? 'advertiser'
+      : location.state?.role && ['super_admin', 'admin', 'member', 'vendor', 'agent', 'advertiser'].includes(location.state.role)
       ? location.state.role
       : 'admin';
 
@@ -45,7 +51,7 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [roleMismatch, setRoleMismatch] = useState(null);
 
-  // Tab metadata for top slides: ONLY Admin and User / Member
+  // Tab metadata for top slides: Admin, Member, Vendor, Agent, Advertiser
   const tabs = [
     {
       id: 'admin',
@@ -60,7 +66,7 @@ export default function Login() {
     },
     {
       id: 'member',
-      label: 'User / Member',
+      label: 'Resident',
       badge: 'Resident Portal',
       icon: HiUserGroup,
       color: 'from-emerald-600 to-teal-700',
@@ -71,7 +77,7 @@ export default function Login() {
     },
     {
       id: 'vendor',
-      label: 'Vendor / Shop',
+      label: 'Vendor',
       badge: 'Merchant Portal',
       icon: HiBuildingStorefront,
       color: 'from-amber-600 to-orange-600',
@@ -79,6 +85,28 @@ export default function Login() {
       activeBg: 'bg-amber-600 text-white',
       accentColor: 'text-amber-600',
       description: 'Manage shop products, pricing, stock and orders for layout members',
+    },
+    {
+      id: 'agent',
+      label: 'Agent',
+      badge: 'Agent Portal',
+      icon: HiSparkles,
+      color: 'from-purple-600 to-indigo-700',
+      activeBorder: 'border-purple-600 text-purple-600',
+      activeBg: 'bg-purple-600 text-white',
+      accentColor: 'text-purple-600',
+      description: 'Onboard vendors, register associations, sell ads and track subscription renewals',
+    },
+    {
+      id: 'advertiser',
+      label: 'Ad Company',
+      badge: 'Advertiser Portal',
+      icon: HiMegaphone,
+      color: 'from-rose-600 to-orange-600',
+      activeBorder: 'border-rose-600 text-rose-600',
+      activeBg: 'bg-rose-600 text-white',
+      accentColor: 'text-rose-600',
+      description: 'Post and activate targeted image & video advertisements across cities & districts',
     },
   ];
 
@@ -172,6 +200,10 @@ export default function Login() {
         navigate('/admin/dashboard', { replace: true });
       } else if (user.role === 'vendor') {
         navigate('/vendor/dashboard', { replace: true });
+      } else if (user.role === 'agent') {
+        navigate('/agent/dashboard', { replace: true });
+      } else if (user.role === 'advertiser') {
+        navigate('/advertiser/dashboard', { replace: true });
       } else {
         navigate('/member/dashboard', { replace: true });
       }
@@ -195,6 +227,10 @@ export default function Login() {
       navigate('/admin/dashboard', { replace: true });
     } else if (targetRole === 'vendor') {
       navigate('/vendor/dashboard', { replace: true });
+    } else if (targetRole === 'agent') {
+      navigate('/agent/dashboard', { replace: true });
+    } else if (targetRole === 'advertiser') {
+      navigate('/advertiser/dashboard', { replace: true });
     } else {
       navigate('/member/dashboard', { replace: true });
     }
@@ -274,9 +310,9 @@ export default function Login() {
             </p>
           </div>
 
-          {/* 2 DISTINCT ROLE TABS (Super Admin moved below submit button) */}
-          <div className="px-6 sm:px-8 pt-2">
-            <div className="grid grid-cols-2 gap-2 bg-gray-100/80 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700">
+          {/* 5 ROLE TABS (Super Admin moved below submit button) */}
+          <div className="px-4 sm:px-8 pt-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 bg-gray-100/80 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -285,14 +321,14 @@ export default function Login() {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab.id)}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    className={`flex flex-col items-center justify-center gap-1 py-2.5 px-1 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer ${
                       isActive
                         ? `${tab.activeBg} shadow-md shadow-gray-400/20 scale-[1.02]`
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-700/60'
                     }`}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-center">{tab.label}</span>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    <span className="text-center truncate w-full">{tab.label}</span>
                   </button>
                 );
               })}
@@ -430,6 +466,12 @@ export default function Login() {
                     ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30'
                     : activeTab === 'admin'
                     ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30'
+                    : activeTab === 'vendor'
+                    ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30'
+                    : activeTab === 'agent'
+                    ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+                    : activeTab === 'advertiser'
+                    ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30'
                     : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
                 }`}
               >
@@ -470,40 +512,64 @@ export default function Login() {
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-3">
                 Need to register? Select a Registration Form:
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                 <Link
                   to="/register?type=assoc-admin"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/90 dark:hover:bg-purple-900/50 hover:border-purple-300 transition text-center group shadow-xs"
                 >
                   <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1">
                     🏛️ Association
                   </span>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
-                    Main Admin & Layout
+                    Layout Admin
                   </span>
                 </Link>
 
                 <Link
                   to="/register?type=member"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100/90 dark:hover:bg-emerald-900/50 hover:border-emerald-300 transition text-center group shadow-xs"
                 >
                   <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                    👥 Member
+                    👥 Resident
                   </span>
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-                    Resident Registration
+                    Member Portal
                   </span>
                 </Link>
 
                 <Link
                   to="/vendor/register"
-                  className="flex flex-col items-center justify-center p-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100/90 dark:hover:bg-amber-900/50 hover:border-amber-300 transition text-center group shadow-sm"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100/90 dark:hover:bg-amber-900/50 hover:border-amber-300 transition text-center group shadow-xs"
                 >
                   <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                    🏪 Vendor Shop
+                    🏪 Shop Vendor
                   </span>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
-                    Register Shop & Products
+                    Local Merchant
+                  </span>
+                </Link>
+
+                <Link
+                  to="/agent/register"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100/90 dark:hover:bg-indigo-900/50 hover:border-indigo-300 transition text-center group shadow-xs"
+                >
+                  <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300 flex items-center gap-1">
+                    🚀 Growth Agent
+                  </span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
+                    Partner & Earn
+                  </span>
+                </Link>
+
+                <Link
+                  to="/advertiser/register"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100/90 dark:hover:bg-rose-900/50 hover:border-rose-300 transition text-center group shadow-xs col-span-2 sm:col-span-1"
+                >
+                  <span className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1">
+                    📢 Ad Company
+                  </span>
+                  <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium mt-0.5">
+                    Promote Brands
                   </span>
                 </Link>
               </div>

@@ -134,6 +134,73 @@ router.post(
   authController.registerVendor
 );
 
+// Multer middleware wrapper for Agent registration (profile photo)
+const agentUploadMiddleware = (req, res, next) => {
+  if (upload && upload.uploadGeneric) {
+    upload.uploadGeneric('profiles', 5 * 1024 * 1024).fields([
+      { name: 'profile_photo', maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) return res.status(400).json({ success: false, message: err.message || 'Profile photo upload failed' });
+      next();
+    });
+  } else {
+    next();
+  }
+};
+
+/**
+ * @route   POST /api/v1/auth/register-agent
+ * @desc    Public registration for Growth & Business Agent
+ * @access  Public
+ */
+router.post(
+  '/register-agent',
+  authLimiter,
+  agentUploadMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Agent name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('phone').trim().isLength({ min: 10, max: 15 }).withMessage('Valid phone number is required (10-15 digits)'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    validate
+  ],
+  authController.registerAgent
+);
+
+// Multer middleware wrapper for Advertiser / Ad Company registration (company logo)
+const advertiserUploadMiddleware = (req, res, next) => {
+  if (upload && upload.uploadGeneric) {
+    upload.uploadGeneric('logos', 5 * 1024 * 1024).fields([
+      { name: 'company_logo', maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) return res.status(400).json({ success: false, message: err.message || 'Company logo upload failed' });
+      next();
+    });
+  } else {
+    next();
+  }
+};
+
+/**
+ * @route   POST /api/v1/auth/register-advertiser
+ * @desc    Public registration for Advertiser / Ad Company
+ * @access  Public
+ */
+router.post(
+  '/register-advertiser',
+  authLimiter,
+  advertiserUploadMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Contact person name is required'),
+    body('company_name').trim().notEmpty().withMessage('Company / Brand name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('phone').trim().isLength({ min: 10, max: 15 }).withMessage('Valid phone number is required (10-15 digits)'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    validate
+  ],
+  authController.registerAdvertiser
+);
+
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login user with email/phone & password
