@@ -1407,20 +1407,56 @@ const authController = {
         RETURNING id, name, email, phone, role, status, agent_code, profile_photo, created_at
       `;
 
-      const result = await pool.query(insertQuery, [
-        name.trim(),
-        email.trim().toLowerCase(),
-        phone.trim(),
-        passwordHash,
-        agentCode,
-        door_no ? door_no.trim() : null,
-        street ? street.trim() : null,
-        taluk ? taluk.trim() : null,
-        district ? district.trim() : null,
-        state ? state.trim() : 'Tamil Nadu',
-        aadhaar_number ? aadhaar_number.trim() : null,
-        profilePhoto
-      ]);
+      let result;
+      try {
+        result = await pool.query(insertQuery, [
+          name.trim(),
+          email.trim().toLowerCase(),
+          phone.trim(),
+          passwordHash,
+          agentCode,
+          door_no ? door_no.trim() : null,
+          street ? street.trim() : null,
+          taluk ? taluk.trim() : null,
+          district ? district.trim() : null,
+          state ? state.trim() : 'Tamil Nadu',
+          aadhaar_number ? aadhaar_number.trim() : null,
+          profilePhoto
+        ]);
+      } catch (insertErr) {
+        if (insertErr.message && (insertErr.message.includes('agent_code') || insertErr.message.includes('does not exist') || insertErr.message.includes('constraint'))) {
+          console.warn('[Auto-Migration]: Ensuring agent columns and constraints in users table...');
+          await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_code VARCHAR(50);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS gst_number VARCHAR(50);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_district VARCHAR(100);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_city VARCHAR(100);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_id INTEGER;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_agent_id INTEGER;
+            ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+            ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'ad_company', 'advertiser'));
+          `).catch((migErr) => console.warn('[Auto-Migration Warn]:', migErr.message));
+
+          result = await pool.query(insertQuery, [
+            name.trim(),
+            email.trim().toLowerCase(),
+            phone.trim(),
+            passwordHash,
+            agentCode,
+            door_no ? door_no.trim() : null,
+            street ? street.trim() : null,
+            taluk ? taluk.trim() : null,
+            district ? district.trim() : null,
+            state ? state.trim() : 'Tamil Nadu',
+            aadhaar_number ? aadhaar_number.trim() : null,
+            profilePhoto
+          ]);
+        } else {
+          throw insertErr;
+        }
+      }
 
       const newAgent = result.rows[0];
 
@@ -1527,22 +1563,57 @@ const authController = {
         RETURNING id, name, email, phone, role, status, company_name, gst_number, company_website, shop_logo, created_at
       `;
 
-      const result = await pool.query(insertQuery, [
-        name.trim(),
-        email.trim().toLowerCase(),
-        phone.trim(),
-        passwordHash,
-        company_name.trim(),
-        gst_number ? gst_number.trim() : null,
-        company_website ? company_website.trim() : null,
-        shop_category ? shop_category.trim() : 'Brand & Business Marketing',
-        companyLogo,
-        door_no ? door_no.trim() : null,
-        street ? street.trim() : null,
-        taluk ? taluk.trim() : null,
-        district ? district.trim() : null,
-        state ? state.trim() : 'Tamil Nadu'
-      ]);
+      let result;
+      try {
+        result = await pool.query(insertQuery, [
+          name.trim(),
+          email.trim().toLowerCase(),
+          phone.trim(),
+          passwordHash,
+          company_name.trim(),
+          gst_number ? gst_number.trim() : null,
+          company_website ? company_website.trim() : null,
+          shop_category ? shop_category.trim() : 'Brand & Business Marketing',
+          companyLogo,
+          door_no ? door_no.trim() : null,
+          street ? street.trim() : null,
+          taluk ? taluk.trim() : null,
+          district ? district.trim() : null,
+          state ? state.trim() : 'Tamil Nadu'
+        ]);
+      } catch (insertErr) {
+        if (insertErr.message && (insertErr.message.includes('company_name') || insertErr.message.includes('does not exist') || insertErr.message.includes('constraint'))) {
+          console.warn('[Auto-Migration]: Ensuring advertiser columns and constraints in users table...');
+          await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS gst_number VARCHAR(50);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_category VARCHAR(100);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_logo VARCHAR(500);
+            ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+            ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'ad_company', 'advertiser'));
+          `).catch((migErr) => console.warn('[Auto-Migration Warn]:', migErr.message));
+
+          result = await pool.query(insertQuery, [
+            name.trim(),
+            email.trim().toLowerCase(),
+            phone.trim(),
+            passwordHash,
+            company_name.trim(),
+            gst_number ? gst_number.trim() : null,
+            company_website ? company_website.trim() : null,
+            shop_category ? shop_category.trim() : 'Brand & Business Marketing',
+            companyLogo,
+            door_no ? door_no.trim() : null,
+            street ? street.trim() : null,
+            taluk ? taluk.trim() : null,
+            district ? district.trim() : null,
+            state ? state.trim() : 'Tamil Nadu'
+          ]);
+        } else {
+          throw insertErr;
+        }
+      }
 
       const newAdvertiser = result.rows[0];
 

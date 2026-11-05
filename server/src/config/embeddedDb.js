@@ -163,7 +163,7 @@ function ensureSchemaMigrations(db) {
     // 2. Ensure missing columns on users and vendor migration
     const schemaRes = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='users';");
     const currentSql = schemaRes[0]?.values[0]?.[0] || '';
-    if (currentSql && !currentSql.includes("'vendor'")) {
+    if (currentSql && (!currentSql.includes("'agent'") || !currentSql.includes("'ad_company'"))) {
       db.run("PRAGMA foreign_keys = OFF;");
       db.run(`
         CREATE TABLE users_v_migration (
@@ -172,7 +172,7 @@ function ensureSchemaMigrations(db) {
           email TEXT UNIQUE,
           phone TEXT,
           password_hash TEXT NOT NULL,
-          role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor')),
+          role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'ad_company', 'advertiser')),
           association_id INTEGER REFERENCES associations(id) ON DELETE SET NULL,
           member_code TEXT UNIQUE,
           door_no TEXT,
@@ -196,6 +196,19 @@ function ensureSchemaMigrations(db) {
           business_hours TEXT,
           upi_id TEXT,
           shop_description TEXT,
+          payment_status TEXT DEFAULT 'unpaid',
+          payment_reference TEXT,
+          payment_amount REAL DEFAULT 0,
+          payment_date TEXT,
+          payment_proof TEXT,
+          agent_code TEXT,
+          company_name TEXT,
+          gst_number TEXT,
+          company_website TEXT,
+          agent_id INTEGER,
+          assigned_district TEXT,
+          assigned_city TEXT,
+          referred_by_agent_id INTEGER,
           status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
           rejection_reason TEXT,
           language TEXT DEFAULT 'en',
@@ -294,6 +307,15 @@ function ensureSchemaMigrations(db) {
     if (!userCols.includes('agent_id')) {
       db.run("ALTER TABLE users ADD COLUMN agent_id INTEGER;");
     }
+    if (!userCols.includes('assigned_district')) {
+      db.run("ALTER TABLE users ADD COLUMN assigned_district TEXT;");
+    }
+    if (!userCols.includes('assigned_city')) {
+      db.run("ALTER TABLE users ADD COLUMN assigned_city TEXT;");
+    }
+    if (!userCols.includes('referred_by_agent_id')) {
+      db.run("ALTER TABLE users ADD COLUMN referred_by_agent_id INTEGER;");
+    }
 
     // 3. Ensure missing columns on associations
     const assocRes = db.exec("PRAGMA table_info(associations);");
@@ -312,6 +334,9 @@ function ensureSchemaMigrations(db) {
     }
     if (!assocCols.includes('agent_id')) {
       db.run("ALTER TABLE associations ADD COLUMN agent_id INTEGER;");
+    }
+    if (!assocCols.includes('referred_by_agent_id')) {
+      db.run("ALTER TABLE associations ADD COLUMN referred_by_agent_id INTEGER;");
     }
     try {
       const missingAssocs = db.exec("SELECT id, name FROM associations WHERE code IS NULL OR code = '';");
@@ -440,7 +465,7 @@ function initSchemaAndSeed(db) {
       email TEXT UNIQUE,
       phone TEXT,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor')),
+      role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'ad_company', 'advertiser')),
       association_id INTEGER REFERENCES associations(id) ON DELETE SET NULL,
       member_code TEXT UNIQUE,
       door_no TEXT,

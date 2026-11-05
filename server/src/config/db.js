@@ -56,7 +56,9 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS scrolling_announcement TEXT;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS is_scrolling_active BOOLEAN DEFAULT true;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS code VARCHAR(50);
-      try {
+      `);
+
+try {
         const missingCodes = await pgPool.query("SELECT id, name FROM associations WHERE code IS NULL OR code = ''");
         if (missingCodes.rows.length > 0) {
           const { generateAssociationCode } = require('../utils/generateAssociationCode');
@@ -68,6 +70,8 @@ async function initPostgresSchemaAndSeed() {
       } catch (backfillErr) {
         console.warn('Association code backfill notice:', backfillErr.message);
       }
+
+    await pgPool.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS idx_associations_code ON associations(code);
       ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_key;
       ALTER TABLE votes DROP CONSTRAINT IF EXISTS votes_poll_id_user_id_unique;
@@ -79,7 +83,7 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE event_captures ALTER COLUMN file_size TYPE BIGINT;
       ALTER TABLE documents ALTER COLUMN file_type TYPE VARCHAR(255);
       ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'advertiser'));
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'member', 'vendor', 'agent', 'ad_company', 'advertiser'));
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_category VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_address TEXT;
@@ -97,6 +101,10 @@ async function initPostgresSchemaAndSeed() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS gst_number VARCHAR(50);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_district VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_city VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_agent_id INTEGER;
+      ALTER TABLE associations ADD COLUMN IF NOT EXISTS referred_by_agent_id INTEGER;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_id INTEGER;
       ALTER TABLE associations ADD COLUMN IF NOT EXISTS agent_id INTEGER;
       ALTER TABLE advertisements ADD COLUMN IF NOT EXISTS target_city VARCHAR(100);
