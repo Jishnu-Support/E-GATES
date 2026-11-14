@@ -326,9 +326,9 @@ try {
       const existing = saCheck.rows[0];
       await pgPool.query(
         `UPDATE users
-         SET password_hash = $1, name = $2, phone = $3
-         WHERE id = $4`,
-        [hash, seedUsername, seedPhone, existing.id]
+         SET password_hash = $1, name = $2, phone = $3, email = $4, status = 'approved'
+         WHERE id = $5`,
+        [hash, seedUsername, seedPhone, seedEmail, existing.id]
       );
     }
   } catch (err) {

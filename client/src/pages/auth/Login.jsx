@@ -147,9 +147,11 @@ export default function Login() {
 
     try {
       setIsLoading(true);
-      const isEmail = identifier.includes('@');
+      const trimmedId = identifier.trim();
       const credentials = {
-        [isEmail ? 'email' : 'phone']: identifier.trim(),
+        identifier: trimmedId,
+        email: trimmedId,
+        phone: trimmedId,
         password,
       };
 
@@ -170,6 +172,12 @@ export default function Login() {
           }`
         );
         setIsLoading(false);
+        return;
+      }
+
+      // If Super Admin logs in from any tab, seamlessly route directly to /super-admin
+      if (user.role === 'super_admin') {
+        navigate('/super-admin', { replace: true });
         return;
       }
 
