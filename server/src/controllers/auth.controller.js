@@ -454,9 +454,10 @@ const authController = {
   async login(req, res, next) {
     try {
       const { identifier, email, phone, password } = req.body;
-      const loginId = (identifier || email || phone || '').trim();
+      const rawLoginId = (identifier || email || phone || '').trim();
+      const cleanPhoneId = rawLoginId.replace(/[\s\-()]/g, '');
 
-      if (!loginId || !password) {
+      if (!rawLoginId || !password) {
         return res.status(400).json({
           success: false,
           message: 'Email or phone and password are required'
@@ -468,8 +469,8 @@ const authController = {
         `SELECT u.*, a.name as association_name, a.code as association_code, a.is_active as association_active
          FROM users u
          LEFT JOIN associations a ON u.association_id = a.id
-         WHERE LOWER(u.email) = LOWER($1) OR u.phone = $1 OR LOWER(u.name) = LOWER($1)`,
-        [loginId]
+         WHERE LOWER(u.email) = LOWER($1) OR u.phone = $1 OR u.phone = $2 OR LOWER(u.name) = LOWER($1) OR LOWER(u.member_code) = LOWER($1)`,
+        [rawLoginId, cleanPhoneId]
       );
 
       if (userResult.rows.length === 0) {

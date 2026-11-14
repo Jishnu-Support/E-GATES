@@ -438,6 +438,38 @@ function ensureSchemaMigrations(db) {
     } catch (adMigErr) {
       console.warn('[EmbeddedDB Ad Migration Notice]:', adMigErr.message);
     }
+
+    // Sync seed super admin matching env configuration
+    try {
+      const config = require('./env');
+      const bcrypt = require('bcrypt');
+      const seedUsername = config.seedAdmin?.username || 'jit_admin';
+      const seedPassword = config.seedAdmin?.password || 'Jishnuinfotech@123';
+      const seedPhone = config.seedAdmin?.phone || '9566823219';
+      const seedEmail = seedUsername.includes('@')
+        ? seedUsername.toLowerCase()
+        : `${seedUsername.toLowerCase()}@jishnuinfotech.com`;
+
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(seedPassword, salt);
+
+      const sa = db.exec("SELECT id FROM users WHERE role = 'super_admin' LIMIT 1");
+      if (!sa || sa.length === 0 || !sa[0].values || sa[0].values.length === 0) {
+        db.run(
+          `INSERT INTO users (name, email, phone, password_hash, role, status, member_code)
+           VALUES (?, ?, ?, ?, 'super_admin', 'approved', '000001')`,
+          [seedUsername, seedEmail, seedPhone, hash]
+        );
+      } else {
+        const saId = sa[0].values[0][0];
+        db.run(
+          `UPDATE users SET password_hash = ?, name = ?, phone = ?, status = 'approved' WHERE id = ?`,
+          [hash, seedUsername, seedPhone, saId]
+        );
+      }
+    } catch (saSyncErr) {
+      console.warn('[EmbeddedDB SuperAdmin Sync Notice]:', saSyncErr.message);
+    }
   } catch (err) {
     console.error('[EmbeddedDB Migration Error]:', err.message);
   }
