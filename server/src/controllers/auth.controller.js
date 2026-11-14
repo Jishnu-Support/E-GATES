@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const pool = require('../config/db');
+const config = require('../config/env');
 const emailService = require('../services/email.service');
 const smsService = require('../services/sms.service');
 const { generateAssociationCode } = require('../utils/generateAssociationCode');
@@ -454,7 +455,8 @@ const authController = {
   async login(req, res, next) {
     try {
       const { identifier, email, phone, password } = req.body;
-      const rawLoginId = (identifier || email || phone || '').trim();
+      const loginId = (identifier || email || phone || '').trim();
+      const rawLoginId = loginId;
       const cleanPhoneId = rawLoginId.replace(/[\s\-()]/g, '');
 
       if (!rawLoginId || !password) {
