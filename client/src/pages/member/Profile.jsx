@@ -587,7 +587,7 @@ export default function Profile() {
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
     const base = typeof window !== 'undefined' && window.location.origin
       ? window.location.origin
-      : (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
+      : (import.meta.env.VITE_API_URL || 'http://129.121.171.41:3000').replace(/\/api\/v1\/?$/, '');
     const normalized = filePath.replace(/\\/g, '/');
     const uploadIndex = normalized.indexOf('/uploads/');
     if (uploadIndex !== -1) {

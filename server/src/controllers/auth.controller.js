@@ -936,7 +936,7 @@ const authController = {
         : 'Resident Member';
 
       // Send email if SMTP configured
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://129.121.171.41:3000';
       const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
       try {

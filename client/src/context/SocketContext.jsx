@@ -8,7 +8,7 @@ const getSocketUrl = () => {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
-  return import.meta.env.VITE_SOCKET_URL || 'http://localhost:5002';
+  return import.meta.env.VITE_SOCKET_URL || 'http://129.121.171.41:3000';
 };
 
 const SOCKET_URL = getSocketUrl();

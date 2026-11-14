@@ -181,7 +181,7 @@ async function startServer() {
   initCronJobs();
 
   // Start Listening on primary port
-  const PORT = config.port || 3001;
+  const PORT = config.port || 3000;
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(`  Layout Association Management Backend Server`);
@@ -194,7 +194,7 @@ async function startServer() {
   });
 
   // Multi-Port support: Also listen on common Easypanel ports so Traefik never fails
-  const fallbackPorts = [3002, 3001, 3000, 5000, 5002, 8080].filter((p) => p !== PORT);
+  const fallbackPorts = [3000, 3001, 3002, 5000, 5002, 8080].filter((p) => p !== PORT);
   fallbackPorts.forEach((p) => {
     try {
       const s = http.createServer(app);

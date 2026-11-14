@@ -454,7 +454,7 @@ export default function EventCaptures() {
       // Fallback: Direct attachment download endpoint
       const baseApi = (typeof window !== 'undefined' && window.location.origin)
         ? window.location.origin
-        : (import.meta.env.VITE_API_URL || 'http://localhost:5002').replace(/\/api\/v1\/?$/, '');
+        : (import.meta.env.VITE_API_URL || 'http://129.121.171.41:3000').replace(/\/api\/v1\/?$/, '');
       const downloadEndpoint = `${baseApi}/api/v1/event-captures/${capture.id}/download`;
 
       const link = document.createElement('a');

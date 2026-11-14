@@ -26,7 +26,7 @@ import toast from 'react-hot-toast';
 
 const resolveMediaUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/ads/')) return url;
+  if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/ads/')) return url;
   if (url.startsWith('/uploads/')) return url;
   if (url.startsWith('uploads/')) return '/' + url;
   return getFileUrl(url);

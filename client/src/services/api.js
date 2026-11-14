@@ -4,7 +4,7 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     return '/api/v1';
   }
-  return import.meta.env.VITE_API_URL || 'http://localhost:5002/api/v1';
+  return import.meta.env.VITE_API_URL || 'http://129.121.171.41:3000/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -61,7 +61,7 @@ api.interceptors.response.use(
     // If no response (network error / server down), try direct backend port fallback
     if (!error.response && originalRequest && !originalRequest._fallbackTried) {
       originalRequest._fallbackTried = true;
-      const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://localhost:5002';
+      const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://129.121.171.41:3000';
       const directBase = `${origin}/api/v1`;
       if (originalRequest.baseURL !== directBase) {
         originalRequest.baseURL = directBase;
@@ -164,20 +164,19 @@ export const getFileUrl = (filePath) => {
   if (filePath.startsWith('blob:') || filePath.startsWith('data:')) {
     return filePath;
   }
-  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-    // If an existing record contains http://localhost:5002, rewrite it to current origin in browser
-    if (typeof window !== 'undefined' && window.location?.origin && filePath.includes('localhost:5002')) {
-      filePath = filePath.replace(/^http:\/\/localhost:5002/, window.location.origin);
-    } else {
-      return filePath;
-    }
-  }
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'http://129.121.171.41:3000';
   const normalized = filePath.replace(/\\/g, '/');
+
+  // If filePath contains /uploads/, always point it to the active origin/host
   const uploadIndex = normalized.indexOf('/uploads/');
   if (uploadIndex !== -1) {
     return `${origin}${normalized.substring(uploadIndex)}`;
   }
+
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    return normalized;
+  }
+
   if (normalized.startsWith('uploads/')) {
     return `${origin}/${normalized}`;
   }
