@@ -21,7 +21,7 @@ import PoweredByLogo from '../../components/common/PoweredByLogo';
 import BrandingModal from '../../components/common/BrandingModal';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,7 +49,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [roleMismatch, setRoleMismatch] = useState(null);
 
   // Tab metadata for top slides: Admin, Member, Vendor, Agent, Advertiser
   const tabs = [
@@ -132,7 +131,6 @@ export default function Login() {
     setIdentifier('');
     setPassword('');
     setErrorMessage('');
-    setRoleMismatch(null);
   };
 
   const handleSubmit = async (e) => {
@@ -153,6 +151,7 @@ export default function Login() {
         email: trimmedId,
         phone: trimmedId,
         password,
+        role: activeTab, // Explicitly enforce activeTab portal role on backend
       };
 
       const result = await login(credentials);
@@ -175,21 +174,31 @@ export default function Login() {
         return;
       }
 
-      // If Super Admin logs in from any tab, seamlessly route directly to /super-admin
-      if (user.role === 'super_admin') {
-        navigate('/super-admin', { replace: true });
-        return;
-      }
-
-      // Check for Role Tab Mismatch (e.g. resident trying to login on Super Admin tab)
+      // Enforce strict role matching: Reject any mismatched login and purge session immediately
       if (user.role !== activeTab) {
-        const correctTab = [...tabs, superAdminTabInfo].find((t) => t.id === user.role);
-        setRoleMismatch({
-          userRole: user.role,
-          correctTabLabel: correctTab ? correctTab.label : user.role,
-          correctTabId: user.role,
-          user,
-        });
+        localStorage.removeItem('association_token');
+        localStorage.removeItem('association_refresh_token');
+        localStorage.removeItem('association_user');
+        if (logout) {
+          try { logout(); } catch (_) {}
+        }
+        const roleLabels = {
+          super_admin: 'Super Admin',
+          admin: 'Layout Admin',
+          member: 'Resident Member',
+          vendor: 'Vendor',
+          agent: 'Growth Agent',
+          advertiser: 'Advertiser'
+        };
+        const userRoleName = roleLabels[user.role] || user.role;
+        const currentTabName = roleLabels[activeTab] || activeTab;
+        setErrorMessage(
+          activeTab === 'admin' && user.role === 'super_admin'
+            ? 'Super Administrator credentials cannot be used on the Layout Admin portal. Please sign in through the Super Admin portal below.'
+            : activeTab === 'super_admin' && user.role !== 'super_admin'
+            ? 'This portal is restricted to Super Administrators only.'
+            : `These credentials belong to a ${userRoleName} account and cannot be used to sign in to the ${currentTabName} portal.`
+        );
         setIsLoading(false);
         return;
       }
@@ -227,22 +236,7 @@ export default function Login() {
     }
   };
 
-  // Direct switch to correct tab after mismatch
-  const handleProceedWithRole = (targetRole) => {
-    if (targetRole === 'super_admin') {
-      navigate('/super-admin/dashboard', { replace: true });
-    } else if (targetRole === 'admin') {
-      navigate('/admin/dashboard', { replace: true });
-    } else if (targetRole === 'vendor') {
-      navigate('/vendor/dashboard', { replace: true });
-    } else if (targetRole === 'agent') {
-      navigate('/agent/dashboard', { replace: true });
-    } else if (targetRole === 'advertiser') {
-      navigate('/advertiser/dashboard', { replace: true });
-    } else {
-      navigate('/member/dashboard', { replace: true });
-    }
-  };
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 flex flex-col justify-between p-4 sm:p-6 antialiased">
@@ -365,40 +359,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* Role Mismatch Warning Alert */}
-            {roleMismatch && (
-              <div className="mb-5 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm space-y-2">
-                <div className="flex items-center gap-2 font-bold text-amber-800">
-                  <HiExclamationCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                  <span>Role Mismatch Detected</span>
-                </div>
-                <p className="text-amber-800 leading-relaxed">
-                  Your credentials belong to a <strong>{roleMismatch.correctTabLabel}</strong>{' '}
-                  account, but you are currently on the{' '}
-                  <strong>{currentTabInfo.label}</strong> tab.
-                </p>
-                <div className="pt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(roleMismatch.correctTabId);
-                      setRoleMismatch(null);
-                    }}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition"
-                  >
-                    Switch to {roleMismatch.correctTabLabel} Tab
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleProceedWithRole(roleMismatch.userRole)}
-                    className="px-3 py-1.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-lg transition flex items-center gap-1"
-                  >
-                    <span>Proceed to Dashboard</span>
-                    <HiArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
               {/* Identifier Input */}

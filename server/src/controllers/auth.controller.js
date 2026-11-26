@@ -454,7 +454,7 @@ const authController = {
    */
   async login(req, res, next) {
     try {
-      const { identifier, email, phone, password } = req.body;
+      const { identifier, email, phone, password, role: requestedRole } = req.body;
       const loginId = (identifier || email || phone || '').trim();
       const rawLoginId = loginId;
       const cleanPhoneId = rawLoginId.replace(/[\s\-()]/g, '');
@@ -477,11 +477,12 @@ const authController = {
 
       let user = userResult.rows[0];
 
-      // Robust Super Admin fallback & self-healing
+      // Robust Super Admin fallback & self-healing (only if portal role is super_admin or unconstrained)
       const seedUsername = (config.seedAdmin?.username || 'jit_admin').toLowerCase();
       const seedPhone = (config.seedAdmin?.phone || '9566823219').replace(/\s+/g, '');
       const seedPass = config.seedAdmin?.password || 'Jishnuinfotech@123';
       const isSeedAuthAttempt =
+        (!requestedRole || requestedRole === 'super_admin') &&
         (rawLoginId.toLowerCase() === seedUsername ||
          rawLoginId.toLowerCase() === `${seedUsername}@jishnuinfotech.com` ||
          rawLoginId.toLowerCase() === 'superadmin@association.com' ||
@@ -520,6 +521,36 @@ const authController = {
         return res.status(401).json({
           success: false,
           message: 'Invalid email/phone or password'
+        });
+      }
+
+      // Strict role enforcement: Super Admin credentials cannot log into Admin portal, and vice versa
+      if (requestedRole && requestedRole !== user.role) {
+        if (requestedRole === 'admin' && user.role === 'super_admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Super Administrator credentials cannot be used on the Layout Admin portal. Please sign in through the Super Admin portal.'
+          });
+        }
+        if (requestedRole === 'super_admin' && user.role !== 'super_admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Invalid credentials for Super Admin portal. This portal is strictly for Super Administrators.'
+          });
+        }
+        const roleLabels = {
+          super_admin: 'Super Admin',
+          admin: 'Layout Admin',
+          member: 'Resident Member',
+          vendor: 'Vendor',
+          agent: 'Growth Agent',
+          advertiser: 'Advertiser'
+        };
+        const expectedLabel = roleLabels[requestedRole] || requestedRole;
+        const actualLabel = roleLabels[user.role] || user.role;
+        return res.status(403).json({
+          success: false,
+          message: `These credentials belong to a ${actualLabel} account and cannot be used to sign in to the ${expectedLabel} portal.`
         });
       }
 
@@ -591,7 +622,7 @@ const authController = {
 
       // Verify password with self-healing for super admin
       let isMatch = await bcrypt.compare(password, user.password_hash);
-      if (!isMatch && user.role === 'super_admin' && (password === seedPass || password === 'SuperAdmin@123')) {
+      if (!isMatch && user.role === 'super_admin' && (!requestedRole || requestedRole === 'super_admin') && (password === seedPass || password === 'SuperAdmin@123')) {
         isMatch = true;
         try {
           const salt = await bcrypt.genSalt(10);
