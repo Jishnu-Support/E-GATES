@@ -126,6 +126,9 @@ export default function Header({ onMenuToggle, associationName }) {
   const getProfilePath = () => {
     if (user?.role === 'super_admin') return '/super-admin/profile';
     if (user?.role === 'admin') return '/admin/profile';
+    if (user?.role === 'vendor') return '/vendor/profile';
+    if (user?.role === 'agent') return '/agent/profile';
+    if (user?.role === 'advertiser' || user?.role === 'ad_company') return '/advertiser/profile';
     return '/member/profile';
   };
 

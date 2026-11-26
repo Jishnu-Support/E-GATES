@@ -930,7 +930,15 @@ export default function Profile() {
     ? 'Main Association Admin'
     : (profileData.role === 'admin'
       ? 'Layout Admin'
-      : (profileData.role === 'super_admin' ? 'Super Admin' : 'Resident Member'));
+      : (profileData.role === 'super_admin'
+        ? 'Super Admin'
+        : (profileData.role === 'vendor'
+          ? 'Shop Vendor'
+          : (profileData.role === 'agent'
+            ? 'Growth Agent'
+            : (profileData.role === 'advertiser' || profileData.role === 'ad_company'
+              ? 'Ad Company'
+              : 'Resident Member')))));
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto pb-10">

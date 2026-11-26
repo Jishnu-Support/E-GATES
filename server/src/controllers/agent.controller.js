@@ -26,9 +26,9 @@ const agentController = {
       const businessRes = await pool.query(
         `SELECT 
            COUNT(*) as total,
-           COUNT(*) FILTER (WHERE status = 'approved') as approved,
-           COUNT(*) FILTER (WHERE status = 'pending') as pending,
-           COUNT(*) FILTER (WHERE vendor_payment_status = 'paid') as paid_vendors
+           COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
+           COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+           COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid_vendors
          FROM users 
          WHERE role = 'vendor' AND agent_id = $1`,
         [agentId]
@@ -38,7 +38,7 @@ const agentController = {
       const assocRes = await pool.query(
         `SELECT 
            COUNT(*) as total,
-           COUNT(*) FILTER (WHERE is_active = true) as active
+           COUNT(CASE WHEN is_active = 1 OR is_active = true THEN 1 END) as active
          FROM associations 
          WHERE agent_id = $1`,
         [agentId]
@@ -48,9 +48,9 @@ const agentController = {
       const adsRes = await pool.query(
         `SELECT 
            COUNT(*) as total_ads,
-           COUNT(*) FILTER (WHERE status = 'active') as active_ads,
+           COUNT(CASE WHEN status = 'active' THEN 1 END) as active_ads,
            COALESCE(SUM(payment_amount), 0) as total_ad_volume,
-           COALESCE(SUM(payment_amount) FILTER (WHERE payment_status = 'paid'), 0) as paid_ad_volume
+           COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN payment_amount ELSE 0 END), 0) as paid_ad_volume
          FROM advertisements 
          WHERE agent_id = $1 OR vendor_id = $1`,
         [agentId]
@@ -111,8 +111,8 @@ const agentController = {
     try {
       const agentId = req.user.id;
       const result = await pool.query(
-        `SELECT id, name, email, phone, business_name, business_category, taluk, district, state,
-                status, vendor_payment_status, created_at, profile_photo
+        `SELECT id, name, email, phone, COALESCE(shop_name, name) as business_name, COALESCE(shop_category, 'Retail & Local Shop') as business_category, taluk, district, state,
+                status, COALESCE(payment_status, 'unpaid') as vendor_payment_status, created_at, profile_photo
          FROM users 
          WHERE role = 'vendor' AND agent_id = $1
          ORDER BY created_at DESC`,
@@ -223,7 +223,7 @@ const agentController = {
       const agentId = req.user.id;
       const result = await pool.query(
         `SELECT a.id, a.name, a.code, a.city, a.address, a.is_active, a.created_at,
-                COUNT(u.id) FILTER (WHERE u.role = 'member') as member_count
+                COUNT(CASE WHEN u.role = 'member' THEN 1 END) as member_count
          FROM associations a
          LEFT JOIN users u ON u.association_id = a.id
          WHERE a.agent_id = $1
@@ -347,7 +347,7 @@ const agentController = {
 
       // 1. Vendors needing renewal / payment
       const vendorsRes = await pool.query(
-        `SELECT id, name, business_name, phone, email, status, vendor_payment_status, created_at
+        `SELECT id, name, COALESCE(shop_name, name) as business_name, phone, email, status, COALESCE(payment_status, 'unpaid') as vendor_payment_status, created_at
          FROM users 
          WHERE role = 'vendor' AND agent_id = $1
          ORDER BY created_at DESC`,

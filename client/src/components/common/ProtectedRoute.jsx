@@ -83,8 +83,16 @@ export default function ProtectedRoute({ allowedRoles = [], children }) {
       return <Navigate to="/super-admin/dashboard" replace />;
     } else if (user.role === 'admin') {
       return <Navigate to="/admin/dashboard" replace />;
-    } else {
+    } else if (user.role === 'vendor') {
+      return <Navigate to="/vendor/dashboard" replace />;
+    } else if (user.role === 'agent') {
+      return <Navigate to="/agent/dashboard" replace />;
+    } else if (user.role === 'advertiser' || user.role === 'ad_company') {
+      return <Navigate to="/advertiser/dashboard" replace />;
+    } else if (user.role === 'member') {
       return <Navigate to="/member/dashboard" replace />;
+    } else {
+      return <Navigate to="/login" replace />;
     }
   }
 
