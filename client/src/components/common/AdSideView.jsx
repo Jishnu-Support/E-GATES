@@ -5,6 +5,9 @@ import {
   HiPhone,
   HiArrowTopRightOnSquare,
   HiEye,
+  HiXMark,
+  HiArrowsPointingOut,
+  HiMapPin,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -120,12 +123,147 @@ export function useActiveAds(panel = 'member', associationId = null) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 0. FULL-SCREEN / EXPANDED AD LIGHTBOX MODAL (when user taps any ad)
+// ─────────────────────────────────────────────────────────────────────────────
+function AdFullViewModal({ ad, isVideo, onClose, onVisit, onCall }) {
+  useEffect(() => {
+    if (!ad) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [ad, onClose]);
+
+  if (!ad) return null;
+
+  const imageUrl = resolveImageUrl(ad.banner_image);
+  const videoUrl = resolveVideoUrl(ad.video_url);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={ad.title || 'Advertisement'}
+    >
+      <div
+        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-slate-700 max-h-[92vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Modal Bar */}
+        <div className="px-4 py-3 bg-gray-50 dark:bg-slate-800/90 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex-shrink-0">
+              {isVideo ? 'Video Ad' : 'Sponsored Ad'}
+            </span>
+            {ad.badge && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white flex-shrink-0">
+                {ad.badge}
+              </span>
+            )}
+            <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white truncate">
+              {ad.shop_name || 'Featured Sponsor'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl bg-gray-200/80 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-rose-600 hover:text-white transition cursor-pointer flex-shrink-0"
+            aria-label="Close advertisement"
+          >
+            <HiXMark className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Full Media View */}
+        <div className="relative bg-black flex items-center justify-center max-h-[60vh] overflow-hidden">
+          {isVideo ? (
+            <video
+              src={videoUrl}
+              poster={imageUrl}
+              autoPlay
+              controls
+              playsInline
+              loop
+              className="w-full max-h-[60vh] object-contain bg-black"
+            >
+              Your browser does not support HTML5 video.
+            </video>
+          ) : (
+            <img
+              src={imageUrl || FALLBACK_AD_BANNER}
+              alt={ad.title}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = FALLBACK_AD_BANNER;
+              }}
+              className="w-full max-h-[60vh] object-contain bg-slate-950"
+            />
+          )}
+        </div>
+
+        {/* Full Details & Action Footer */}
+        <div className="p-4 sm:p-5 space-y-3 overflow-y-auto">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-snug">
+              {ad.title}
+            </h2>
+            {ad.tagline && (
+              <p className="text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {ad.tagline}
+              </p>
+            )}
+            {ad.description && (
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">
+                {ad.description}
+              </p>
+            )}
+            {(ad.target_city || ad.target_district || ad.location_name) && (
+              <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-2">
+                <HiMapPin className="w-3.5 h-3.5 text-rose-500" />
+                <span>
+                  {ad.location_name || [ad.target_city, ad.target_district].filter(Boolean).join(', ')}
+                </span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={onVisit}
+              className="flex-1 min-w-[140px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+            >
+              <HiArrowTopRightOnSquare className="w-4 h-4" />
+              <span>{ad.action_text || (isVideo ? 'Visit Sponsor' : 'View Store')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onCall}
+              className="py-2.5 px-4 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <HiPhone className="w-4 h-4 text-rose-500" />
+              <span>Call</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. COMPACT PICTURE ADVERTISEMENT (Reduced size, no unwanted clutter)
 // ─────────────────────────────────────────────────────────────────────────────
 export function AdPictureCard({ ads, isMobile = false }) {
   const navigate = useNavigate();
   const list = Array.isArray(ads) && ads.length > 0 ? ads : DEFAULT_PICTURE_ADS;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showFullAd, setShowFullAd] = useState(false);
 
   useEffect(() => {
     if (list.length <= 1) return;
@@ -184,10 +322,14 @@ export function AdPictureCard({ ads, isMobile = false }) {
         </span>
       </div>
 
-      {/* Compact Image Banner */}
+      {/* Compact Image Banner (tap to view full ad) */}
       <div
-        className="relative w-full h-24 sm:h-28 overflow-hidden bg-slate-950 cursor-pointer"
-        onClick={handleViewStore}
+        className="relative w-full h-24 sm:h-28 overflow-hidden bg-slate-950 cursor-pointer group"
+        onClick={() => {
+          handleAdClick();
+          setShowFullAd(true);
+        }}
+        title="Tap to view full ad"
       >
         {imageUrl ? (
           <img
@@ -197,7 +339,7 @@ export function AdPictureCard({ ads, isMobile = false }) {
               e.target.onerror = null;
               e.target.src = FALLBACK_AD_BANNER;
             }}
-            className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-900 text-amber-400 text-xl font-bold">
@@ -209,6 +351,9 @@ export function AdPictureCard({ ads, isMobile = false }) {
             {ad.badge}
           </span>
         )}
+        <span className="absolute bottom-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white/90 opacity-80 group-hover:opacity-100 transition">
+          <HiArrowsPointingOut className="w-3.5 h-3.5" />
+        </span>
       </div>
 
       {/* Concise Content Bar */}
@@ -221,7 +366,10 @@ export function AdPictureCard({ ads, isMobile = false }) {
 
         <h3
           className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition"
-          onClick={handleViewStore}
+          onClick={() => {
+            handleAdClick();
+            setShowFullAd(true);
+          }}
         >
           {ad.title}
         </h3>
@@ -266,6 +414,16 @@ export function AdPictureCard({ ads, isMobile = false }) {
           </div>
         )}
       </div>
+
+      {showFullAd && (
+        <AdFullViewModal
+          ad={ad}
+          isVideo={false}
+          onClose={() => setShowFullAd(false)}
+          onVisit={handleViewStore}
+          onCall={handleCall}
+        />
+      )}
     </div>
   );
 }
@@ -277,6 +435,7 @@ export function AdVideoCard({ ads, isMobile = false }) {
   const navigate = useNavigate();
   const list = Array.isArray(ads) && ads.length > 0 ? ads : DEFAULT_VIDEO_ADS;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showFullAd, setShowFullAd] = useState(false);
   const videoRef = useRef(null);
 
   const ad = list[currentIndex] || list[0];
@@ -338,8 +497,15 @@ export function AdVideoCard({ ads, isMobile = false }) {
         </span>
       </div>
 
-      {/* Reduced-Height Video Player */}
-      <div className="relative w-full h-32 sm:h-36 bg-black overflow-hidden flex items-center justify-center">
+      {/* Reduced-Height Video Player (tap to view full ad) */}
+      <div
+        className="relative w-full h-32 sm:h-36 bg-black overflow-hidden flex items-center justify-center cursor-pointer group"
+        onClick={() => {
+          handleAdClick();
+          setShowFullAd(true);
+        }}
+        title="Tap to view full video ad"
+      >
         <video
           key={`${ad.id}-${videoUrl}`}
           ref={videoRef}
@@ -353,10 +519,27 @@ export function AdVideoCard({ ads, isMobile = false }) {
           preload="auto"
           className="w-full h-full object-cover bg-black"
           onEnded={handleVideoEnded}
-          onClick={handleAdClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdClick();
+            setShowFullAd(true);
+          }}
         >
           Your browser does not support HTML5 video.
         </video>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdClick();
+            setShowFullAd(true);
+          }}
+          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white/90 hover:bg-black/85 transition cursor-pointer z-10"
+          title="Expand video ad"
+          aria-label="Expand video ad"
+        >
+          <HiArrowsPointingOut className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Concise Content Bar */}
@@ -367,7 +550,13 @@ export function AdVideoCard({ ads, isMobile = false }) {
           </span>
         </div>
 
-        <h3 className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1">
+        <h3
+          className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-1 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+          onClick={() => {
+            handleAdClick();
+            setShowFullAd(true);
+          }}
+        >
           {ad.title}
         </h3>
 
@@ -400,6 +589,22 @@ export function AdVideoCard({ ads, isMobile = false }) {
           </div>
         )}
       </div>
+
+      {showFullAd && (
+        <AdFullViewModal
+          ad={ad}
+          isVideo={true}
+          onClose={() => setShowFullAd(false)}
+          onVisit={handleVisitSponsor}
+          onCall={(e) => {
+            e?.stopPropagation();
+            handleAdClick();
+            const phone = ad.call_phone || ad.action_url || ad.shop_phone || '9566823219';
+            const cleanPhone = String(phone).replace(/[^0-9+]/g, '');
+            window.location.href = `tel:${cleanPhone}`;
+          }}
+        />
+      )}
     </div>
   );
 }
