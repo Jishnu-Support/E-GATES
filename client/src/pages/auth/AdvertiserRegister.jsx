@@ -8,6 +8,7 @@ import {
   HiLockClosed,
   HiMapPin,
   HiCheckCircle,
+  HiArrowLeft,
   HiArrowRight,
   HiGlobeAlt,
   HiDocumentCheck,
@@ -155,14 +156,23 @@ export default function AdvertiserRegister() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between p-4 sm:p-6 antialiased text-white">
       {/* Top Bar */}
-      <div className="w-full max-w-4xl mx-auto flex items-center justify-between py-2">
-        <Link to="/" className="flex items-center gap-2">
-          <img
-            src="/egates-logo.png"
-            alt="EGATES"
-            className="h-10 w-auto rounded-xl bg-white/95 p-1"
-          />
-        </Link>
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-3 py-2">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src="/egates-logo.png"
+              alt="EGATES"
+              className="h-10 w-auto rounded-xl bg-white/95 p-1"
+            />
+          </Link>
+          <Link
+            to="/login?role=advertiser"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white transition px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-rose-500/60 shadow-sm"
+          >
+            <HiArrowLeft className="w-4 h-4" />
+            <span>Back to Login</span>
+          </Link>
+        </div>
         <PoweredByLogo />
       </div>
 
