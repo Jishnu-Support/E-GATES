@@ -297,11 +297,13 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    if (user?.id) {
+    const role = profileData.role || user?.role;
+    const isExcluded = role === 'super_admin' || ['agent', 'vendor', 'advertiser', 'ad_company'].includes(role);
+    if (user?.id && !isExcluded) {
       fetchFamilyMembers();
       fetchTenants();
     }
-  }, [user?.id]);
+  }, [user?.id, profileData.role, user?.role]);
 
   const handleOpenAddFamily = () => {
     setEditingFamily(null);
@@ -940,6 +942,10 @@ export default function Profile() {
               ? 'Ad Company'
               : 'Resident Member')))));
 
+  const currentRole = profileData.role || user?.role;
+  const isAgentOrVendorOrAd = ['agent', 'vendor', 'advertiser', 'ad_company'].includes(currentRole);
+  const canManageFamilyAndTenants = !isSuperAdmin && !isAgentOrVendorOrAd;
+
   return (
     <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto pb-10">
       {/* Top Banner & Profile Avatar Card */}
@@ -1559,8 +1565,8 @@ export default function Profile() {
       </div>
       )}
 
-      {/* Section 4: Family Members - Excluded for Super Admin */}
-      {!isSuperAdmin && (
+      {/* Section 4: Family Members - Only for Resident Members & Layout Admins */}
+      {canManageFamilyAndTenants && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
@@ -1793,8 +1799,8 @@ export default function Profile() {
       </div>
       )}
 
-      {/* Section 5: Tenant Registry & Rental Management - Excluded for Super Admin */}
-      {!isSuperAdmin && (
+      {/* Section 5: Tenant Registry & Rental Management - Only for Resident Members & Layout Admins */}
+      {canManageFamilyAndTenants && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
