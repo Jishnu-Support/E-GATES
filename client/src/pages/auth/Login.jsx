@@ -136,7 +136,6 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    setRoleMismatch(null);
 
     if (!identifier.trim() || !password) {
       setErrorMessage('Please enter your email or phone and password.');
