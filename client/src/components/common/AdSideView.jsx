@@ -8,6 +8,7 @@ import {
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { FALLBACK_AD_BANNER } from '../../constants/adConstants';
 
 // Fallback showcase ads without clutter
 export const DEFAULT_PICTURE_ADS = [
@@ -192,6 +193,10 @@ export function AdPictureCard({ ads, isMobile = false }) {
           <img
             src={imageUrl}
             alt={ad.title}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = FALLBACK_AD_BANNER;
+            }}
             className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (

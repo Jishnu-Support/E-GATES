@@ -22,6 +22,7 @@ import {
 import api, { getFileUrl } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { FALLBACK_AD_BANNER } from '../../constants/adConstants';
 
 
 const resolveMediaUrl = (url) => {
@@ -91,10 +92,26 @@ export default function AdvertiserDashboard() {
   }, []);
 
   const handleBannerChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
-      setBannerFile(file);
-      setBannerPreview(URL.createObjectURL(file));
+      if (file.size === 0) {
+        toast.error('The selected file is empty (0 bytes). Please choose a valid image.');
+        e.target.value = '';
+        return;
+      }
+      const objUrl = URL.createObjectURL(file);
+      const testImg = new Image();
+      testImg.onload = () => {
+        setBannerFile(file);
+        setBannerPreview(objUrl);
+      };
+      testImg.onerror = () => {
+        toast.error('The selected file cannot be decoded as an image. Please choose a valid JPG or PNG image.');
+        e.target.value = '';
+        setBannerFile(null);
+        setBannerPreview(null);
+      };
+      testImg.src = objUrl;
     }
   };
 
@@ -366,7 +383,7 @@ export default function AdvertiserDashboard() {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+                          e.target.src = FALLBACK_AD_BANNER;
                         }}
                       />
                     ) : (
@@ -712,7 +729,19 @@ export default function AdvertiserDashboard() {
                     className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 dark:file:bg-slate-800 file:text-rose-700 dark:file:text-rose-300 cursor-pointer"
                   />
                   {bannerPreview && (
-                    <img src={bannerPreview} alt="Preview" className="w-full h-24 object-cover rounded-xl mt-2 border" />
+                    <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 mt-2">
+                      <img
+                        src={bannerPreview}
+                        alt="Preview"
+                        className="w-full h-28 object-cover"
+                        onError={(e) => {
+                          e.target.src = FALLBACK_AD_BANNER;
+                        }}
+                      />
+                      <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded shadow">
+                        ✓ Image Preview Ready
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (

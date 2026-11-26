@@ -182,23 +182,7 @@ export default function Login() {
         if (logout) {
           try { logout(); } catch (_) {}
         }
-        const roleLabels = {
-          super_admin: 'Super Admin',
-          admin: 'Layout Admin',
-          member: 'Resident Member',
-          vendor: 'Vendor',
-          agent: 'Growth Agent',
-          advertiser: 'Advertiser'
-        };
-        const userRoleName = roleLabels[user.role] || user.role;
-        const currentTabName = roleLabels[activeTab] || activeTab;
-        setErrorMessage(
-          activeTab === 'admin' && user.role === 'super_admin'
-            ? 'Super Administrator credentials cannot be used on the Layout Admin portal. Please sign in through the Super Admin portal below.'
-            : activeTab === 'super_admin' && user.role !== 'super_admin'
-            ? 'This portal is restricted to Super Administrators only.'
-            : `These credentials belong to a ${userRoleName} account and cannot be used to sign in to the ${currentTabName} portal.`
-        );
+        setErrorMessage('Invalid email/phone or password');
         setIsLoading(false);
         return;
       }

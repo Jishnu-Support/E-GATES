@@ -13,6 +13,7 @@ import {
   HiMegaphone,
 } from 'react-icons/hi2';
 import api, { getFileUrl } from '../../services/api';
+import { FALLBACK_AD_BANNER } from '../../constants/adConstants';
 import { useAuth } from '../../hooks/useAuth';
 
 // Fallback showcase ads if database is empty
@@ -191,6 +192,10 @@ export default function AdBannerCarousel({ panel = 'member', associationId = nul
             key={currentAd.id}
             src={bannerUrl}
             alt={currentAd.title}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = FALLBACK_AD_BANNER;
+            }}
             className="absolute inset-0 w-full h-full object-cover transform scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out"
           />
         )}

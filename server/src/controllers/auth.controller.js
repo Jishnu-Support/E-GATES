@@ -466,18 +466,23 @@ const authController = {
         });
       }
 
-      // Find user by email or phone
-      const userResult = await pool.query(
-        `SELECT u.*, a.name as association_name, a.code as association_code, a.is_active as association_active
+      // Find user by email or phone (strictly isolating by requestedRole if provided)
+      let querySql = `SELECT u.*, a.name as association_name, a.code as association_code, a.is_active as association_active
          FROM users u
          LEFT JOIN associations a ON u.association_id = a.id
-         WHERE LOWER(u.email) = LOWER($1) OR u.phone = $1 OR u.phone = $2 OR LOWER(u.name) = LOWER($1) OR LOWER(u.member_code) = LOWER($1)`,
-        [rawLoginId, cleanPhoneId]
-      );
+         WHERE (LOWER(u.email) = LOWER($1) OR u.phone = $1 OR u.phone = $2 OR LOWER(u.name) = LOWER($1) OR LOWER(u.member_code) = LOWER($1))`;
+      const queryParams = [rawLoginId, cleanPhoneId];
+
+      if (requestedRole) {
+        querySql += ` AND u.role = $3`;
+        queryParams.push(requestedRole);
+      }
+
+      const userResult = await pool.query(querySql, queryParams);
 
       let user = userResult.rows[0];
 
-      // Robust Super Admin fallback & self-healing (only if portal role is super_admin or unconstrained)
+      // Robust Super Admin fallback & self-healing (strictly only if portal role is super_admin or unconstrained)
       const seedUsername = (config.seedAdmin?.username || 'jit_admin').toLowerCase();
       const seedPhone = (config.seedAdmin?.phone || '9566823219').replace(/\s+/g, '');
       const seedPass = config.seedAdmin?.password || 'Jishnuinfotech@123';
@@ -524,33 +529,11 @@ const authController = {
         });
       }
 
-      // Strict role enforcement: Super Admin credentials cannot log into Admin portal, and vice versa
+      // Strict role enforcement: If credentials don't match requested portal role, return 401 Invalid credentials
       if (requestedRole && requestedRole !== user.role) {
-        if (requestedRole === 'admin' && user.role === 'super_admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Super Administrator credentials cannot be used on the Layout Admin portal. Please sign in through the Super Admin portal.'
-          });
-        }
-        if (requestedRole === 'super_admin' && user.role !== 'super_admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Invalid credentials for Super Admin portal. This portal is strictly for Super Administrators.'
-          });
-        }
-        const roleLabels = {
-          super_admin: 'Super Admin',
-          admin: 'Layout Admin',
-          member: 'Resident Member',
-          vendor: 'Vendor',
-          agent: 'Growth Agent',
-          advertiser: 'Advertiser'
-        };
-        const expectedLabel = roleLabels[requestedRole] || requestedRole;
-        const actualLabel = roleLabels[user.role] || user.role;
-        return res.status(403).json({
+        return res.status(401).json({
           success: false,
-          message: `These credentials belong to a ${actualLabel} account and cannot be used to sign in to the ${expectedLabel} portal.`
+          message: 'Invalid email/phone or password'
         });
       }
 
