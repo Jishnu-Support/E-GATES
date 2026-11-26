@@ -305,6 +305,22 @@ export function AdVideoCard({ ads, isMobile = false }) {
   const videoUrl = resolveVideoUrl(ad.video_url);
   const posterUrl = resolveImageUrl(ad.banner_image);
 
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    vid.muted = true;
+    const playPromise = vid.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  }, [videoUrl, currentIndex]);
+
+  const handleVideoEnded = () => {
+    if (list.length > 1) {
+      setCurrentIndex((prev) => (prev + 1) % list.length);
+    }
+  };
+
   return (
     <div
       className={`bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs hover:shadow-sm transition-all overflow-hidden select-none ${
@@ -325,14 +341,19 @@ export function AdVideoCard({ ads, isMobile = false }) {
       {/* Reduced-Height Video Player */}
       <div className="relative w-full h-32 sm:h-36 bg-black overflow-hidden flex items-center justify-center">
         <video
+          key={`${ad.id}-${videoUrl}`}
           ref={videoRef}
           src={videoUrl}
           poster={posterUrl}
+          autoPlay
+          muted
+          loop={list.length <= 1}
           controls
           playsInline
-          preload="metadata"
+          preload="auto"
           className="w-full h-full object-cover bg-black"
-          onPlay={handleAdClick}
+          onEnded={handleVideoEnded}
+          onClick={handleAdClick}
         >
           Your browser does not support HTML5 video.
         </video>
