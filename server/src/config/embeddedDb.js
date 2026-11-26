@@ -467,6 +467,27 @@ function ensureSchemaMigrations(db) {
           [hash, seedUsername, seedPhone, saId]
         );
       }
+
+      // Ensure seed Layout Admin exists
+      const adminRes = db.exec("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+      if (!adminRes || adminRes.length === 0 || !adminRes[0].values || adminRes[0].values.length === 0) {
+        let assocRes = db.exec("SELECT id FROM associations LIMIT 1");
+        let assocId = assocRes && assocRes.length > 0 && assocRes[0].values && assocRes[0].values[0] ? assocRes[0].values[0][0] : null;
+        if (!assocId) {
+          db.run(
+            `INSERT INTO associations (name, address, city, is_active, code)
+             VALUES ('Green City Layout Association', 'Main Layout Road', 'Hosur', 1, 'GCLA01')`
+          );
+          const newA = db.exec("SELECT id FROM associations LIMIT 1");
+          assocId = newA[0].values[0][0];
+        }
+        const adminHash = bcrypt.hashSync('Admin@123', salt);
+        db.run(
+          `INSERT INTO users (name, email, phone, password_hash, role, status, is_main_admin, association_id, member_code)
+           VALUES ('admin', 'admin@association.com', '9876543210', ?, 'admin', 'approved', 1, ?, 'ADM001')`,
+          [adminHash, assocId]
+        );
+      }
     } catch (saSyncErr) {
       console.warn('[EmbeddedDB SuperAdmin Sync Notice]:', saSyncErr.message);
     }

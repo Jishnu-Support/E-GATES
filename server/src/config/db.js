@@ -331,6 +331,28 @@ try {
         [hash, seedUsername, seedPhone, seedEmail, existing.id]
       );
     }
+
+    // 3. Ensure a default Layout Association & Layout Admin exist
+    const adminCheck = await pgPool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    if (adminCheck.rows.length === 0) {
+      let assocRes = await pgPool.query("SELECT id FROM associations LIMIT 1");
+      let assocId = assocRes.rows[0]?.id;
+      if (!assocId) {
+        const newAssoc = await pgPool.query(`
+          INSERT INTO associations (name, address, city, is_active, code)
+          VALUES ('Green City Layout Association', 'Main Layout Road', 'Hosur', true, 'GCLA01')
+          RETURNING id
+        `);
+        assocId = newAssoc.rows[0].id;
+      }
+      const adminPassHash = await bcrypt.hash('Admin@123', salt);
+      await pgPool.query(`
+        INSERT INTO users (name, email, phone, password_hash, role, status, is_main_admin, association_id, member_code)
+        VALUES ('admin', 'admin@association.com', '9876543210', $1, 'admin', 'approved', true, $2, 'ADM001')
+        ON CONFLICT (email) DO NOTHING
+      `, [adminPassHash, assocId]);
+      console.log('[PostgreSQL]: Seed Layout Admin (admin / Admin@123) initialized successfully.');
+    }
   } catch (err) {
     console.warn('[PostgreSQL Auto-Init Notice]:', err.message);
   }
