@@ -443,26 +443,36 @@ export default function VendorRegister() {
 
               {/* SECTION 2: TARGET LAYOUT ASSOCIATION */}
               <div className="space-y-4 pt-4 border-t border-slate-800">
-                <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                  <span>📍</span>
-                  <span>2. Target Layout Association (Optional)</span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  If your shop serves a specific layout association, enter their code or select below so residents will see you under their layout directory.
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <span>📍</span>
+                    <span>2. Layout Association Linking (Optional)</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-emerald-400 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    Optional — Enter code only if you want to link
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  The association registration code is <strong className="text-slate-200">completely optional</strong>. If your business serves a specific layout association and you want residents of that layout to see your shop in their community directory, you can enter the layout code or select them below. If you want, you can leave this blank to register as an independent / general city-wide vendor.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Association Registration Code
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-300">
+                        Association Registration Code
+                      </label>
+                      <span className="text-[10px] font-semibold text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded">
+                        Optional
+                      </span>
+                    </div>
                     <div className="relative">
                       <HiBuildingOffice2 className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                       <input
                         type="text"
                         value={assocCodeInput}
                         onChange={(e) => handleAssocCodeChange(e.target.value)}
-                        placeholder="e.g. KCC"
+                        placeholder="e.g. KCC (Leave blank if none)"
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 uppercase tracking-wider focus:outline-none focus:border-amber-500 transition"
                       />
                     </div>
@@ -473,19 +483,29 @@ export default function VendorRegister() {
                         <span>Connected to: {fetchedAssoc.name}</span>
                       </p>
                     )}
+                    {assocCodeInput.trim() && !codeLoading && !fetchedAssoc && (
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Code not recognized — you can leave it blank to register as a general vendor.
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Or Select from Association Directory
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-300">
+                        Or Select Association Directory
+                      </label>
+                      <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                        Optional
+                      </span>
+                    </div>
                     <select
                       value={form.association_id}
                       onChange={(e) => setForm({ ...form, association_id: e.target.value })}
                       className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 transition"
                     >
                       <option value="" className="bg-slate-900 text-white">
-                        All Layout Associations (General Vendor)
+                        None / General City-wide Vendor (No Association)
                       </option>
                       {associations.map((assoc) => (
                         <option key={assoc.id} value={assoc.id} className="bg-slate-900 text-white">
